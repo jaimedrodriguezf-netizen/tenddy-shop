@@ -1,0 +1,82 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad4" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#EDF2F7"/>
+    </linearGradient>
+    <linearGradient id="gallonGlass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#93C5FD" stop-opacity="0.85"/>
+      <stop offset="25%" stop-color="#DBEAFE" stop-opacity="0.6"/>
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="75%" stop-color="#BFDBFE" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="shadow4" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="600" height="600" fill="url(#bgGrad4)"/>
+  <pattern id="grid4" width="20" height="20" patternUnits="userSpaceOnUse">
+    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" stroke-width="0.8"/>
+  </pattern>
+  <rect width="600" height="600" fill="url(#grid4)"/>
+
+  <rect x="25" y="25" width="230" height="48" rx="6" fill="#1E293B" opacity="0.95"/>
+  <text x="38" y="45" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#38BDF8" letter-spacing="1">PLANO TÉCNICO • AYME-004</text>
+  <text x="38" y="62" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">GALÓN PET 4.000 ML C/ASA</text>
+
+  <!-- Galón con Asa -->
+  <g filter="url(#shadow4)">
+    <!-- Cuerpo del Galón -->
+    <path d="M190,490 Q190,515 215,515 L365,515 Q390,515 390,490 L390,220 Q390,165 315,135 L315,95 L265,95 L265,135 Q190,165 190,220 Z" fill="url(#gallonGlass)" stroke="#2563EB" stroke-width="1.5"/>
+    <!-- Asa Integrada -->
+    <path d="M340,200 C375,200 375,340 340,340 L315,340 C340,340 340,200 315,200 Z" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+    <!-- Hueco del Asa -->
+    <ellipse cx="335" cy="270" rx="15" ry="40" fill="#EDF2F7" stroke="#2563EB" stroke-width="1.5"/>
+    <!-- Brillos y Nervaduras -->
+    <path d="M210,220 L210,490" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+    <line x1="210" y1="360" x2="370" y2="360" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="4,4"/>
+    <line x1="210" y1="440" x2="370" y2="440" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="4,4"/>
+  </g>
+
+  <!-- ALTURA 315 mm -->
+  <g stroke="#A61C2E" stroke-width="1.5" fill="#A61C2E">
+    <line x1="315" y1="95" x2="495" y2="95" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="390" y1="515" x2="495" y2="515" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="485" y1="105" x2="485" y2="505"/>
+    <polygon points="485,95 481,107 489,107"/>
+    <polygon points="485,515 481,503 489,503"/>
+    <rect x="440" y="280" width="90" height="34" rx="6" fill="#A61C2E"/>
+    <text x="485" y="296" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#FED7AA" text-anchor="middle">ALTURA TOTAL</text>
+    <text x="485" y="309" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">315.0 mm</text>
+  </g>
+
+  <!-- DIÁMETRO BASE 155 x 132 mm -->
+  <g stroke="#1F2E4D" stroke-width="1.5" fill="#1F2E4D">
+    <line x1="190" y1="520" x2="190" y2="570" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="390" y1="520" x2="390" y2="570" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="200" y1="555" x2="380" y2="555"/>
+    <polygon points="190,555 202,551 202,559"/>
+    <polygon points="390,555 378,551 378,559"/>
+    <rect x="235" y="540" width="130" height="28" rx="4" fill="#1F2E4D"/>
+    <text x="300" y="558" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">BASE: 155 x 132 mm</text>
+  </g>
+
+  <!-- BOCA: 38 mm 3 HILOS -->
+  <g stroke="#0284C7" stroke-width="1.5" fill="#0284C7">
+    <line x1="265" y1="90" x2="265" y2="40" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="315" y1="90" x2="315" y2="40" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="270" y1="50" x2="310" y2="50"/>
+    <polygon points="265,50 273,47 273,53"/>
+    <polygon points="315,50 307,47 307,53"/>
+    <rect x="330" y="36" width="130" height="28" rx="4" fill="#0284C7"/>
+    <text x="395" y="54" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">BOCA: 38 mm ROSCA</text>
+  </g>
+
+  <g>
+    <rect x="25" y="525" width="145" height="50" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="35" y="545" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748B">PESO / GRAMAJE:</text>
+    <text x="35" y="563" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#A61C2E">115.0 g ± 2g</text>
+  </g>
+</svg>
