@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Lock, KeyRound, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import GoogleSignInButton from './GoogleSignInButton';
 
 interface AdminLoginFormProps {
   shopSlug: string;
@@ -52,8 +53,20 @@ export default function AdminLoginForm({
           </div>
           <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Acceso Administrativo B2B</h2>
           <p className="text-xs text-slate-500">
-            Ingresa la clave de administración para <strong>{tenantName}</strong>
+            Ingresa a la administración de <strong>{tenantName}</strong>
           </p>
+        </div>
+
+        {/* Botón de Iniciar Sesión con Google */}
+        <div className="space-y-3">
+          <GoogleSignInButton
+            redirectTo={`/store/${shopSlug}/admin`}
+            label="Entrar con Google"
+          />
+          <div className="relative text-center my-3">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-200" /></div>
+            <span className="relative bg-white px-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider">O usa tu clave master</span>
+          </div>
         </div>
 
         {errorMsg && (

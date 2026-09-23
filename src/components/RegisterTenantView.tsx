@@ -18,6 +18,7 @@ import {
   MapPin,
   Lock
 } from 'lucide-react';
+import GoogleSignInButton from './GoogleSignInButton';
 
 export default function RegisterTenantView() {
   const router = useRouter();
@@ -35,7 +36,6 @@ export default function RegisterTenantView() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successData, setSuccessData] = useState<{ redirectUrl: string; adminUrl: string; slug: string } | null>(null);
 
-  // Auto-sugerir slug al escribir el nombre de empresa si el usuario no lo ha tocado
   const handleNameChange = (val: string) => {
     setCompanyName(val);
     if (!slug || slug === formatSlug(companyName)) {
@@ -180,187 +180,201 @@ export default function RegisterTenantView() {
               </div>
             )}
 
-            <form
-              onSubmit={handleSubmit}
-              className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl"
-            >
-              {/* Bloque 1: Empresa & Dominio */}
-              <div className="space-y-4">
-                <div className="border-b border-slate-800 pb-2">
-                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-sky-400" />
-                    Identidad Corporativa & Subdominio
-                  </h3>
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6 md:p-8 space-y-6 shadow-2xl">
+              {/* Botón Acceso Rápido con Google */}
+              <div className="space-y-3 pb-6 border-b border-slate-800">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block text-center">
+                  Registro Rápido con Cuenta Corporativa
+                </span>
+                <GoogleSignInButton
+                  redirectTo="/registro"
+                  label="Registrarse con Google Workspace"
+                />
+                <div className="relative text-center my-3">
+                  <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-800" /></div>
+                  <span className="relative bg-slate-900 px-3 text-[11px] text-slate-500 font-semibold uppercase">O completa los datos manuales</span>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Nombre de la Empresa o Fábrica *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={companyName}
-                      onChange={(e) => handleNameChange(e.target.value)}
-                      placeholder="Ej. Distribuidora Central de Empaques S.A."
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                    />
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Bloque 1: Empresa & Dominio */}
+                <div className="space-y-4">
+                  <div className="border-b border-slate-800 pb-2">
+                    <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-sky-400" />
+                      Identidad Corporativa & Subdominio
+                    </h3>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Subdominio Deseado en tenddy.shop *
-                    </label>
-                    <div className="flex items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        Nombre de la Empresa o Fábrica *
+                      </label>
                       <input
                         type="text"
                         required
-                        value={slug}
-                        onChange={(e) => setSlug(formatSlug(e.target.value))}
-                        placeholder="miempresa"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-l-lg px-3 py-2.5 text-xs text-sky-400 font-mono focus:border-sky-500 focus:outline-none text-right"
+                        value={companyName}
+                        onChange={(e) => handleNameChange(e.target.value)}
+                        placeholder="Ej. Distribuidora Central de Empaques S.A."
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                       />
-                      <span className="bg-slate-800 border border-l-0 border-slate-700 text-slate-400 text-xs px-3 py-2.5 rounded-r-lg font-mono">
-                        .tenddy.shop
-                      </span>
                     </div>
-                  </div>
-                </div>
 
-                {/* Selección de Industria */}
-                <div className="pt-2">
-                  <label className="block text-xs font-semibold text-slate-400 mb-2">
-                    Sector Industrial o Giro de Negocio *
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {[
-                      { id: 'plastics', name: 'Plásticos & Envases', icon: '♳', color: '#0284c7' },
-                      { id: 'confectionery', name: 'Confitería & Alimentos', icon: '🍬', color: '#e11d48' },
-                      { id: 'chemicals', name: 'Químicos & Agro', icon: '🧪', color: '#059669' },
-                      { id: 'cosmetics', name: 'Cosmética & Belleza', icon: '🧴', color: '#7c3aed' },
-                      { id: 'hardware', name: 'Ferretería & Construcción', icon: '⚙️', color: '#ea580c' },
-                      { id: 'general', name: 'Mayorista General B2B', icon: '📦', color: '#4f46e5' },
-                    ].map((ind) => (
-                      <div
-                        key={ind.id}
-                        onClick={() => {
-                          setIndustryType(ind.id);
-                          setPrimaryColor(ind.color);
-                        }}
-                        className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2.5 ${
-                          industryType === ind.id
-                            ? 'bg-slate-900 border-sky-500 text-white shadow-md shadow-sky-500/10'
-                            : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
-                        }`}
-                      >
-                        <span className="text-xl">{ind.icon}</span>
-                        <span className="text-xs font-semibold">{ind.name}</span>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        Subdominio Deseado en tenddy.shop *
+                      </label>
+                      <div className="flex items-center">
+                        <input
+                          type="text"
+                          required
+                          value={slug}
+                          onChange={(e) => setSlug(formatSlug(e.target.value))}
+                          placeholder="miempresa"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-l-lg px-3 py-2.5 text-xs text-sky-400 font-mono focus:border-sky-500 focus:outline-none text-right"
+                        />
+                        <span className="bg-slate-800 border border-l-0 border-slate-700 text-slate-400 text-xs px-3 py-2.5 rounded-r-lg font-mono">
+                          .tenddy.shop
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Bloque 2: Contacto & Sucursal Principal */}
-              <div className="space-y-4 pt-4 border-t border-slate-800">
-                <div className="border-b border-slate-800 pb-2">
-                  <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-emerald-400" />
-                    Canales de Atención & Ubicación
-                  </h3>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      WhatsApp Comercial (Con código de país) *
-                    </label>
-                    <div className="relative">
-                      <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-                      <input
-                        type="tel"
-                        required
-                        value={whatsapp}
-                        onChange={(e) => setWhatsapp(e.target.value)}
-                        placeholder="Ej. 593998722324 o 573129876543"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                      />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Correo Electrónico de Ventas
+                  {/* Selección de Industria */}
+                  <div className="pt-2">
+                    <label className="block text-xs font-semibold text-slate-400 mb-2">
+                      Sector Industrial o Giro de Negocio *
                     </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="ventas@miempresa.com"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                      />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                      {[
+                        { id: 'plastics', name: 'Plásticos & Envases', icon: '♳', color: '#0284c7' },
+                        { id: 'confectionery', name: 'Confitería & Alimentos', icon: '🍬', color: '#e11d48' },
+                        { id: 'chemicals', name: 'Químicos & Agro', icon: '🧪', color: '#059669' },
+                        { id: 'cosmetics', name: 'Cosmética & Belleza', icon: '🧴', color: '#7c3aed' },
+                        { id: 'hardware', name: 'Ferretería & Construcción', icon: '⚙️', color: '#ea580c' },
+                        { id: 'general', name: 'Mayorista General B2B', icon: '📦', color: '#4f46e5' },
+                      ].map((ind) => (
+                        <div
+                          key={ind.id}
+                          onClick={() => {
+                            setIndustryType(ind.id);
+                            setPrimaryColor(ind.color);
+                          }}
+                          className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2.5 ${
+                            industryType === ind.id
+                              ? 'bg-slate-900 border-sky-500 text-white shadow-md shadow-sky-500/10'
+                              : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                          }`}
+                        >
+                          <span className="text-xl">{ind.icon}</span>
+                          <span className="text-xs font-semibold">{ind.name}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Ciudad Principal de Operación *
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                {/* Bloque 2: Contacto & Sucursal Principal */}
+                <div className="space-y-4 pt-4 border-t border-slate-800">
+                  <div className="border-b border-slate-800 pb-2">
+                    <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-emerald-400" />
+                      Canales de Atención & Ubicación
+                    </h3>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        WhatsApp Comercial (Con código de país) *
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                        <input
+                          type="tel"
+                          required
+                          value={whatsapp}
+                          onChange={(e) => setWhatsapp(e.target.value)}
+                          placeholder="Ej. 593998722324 o 573129876543"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        Correo Electrónico de Ventas
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                        <input
+                          type="email"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="ventas@miempresa.com"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        Ciudad Principal de Operación *
+                      </label>
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
+                        <input
+                          type="text"
+                          required
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          placeholder="Ej. Quito / Bogotá / Guayaquil"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        Dirección de Planta o Bodega Central
+                      </label>
                       <input
                         type="text"
-                        required
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Ej. Quito / Bogotá / Guayaquil"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        placeholder="Ej. Parque Industrial Módulo 4"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                       />
                     </div>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Dirección de Planta o Bodega Central
-                    </label>
-                    <input
-                      type="text"
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
-                      placeholder="Ej. Parque Industrial Módulo 4"
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                    />
-                  </div>
                 </div>
-              </div>
 
-              {/* Botón de Envío */}
-              <div className="pt-4 border-t border-slate-800">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Creando Plataforma y Base de Datos...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Crear Tienda B2B en tenddy.shop</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-                <p className="text-[11px] text-slate-500 text-center mt-2.5">
-                  Sin tarjeta de crédito requerida. Aprovisionamiento automático en PostgreSQL 17.
-                </p>
-              </div>
-            </form>
+                {/* Botón de Envío */}
+                <div className="pt-4 border-t border-slate-800">
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-sm py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/30 transition-all cursor-pointer"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Creando Plataforma y Base de Datos...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Crear Tienda B2B en tenddy.shop</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-slate-500 text-center mt-2.5">
+                    Sin tarjeta de crédito requerida. Aprovisionamiento automático en PostgreSQL 17.
+                  </p>
+                </div>
+              </form>
+            </div>
           </div>
         )}
       </main>
