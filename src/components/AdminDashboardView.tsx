@@ -32,7 +32,8 @@ import {
   ChevronDown,
   Layers,
   ArrowUpRight,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
@@ -101,6 +102,7 @@ export default function AdminDashboardView({
   const totalUnitsQuoted = quotes.reduce((acc, q) => {
     return acc + (q.items?.reduce((sub, item) => sub + (item.total_units || 0), 0) || 0);
   }, 0);
+  const viewsCount = tenant.views_count || 0;
 
   // Filtrado de cotizaciones
   const filteredQuotes = quotes.filter((q) => {
@@ -203,11 +205,10 @@ export default function AdminDashboardView({
       />
 
       {/* =========================================================================
-          1. MENÚ LATERAL (SIDEBAR PROFESIONAL MODERNO)
+          1. MENÚ LATERAL (SIDEBAR)
           ========================================================================= */}
       <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between shrink-0 sticky top-0 h-screen z-30 shadow-sm">
         <div className="p-5 space-y-6">
-          {/* Header del Sidebar */}
           <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white shadow-sm text-sm shrink-0">
               {tenant.name.charAt(0)}
@@ -225,7 +226,6 @@ export default function AdminDashboardView({
             </div>
           </div>
 
-          {/* Navegación Principal */}
           <div className="space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
               Gestión B2B
@@ -302,7 +302,6 @@ export default function AdminDashboardView({
             </button>
           </div>
 
-          {/* Enlaces de Tienda */}
           <div className="pt-4 border-t border-slate-100 space-y-1">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
               Canal de Venta
@@ -322,7 +321,6 @@ export default function AdminDashboardView({
           </div>
         </div>
 
-        {/* Footer del Sidebar */}
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
           <button
             onClick={handleLogout}
@@ -374,7 +372,19 @@ export default function AdminDashboardView({
           {/* PESTAÑA 1: COTIZACIONES */}
           {activeTab === 'quotes' && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Tarjetas de Métricas Claras con Contador de Vistas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                  <div className="flex items-center justify-between text-xs font-medium text-slate-500">
+                    <span>Visitas a la Tienda</span>
+                    <Eye className="w-4 h-4 text-sky-500" />
+                  </div>
+                  <div className="text-3xl font-extrabold text-sky-600 mt-2 font-mono">
+                    {viewsCount.toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Tráfico total registrado</div>
+                </div>
+
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
                   <div className="text-xs font-medium text-slate-500">Total Cotizaciones</div>
                   <div className="text-3xl font-extrabold text-slate-900 mt-2 font-mono">{totalQuotes}</div>
@@ -388,20 +398,21 @@ export default function AdminDashboardView({
                 </div>
 
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
-                  <div className="text-xs font-medium text-slate-500">Aprobadas / En Producción</div>
+                  <div className="text-xs font-medium text-slate-500">Aprobadas / Producción</div>
                   <div className="text-3xl font-extrabold text-emerald-600 mt-2 font-mono">{approvedQuotes}</div>
                   <div className="text-[11px] text-emerald-600/80 mt-1 font-medium">Cotizaciones cerradas</div>
                 </div>
 
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
                   <div className="text-xs font-medium text-slate-500">Volumen en Demanda</div>
-                  <div className="text-3xl font-extrabold text-blue-600 mt-2 font-mono">
+                  <div className="text-3xl font-extrabold text-indigo-600 mt-2 font-mono">
                     {totalUnitsQuoted.toLocaleString()}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">Unidades totales solicitadas</div>
+                  <div className="text-[11px] text-slate-400 mt-1">Unidades solicitadas</div>
                 </div>
               </div>
 
+              {/* Bandeja de Requerimientos + Detalle Lateral */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                 <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-xs">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">

@@ -17,7 +17,8 @@ import {
   Power,
   Calendar,
   LogOut,
-  Users
+  Users,
+  Eye
 } from 'lucide-react';
 import SuperadminUsersManager, { B2BAccount, TenantStaffMember } from './SuperadminUsersManager';
 
@@ -27,6 +28,7 @@ export interface SuperadminTenantSummary {
   name: string;
   industry_type: string;
   is_active: boolean;
+  views_count: number;
   created_at: string;
   total_products: number;
   total_quotes: number;
@@ -36,6 +38,7 @@ export interface SuperadminTenantSummary {
 
 interface SuperadminDashboardViewProps {
   tenants: SuperadminTenantSummary[];
+  totalGlobalViews: number;
   totalGlobalQuotes: number;
   totalGlobalProducts: number;
   totalGlobalUnitsQuoted: number;
@@ -46,6 +49,7 @@ interface SuperadminDashboardViewProps {
 
 export default function SuperadminDashboardView({
   tenants: initialTenants,
+  totalGlobalViews,
   totalGlobalQuotes,
   totalGlobalProducts,
   totalGlobalUnitsQuoted,
@@ -167,10 +171,21 @@ export default function SuperadminDashboardView({
 
       <main className="max-w-7xl mx-auto p-8 space-y-8">
         {/* Métricas Globales de la Plataforma */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Fábricas / Tiendas Activas</span>
+              <span>Tráfico Global de la Red</span>
+              <Eye className="w-4 h-4 text-sky-400" />
+            </div>
+            <div className="text-3xl font-extrabold text-sky-400 mt-2 font-mono">
+              {totalGlobalViews.toLocaleString()}
+            </div>
+            <div className="text-[11px] text-slate-500 mt-1">Visitas en todas las tiendas</div>
+          </div>
+
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xs">
+            <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
+              <span>Fábricas Activas</span>
               <Building2 className="w-4 h-4 text-amber-400" />
             </div>
             <div className="text-3xl font-extrabold text-white mt-2 font-mono">
@@ -182,23 +197,23 @@ export default function SuperadminDashboardView({
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
               <span>Cotizaciones Globales</span>
-              <MessageCircle className="w-4 h-4 text-sky-400" />
+              <MessageCircle className="w-4 h-4 text-emerald-400" />
             </div>
-            <div className="text-3xl font-extrabold text-sky-400 mt-2 font-mono">
+            <div className="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">
               {totalGlobalQuotes}
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">Leads transaccionados en la red</div>
+            <div className="text-[11px] text-slate-500 mt-1">Leads transaccionados</div>
           </div>
 
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xs">
             <div className="flex items-center justify-between text-slate-400 text-xs font-semibold">
-              <span>Empresas Compradoras B2B</span>
-              <Users className="w-4 h-4 text-emerald-400" />
+              <span>Empresas Compradoras</span>
+              <Users className="w-4 h-4 text-purple-400" />
             </div>
-            <div className="text-3xl font-extrabold text-emerald-400 mt-2 font-mono">
+            <div className="text-3xl font-extrabold text-purple-400 mt-2 font-mono">
               {totalB2BAccounts}
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">Cuentas universales en base de datos</div>
+            <div className="text-[11px] text-slate-500 mt-1">Cuentas universales B2B</div>
           </div>
 
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-5 shadow-xs">
@@ -209,7 +224,7 @@ export default function SuperadminDashboardView({
             <div className="text-3xl font-extrabold text-indigo-400 mt-2 font-mono">
               {totalGlobalUnitsQuoted.toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-500 mt-1">Unidades totales solicitadas</div>
+            <div className="text-[11px] text-slate-500 mt-1">Unidades en demanda</div>
           </div>
         </div>
 
@@ -223,7 +238,7 @@ export default function SuperadminDashboardView({
                   Directorio Global de Tiendas en tenddy.shop
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Supervisa el estado, catálogo y métricas de cada cliente en la plataforma.
+                  Supervisa el tráfico de visitas, catálogo y métricas de cada cliente en la plataforma.
                 </p>
               </div>
 
@@ -245,9 +260,9 @@ export default function SuperadminDashboardView({
                   <tr>
                     <th className="py-3 px-4">Fábrica / Empresa</th>
                     <th className="py-3 px-4">Giro / Industria</th>
+                    <th className="py-3 px-4">Tráfico / Visitas</th>
                     <th className="py-3 px-4">Catálogo</th>
                     <th className="py-3 px-4">Cotizaciones</th>
-                    <th className="py-3 px-4">Sucursales</th>
                     <th className="py-3 px-4">Estado</th>
                     <th className="py-3 px-4 text-right">Acciones de Control</th>
                   </tr>
@@ -268,16 +283,19 @@ export default function SuperadminDashboardView({
                         </span>
                       </td>
 
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center gap-1.5 font-mono font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full text-[11px]">
+                          <Eye className="w-3 h-3" />
+                          {t.views_count.toLocaleString()} visitas
+                        </span>
+                      </td>
+
                       <td className="py-3.5 px-4 font-mono font-bold text-white">
                         {t.total_products} productos
                       </td>
 
                       <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
                         {t.total_quotes} cotizaciones
-                      </td>
-
-                      <td className="py-3.5 px-4 font-mono text-slate-400">
-                        {t.total_branches} sedes
                       </td>
 
                       <td className="py-3.5 px-4">
@@ -336,7 +354,7 @@ export default function SuperadminDashboardView({
           </div>
         )}
 
-        {/* PESTAÑA 2: CRUD DE USUARIOS (COMPRADORES & STAFF) */}
+        {/* PESTAÑA 2: CRUD DE USUARIOS */}
         {activeTab === 'users' && (
           <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-sm">
             <SuperadminUsersManager

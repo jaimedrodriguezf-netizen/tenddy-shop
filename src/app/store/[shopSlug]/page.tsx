@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import TenantLandingView from '@/components/TenantLandingView';
+import ViewTracker from '@/components/ViewTracker';
 
 interface ShopPageProps {
   params: Promise<{
@@ -18,21 +19,23 @@ export default async function ShopPage({ params }: ShopPageProps) {
   }
 
   // Para AYME INDUSTRIAS PET servimos la réplica exacta en iframe 100% aislado
-  // Esto elimina cualquier conflicto con Next.js/Turbopack HMR y garantiza video y estilos idénticos
   if (tenant.slug === 'ayme-pet' || tenant.slug === 'plastpet') {
     return (
-      <iframe
-        src="/standalone.html"
-        style={{
-          width: '100vw',
-          height: '100vh',
-          border: 'none',
-          position: 'fixed',
-          inset: 0,
-          zIndex: 9999,
-        }}
-        title="AYME INDUSTRIAS PET"
-      />
+      <>
+        <ViewTracker tenantId={tenant.id} />
+        <iframe
+          src="/standalone.html"
+          style={{
+            width: '100vw',
+            height: '100vh',
+            border: 'none',
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+          }}
+          title="AYME INDUSTRIAS PET"
+        />
+      </>
     );
   }
 
@@ -40,11 +43,14 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const { categories, products, branches } = await getTenantCatalog(tenant.id);
 
   return (
-    <TenantLandingView
-      tenant={tenant}
-      categories={categories}
-      products={products}
-      branches={branches}
-    />
+    <>
+      <ViewTracker tenantId={tenant.id} />
+      <TenantLandingView
+        tenant={tenant}
+        categories={categories}
+        products={products}
+        branches={branches}
+      />
+    </>
   );
 }

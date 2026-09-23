@@ -22,7 +22,7 @@ export default async function SuperadminPage() {
 
   // Consultar métricas y usuarios en paralelo
   const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes] = await Promise.all([
-    admin.from('tenants').select('id, slug, name, industry_type, is_active, created_at').order('created_at', { ascending: false }),
+    admin.from('tenants').select('id, slug, name, industry_type, is_active, views_count, created_at').order('created_at', { ascending: false }),
     admin.from('quotes').select('id, estimated_total, items'),
     admin.from('products').select('id, tenant_id'),
     admin.from('b2b_accounts').select('*').order('created_at', { ascending: false }),
@@ -46,6 +46,7 @@ export default async function SuperadminPage() {
       name: t.name,
       industry_type: t.industry_type,
       is_active: t.is_active,
+      views_count: t.views_count || 0,
       created_at: t.created_at,
       total_products: tenantProducts.length,
       total_quotes: tenantQuotes.length,
@@ -57,6 +58,7 @@ export default async function SuperadminPage() {
   const totalGlobalQuotes = rawQuotes.length;
   const totalGlobalProducts = rawProducts.length;
   const totalB2BAccounts = rawBuyers.length;
+  const totalGlobalViews = rawTenants.reduce((acc, t: any) => acc + (t.views_count || 0), 0);
   const totalGlobalUnitsQuoted = rawQuotes.reduce((acc, q: any) => {
     const items = q.items || [];
     return acc + items.reduce((sub: number, i: any) => sub + (i.total_units || 0), 0);
@@ -65,6 +67,7 @@ export default async function SuperadminPage() {
   return (
     <SuperadminDashboardView
       tenants={tenantsSummary}
+      totalGlobalViews={totalGlobalViews}
       totalGlobalQuotes={totalGlobalQuotes}
       totalGlobalProducts={totalGlobalProducts}
       totalGlobalUnitsQuoted={totalGlobalUnitsQuoted}

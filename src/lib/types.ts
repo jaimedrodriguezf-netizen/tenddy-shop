@@ -4,6 +4,7 @@ export interface Tenant {
   name: string;
   industry_type: string;
   logo_url: string;
+  views_count?: number;
   theme_config: {
     primary_color: string;
     secondary_color: string;
