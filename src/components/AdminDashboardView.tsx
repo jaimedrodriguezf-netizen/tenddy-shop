@@ -31,11 +31,13 @@ import {
   Store,
   ChevronDown,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  Users
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
 import AppearanceTab from './AppearanceTab';
+import TeamTab, { TenantMember } from './TeamTab';
 
 interface QuoteItem {
   product_id: string;
@@ -71,6 +73,7 @@ interface AdminDashboardViewProps {
   products: Product[];
   categories?: Category[];
   initialQuotes: QuoteRecord[];
+  initialMembers?: TenantMember[];
 }
 
 export default function AdminDashboardView({
@@ -79,9 +82,10 @@ export default function AdminDashboardView({
   products: initialProducts,
   categories = [],
   initialQuotes,
+  initialMembers = [],
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
-  const [activeTab, setActiveTab] = useState<'quotes' | 'products' | 'appearance'>('quotes');
+  const [activeTab, setActiveTab] = useState<'quotes' | 'products' | 'team' | 'appearance'>('quotes');
   const [quotes, setQuotes] = useState<QuoteRecord[]>(initialQuotes);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [filterStatus, setFilterStatus] = useState<string>('all');
@@ -274,6 +278,18 @@ export default function AdminDashboardView({
             </button>
 
             <button
+              onClick={() => setActiveTab('team')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'team'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Equipo & Asesores</span>
+            </button>
+
+            <button
               onClick={() => setActiveTab('appearance')}
               className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === 'appearance'
@@ -319,15 +335,15 @@ export default function AdminDashboardView({
       </aside>
 
       {/* =========================================================================
-          2. ÁREA DE CONTENIDO PRINCIPAL (CLARA, LIMPIA, SIN RUIDO VISUAL)
+          2. ÁREA DE CONTENIDO PRINCIPAL
           ========================================================================= */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navbar */}
         <header className="h-16 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <h1 className="text-base font-bold text-slate-900 tracking-tight">
               {activeTab === 'quotes' && 'Panel de Cotizaciones & Requerimientos'}
               {activeTab === 'products' && 'Catálogo de Envases & Productos B2B'}
+              {activeTab === 'team' && 'Gestión de Equipo, Asesores & Roles'}
               {activeTab === 'appearance' && 'Personalización de Marca & Diseño Web'}
             </h1>
           </div>
@@ -354,14 +370,10 @@ export default function AdminDashboardView({
           </div>
         </header>
 
-        {/* Contenedor de Vistas */}
         <main className="p-8 space-y-8 flex-1 max-w-7xl mx-auto w-full">
-          {/* =========================================================================
-              PESTAÑA 1: COTIZACIONES
-              ========================================================================= */}
+          {/* PESTAÑA 1: COTIZACIONES */}
           {activeTab === 'quotes' && (
             <div className="space-y-6">
-              {/* Tarjetas de Métricas Claras */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
                   <div className="text-xs font-medium text-slate-500">Total Cotizaciones</div>
@@ -390,9 +402,7 @@ export default function AdminDashboardView({
                 </div>
               </div>
 
-              {/* Bandeja de Requerimientos + Detalle Lateral */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* Lista de Cotizaciones */}
                 <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-xs">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <h3 className="font-bold text-sm text-slate-900">
@@ -416,7 +426,6 @@ export default function AdminDashboardView({
                     </div>
                   </div>
 
-                  {/* Buscador */}
                   <div className="relative">
                     <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
                     <input
@@ -428,7 +437,6 @@ export default function AdminDashboardView({
                     />
                   </div>
 
-                  {/* Lista de Cotizaciones */}
                   <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
                     {filteredQuotes.length === 0 ? (
                       <div className="text-center py-16 text-slate-400 text-xs">
@@ -485,7 +493,7 @@ export default function AdminDashboardView({
                   </div>
                 </div>
 
-                {/* Detalle Lateral de la Cotización */}
+                {/* Detalle Lateral */}
                 <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl p-6 space-y-5 shadow-xs sticky top-24">
                   {selectedQuote ? (
                     <>
@@ -504,7 +512,6 @@ export default function AdminDashboardView({
                         </p>
                       </div>
 
-                      {/* Actualizar Estado */}
                       <div className="space-y-1.5">
                         <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                           Cambiar Estado Comercial
@@ -527,7 +534,6 @@ export default function AdminDashboardView({
                         </div>
                       </div>
 
-                      {/* Datos de Contacto */}
                       <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 space-y-2.5 text-xs">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-500 font-medium">WhatsApp / Teléfono:</span>
@@ -566,7 +572,6 @@ export default function AdminDashboardView({
                         )}
                       </div>
 
-                      {/* Productos Solicitados */}
                       <div className="space-y-2">
                         <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
                           Envases Solicitados ({selectedQuote.items?.length || 0})
@@ -602,9 +607,7 @@ export default function AdminDashboardView({
             </div>
           )}
 
-          {/* =========================================================================
-              PESTAÑA 2: CATÁLOGO DE PRODUCTOS
-              ========================================================================= */}
+          {/* PESTAÑA 2: PRODUCTOS */}
           {activeTab === 'products' && (
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-6 shadow-xs">
               <div className="flex items-center justify-between">
@@ -664,9 +667,18 @@ export default function AdminDashboardView({
             </div>
           )}
 
-          {/* =========================================================================
-              PESTAÑA 3: APARIENCIA & DISEÑO
-              ========================================================================= */}
+          {/* PESTAÑA 3: EQUIPO & ROLES */}
+          {activeTab === 'team' && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+              <TeamTab
+                tenant={tenant}
+                branches={branches}
+                initialMembers={initialMembers}
+              />
+            </div>
+          )}
+
+          {/* PESTAÑA 4: APARIENCIA */}
           {activeTab === 'appearance' && (
             <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
               <AppearanceTab

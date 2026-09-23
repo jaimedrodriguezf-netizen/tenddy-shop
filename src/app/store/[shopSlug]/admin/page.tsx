@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import { getAdminClient } from '@/lib/supabase';
 import { QuoteRecord } from '@/components/AdminDashboardView';
+import { TenantMember } from '@/components/TeamTab';
 import AdminAuthWrapper from '@/components/AdminAuthWrapper';
 
 interface AdminPageProps {
@@ -27,17 +28,27 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   const { products, branches, categories } = await getTenantCatalog(tenant.id);
 
-  // Si está autenticado, cargamos las cotizaciones de forma segura con el service role
+  // Si está autenticado, cargamos las cotizaciones y miembros de forma segura con el service role
   let quotes: QuoteRecord[] = [];
+  let members: TenantMember[] = [];
+
   if (isAuthenticated) {
     const admin = getAdminClient();
-    const { data: quotesData } = await admin
-      .from('quotes')
-      .select('*')
-      .eq('tenant_id', tenant.id)
-      .order('created_at', { ascending: false });
+    const [quotesRes, membersRes] = await Promise.all([
+      admin
+        .from('quotes')
+        .select('*')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: false }),
+      admin
+        .from('tenant_members')
+        .select('id, full_name, email, phone, role, is_active, created_at, branch_id')
+        .eq('tenant_id', tenant.id)
+        .order('created_at', { ascending: true }),
+    ]);
 
-    quotes = (quotesData || []) as QuoteRecord[];
+    quotes = (quotesRes.data || []) as QuoteRecord[];
+    members = (membersRes.data || []) as TenantMember[];
   }
 
   return (
@@ -48,6 +59,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       products={products}
       categories={categories}
       initialQuotes={quotes}
+      initialMembers={members}
       initiallyAuthenticated={isAuthenticated}
     />
   );
