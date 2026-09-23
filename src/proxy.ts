@@ -18,18 +18,19 @@ export function proxy(request: NextRequest) {
   const currentHost = hostname.split(':')[0].toLowerCase();
   const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tenddy.shop').toLowerCase();
 
-  // Si la petición es por IP directa (ej: Tailscale 100.x.x.x o localhost), o si la ruta ya incluye /store
-  const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(currentHost);
-  if (
+  // Si visita el dominio raíz (localhost, tenddy.shop, www.tenddy.shop) o rutas globales (/registro, /store)
+  const isRootDomain =
     currentHost === 'localhost' ||
     currentHost === '127.0.0.1' ||
-    isIpAddress ||
-    url.pathname.startsWith('/store')
-  ) {
+    currentHost === rootDomain ||
+    currentHost === `www.${rootDomain}`;
+
+  // Si es el dominio raíz o la petición es para las rutas globales del SaaS (/registro, /store, etc.)
+  if (isRootDomain || url.pathname.startsWith('/registro') || url.pathname.startsWith('/store')) {
     return NextResponse.next();
   }
 
-  // Detectar si es subdominio o dominio propio
+  // Detectar si es subdominio (ej: ayme.tenddy.shop o ayme.localhost)
   let detectedSlug: string | null = null;
   if (currentHost.endsWith(`.${rootDomain}`)) {
     detectedSlug = currentHost.replace(`.${rootDomain}`, '');
@@ -39,6 +40,7 @@ export function proxy(request: NextRequest) {
     currentHost !== rootDomain &&
     currentHost !== `www.${rootDomain}`
   ) {
+    // Dominio personalizado propio (ej: envasesayme.com)
     detectedSlug = currentHost;
   }
 
@@ -47,6 +49,7 @@ export function proxy(request: NextRequest) {
     requestHeaders.set('x-shop-slug', detectedSlug);
     requestHeaders.set('x-current-host', currentHost);
 
+    // Reescribir transparentemente hacia la tienda correspondiente
     return NextResponse.rewrite(
       new URL(`/store/${detectedSlug}${url.pathname}`, request.url),
       {
