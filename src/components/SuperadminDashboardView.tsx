@@ -19,6 +19,7 @@ import {
   LogOut,
   Users
 } from 'lucide-react';
+import SuperadminUsersManager, { B2BAccount, TenantStaffMember } from './SuperadminUsersManager';
 
 export interface SuperadminTenantSummary {
   id: string;
@@ -39,6 +40,8 @@ interface SuperadminDashboardViewProps {
   totalGlobalProducts: number;
   totalGlobalUnitsQuoted: number;
   totalB2BAccounts: number;
+  initialBuyers?: B2BAccount[];
+  initialStaff?: TenantStaffMember[];
 }
 
 export default function SuperadminDashboardView({
@@ -47,8 +50,11 @@ export default function SuperadminDashboardView({
   totalGlobalProducts,
   totalGlobalUnitsQuoted,
   totalB2BAccounts,
+  initialBuyers = [],
+  initialStaff = [],
 }: SuperadminDashboardViewProps) {
   const [tenants, setTenants] = useState<SuperadminTenantSummary[]>(initialTenants);
+  const [activeTab, setActiveTab] = useState<'tenants' | 'users'>('tenants');
   const [search, setSearch] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -130,6 +136,33 @@ export default function SuperadminDashboardView({
             </button>
           </div>
         </div>
+
+        {/* Selector de Pestañas Principales */}
+        <div className="max-w-7xl mx-auto mt-4 pt-3 border-t border-slate-800/80 flex items-center gap-6 text-xs font-bold">
+          <button
+            onClick={() => setActiveTab('tenants')}
+            className={`pb-1 transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'tenants'
+                ? 'text-amber-400 border-b-2 border-amber-400'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            <span>Fábricas & Tiendas ({tenants.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`pb-1 transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'users'
+                ? 'text-amber-400 border-b-2 border-amber-400'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>CRUD de Usuarios & Cuentas B2B ({initialBuyers.length + initialStaff.length})</span>
+          </button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto p-8 space-y-8">
@@ -180,126 +213,138 @@ export default function SuperadminDashboardView({
           </div>
         </div>
 
-        {/* Tabla de Todas las Empresas / Tiendas */}
-        <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <Globe className="w-4 h-4 text-amber-400" />
-                Directorio Global de Tiendas en tenddy.shop
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Supervisa el estado, catálogo y métricas de cada cliente en la plataforma.
-              </p>
+        {/* PESTAÑA 1: GESTIÓN DE TIENDAS */}
+        {activeTab === 'tenants' && (
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-amber-400" />
+                  Directorio Global de Tiendas en tenddy.shop
+                </h2>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Supervisa el estado, catálogo y métricas de cada cliente en la plataforma.
+                </p>
+              </div>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar por tienda, subdominio o industria..."
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:border-amber-400 focus:outline-none transition-all"
+                />
+              </div>
             </div>
 
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por tienda, subdominio o industria..."
-                className="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-white placeholder:text-slate-500 focus:border-amber-400 focus:outline-none transition-all"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-900/60 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
-                <tr>
-                  <th className="py-3 px-4">Fábrica / Empresa</th>
-                  <th className="py-3 px-4">Giro / Industria</th>
-                  <th className="py-3 px-4">Catálogo</th>
-                  <th className="py-3 px-4">Cotizaciones</th>
-                  <th className="py-3 px-4">Sucursales</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4 text-right">Acciones de Control</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredTenants.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-white text-sm">{t.name}</div>
-                      <div className="text-[11px] font-mono text-sky-400 mt-0.5">
-                        {t.slug}.tenddy.shop
-                      </div>
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      <span className="capitalize bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[11px] font-medium text-slate-300">
-                        {t.industry_type}
-                      </span>
-                    </td>
-
-                    <td className="py-3.5 px-4 font-mono font-bold text-white">
-                      {t.total_products} productos
-                    </td>
-
-                    <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
-                      {t.total_quotes} cotizaciones
-                    </td>
-
-                    <td className="py-3.5 px-4 font-mono text-slate-400">
-                      {t.total_branches} sedes
-                    </td>
-
-                    <td className="py-3.5 px-4">
-                      {t.is_active ? (
-                        <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                          Activa
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 text-rose-400 font-semibold text-[11px]">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                          Suspendida
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/store/${t.slug}`}
-                          target="_blank"
-                          className="bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white p-2 rounded-lg border border-slate-800 transition-colors"
-                          title="Visitar Tienda Pública"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </Link>
-
-                        <Link
-                          href={`/store/${t.slug}/admin`}
-                          target="_blank"
-                          className="bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 p-2 rounded-lg border border-slate-800 transition-colors"
-                          title="Abrir Panel Admin de la Tienda"
-                        >
-                          <Lock className="w-3.5 h-3.5" />
-                        </Link>
-
-                        <button
-                          onClick={() => handleToggleStatus(t.id, t.is_active)}
-                          disabled={isUpdating}
-                          className={`p-2 rounded-lg border transition-colors cursor-pointer ${
-                            t.is_active
-                              ? 'text-rose-400 hover:bg-rose-500/10 border-rose-500/20'
-                              : 'text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
-                          }`}
-                          title={t.is_active ? 'Suspender Tienda' : 'Reactivar Tienda'}
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs text-slate-300">
+                <thead className="bg-slate-900/60 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">Fábrica / Empresa</th>
+                    <th className="py-3 px-4">Giro / Industria</th>
+                    <th className="py-3 px-4">Catálogo</th>
+                    <th className="py-3 px-4">Cotizaciones</th>
+                    <th className="py-3 px-4">Sucursales</th>
+                    <th className="py-3 px-4">Estado</th>
+                    <th className="py-3 px-4 text-right">Acciones de Control</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {filteredTenants.map((t) => (
+                    <tr key={t.id} className="hover:bg-slate-900/40 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white text-sm">{t.name}</div>
+                        <div className="text-[11px] font-mono text-sky-400 mt-0.5">
+                          {t.slug}.tenddy.shop
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <span className="capitalize bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[11px] font-medium text-slate-300">
+                          {t.industry_type}
+                        </span>
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono font-bold text-white">
+                        {t.total_products} productos
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono font-bold text-emerald-400">
+                        {t.total_quotes} cotizaciones
+                      </td>
+
+                      <td className="py-3.5 px-4 font-mono text-slate-400">
+                        {t.total_branches} sedes
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        {t.is_active ? (
+                          <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                            Activa
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1.5 text-rose-400 font-semibold text-[11px]">
+                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                            Suspendida
+                          </span>
+                        )}
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Link
+                            href={`/store/${t.slug}`}
+                            target="_blank"
+                            className="bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white p-2 rounded-lg border border-slate-800 transition-colors"
+                            title="Visitar Tienda Pública"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </Link>
+
+                          <Link
+                            href={`/store/${t.slug}/admin`}
+                            target="_blank"
+                            className="bg-slate-900 hover:bg-slate-800 text-amber-400 hover:text-amber-300 p-2 rounded-lg border border-slate-800 transition-colors"
+                            title="Abrir Panel Admin de la Tienda"
+                          >
+                            <Lock className="w-3.5 h-3.5" />
+                          </Link>
+
+                          <button
+                            onClick={() => handleToggleStatus(t.id, t.is_active)}
+                            disabled={isUpdating}
+                            className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+                              t.is_active
+                                ? 'text-rose-400 hover:bg-rose-500/10 border-rose-500/20'
+                                : 'text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
+                            }`}
+                            title={t.is_active ? 'Suspender Tienda' : 'Reactivar Tienda'}
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* PESTAÑA 2: CRUD DE USUARIOS (COMPRADORES & STAFF) */}
+        {activeTab === 'users' && (
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-sm">
+            <SuperadminUsersManager
+              initialBuyers={initialBuyers}
+              initialStaff={initialStaff}
+            />
+          </div>
+        )}
       </main>
     </div>
   );

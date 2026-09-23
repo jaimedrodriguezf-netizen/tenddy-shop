@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
 import SuperadminDashboardView, { SuperadminTenantSummary } from '@/components/SuperadminDashboardView';
 import SuperadminLoginForm from '@/components/SuperadminLoginForm';
+import { B2BAccount, TenantStaffMember } from '@/components/SuperadminUsersManager';
 
 export const metadata = {
   title: 'Torre de Control Superadmin | tenddy.shop',
@@ -19,17 +20,20 @@ export default async function SuperadminPage() {
 
   const admin = getAdminClient();
 
-  // Consultar métricas globales en paralelo
-  const [tenantsRes, quotesRes, productsRes, accountsRes] = await Promise.all([
+  // Consultar métricas y usuarios en paralelo
+  const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes] = await Promise.all([
     admin.from('tenants').select('id, slug, name, industry_type, is_active, created_at').order('created_at', { ascending: false }),
     admin.from('quotes').select('id, estimated_total, items'),
     admin.from('products').select('id, tenant_id'),
-    admin.from('b2b_accounts').select('id'),
+    admin.from('b2b_accounts').select('*').order('created_at', { ascending: false }),
+    admin.from('tenant_members').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
   ]);
 
   const rawTenants = tenantsRes.data || [];
   const rawQuotes = quotesRes.data || [];
   const rawProducts = productsRes.data || [];
+  const rawBuyers = (accountsRes.data || []) as B2BAccount[];
+  const rawStaff = (staffRes.data || []) as TenantStaffMember[];
 
   // Calcular métricas agregadas por tenant
   const tenantsSummary: SuperadminTenantSummary[] = rawTenants.map((t) => {
@@ -52,7 +56,7 @@ export default async function SuperadminPage() {
 
   const totalGlobalQuotes = rawQuotes.length;
   const totalGlobalProducts = rawProducts.length;
-  const totalB2BAccounts = accountsRes.data?.length || 0;
+  const totalB2BAccounts = rawBuyers.length;
   const totalGlobalUnitsQuoted = rawQuotes.reduce((acc, q: any) => {
     const items = q.items || [];
     return acc + items.reduce((sub: number, i: any) => sub + (i.total_units || 0), 0);
@@ -65,6 +69,8 @@ export default async function SuperadminPage() {
       totalGlobalProducts={totalGlobalProducts}
       totalGlobalUnitsQuoted={totalGlobalUnitsQuoted}
       totalB2BAccounts={totalB2BAccounts}
+      initialBuyers={rawBuyers}
+      initialStaff={rawStaff}
     />
   );
 }
