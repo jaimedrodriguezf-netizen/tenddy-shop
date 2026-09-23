@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import "../../public/css/style.css";
+import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AYME INDUSTRIAS PET | Solutions in Packaging",
-  description: "Fabricación de envases, botellas y tapas en PET y PP",
+  title: "tenddy.shop | Plataforma E-Commerce B2B para Fabricantes y Mayoristas",
+  description: "Despliega tu catálogo B2B, pedidos por volumen y cotizaciones directas a WhatsApp.",
 };
 
 export default function RootLayout({
@@ -12,17 +12,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es">
+    <html lang="es" className="h-full">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Instrument+Sans:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
         />
-        <link rel="stylesheet" href="/css/style.css" />
       </head>
-      <body>
+      <body className="min-h-full font-sans antialiased text-slate-900 bg-white">
         {children}
       </body>
     </html>

@@ -11,7 +11,7 @@ async function runTestSuite() {
   });
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 1280, height: 800 });
+  await page.setViewport({ width: 1440, height: 900 });
 
   const results = [];
 
@@ -62,35 +62,36 @@ async function runTestSuite() {
     const authLocked = await page.evaluate(() => !!document.querySelector("input[type=\"password\"]"));
     record("5. Seguridad: Bloqueo de /admin sin autenticación", authLocked, "Pantalla de Login Master activa");
 
-    // 6. BACKOFFICE & PESTAÑAS
+    // 6. BACKOFFICE CON SIDEBAR MODERNO
     await page.type("input[type=\"password\"]", "tenddy2026");
     await page.click("button[type=\"submit\"]");
     await new Promise(r => setTimeout(r, 1200));
 
     const adminLoaded = await page.evaluate(() => {
       const text = document.body.innerText;
-      return text.includes("Total Cotizaciones") && text.includes("Personalizar Apariencia");
+      const aside = document.querySelector("aside");
+      return text.includes("Cotizaciones") && text.includes("Diseño & Apariencia") && !!aside;
     });
-    record("6. Backoffice: Ingreso exitoso, métricas y pestañas", adminLoaded, "Sesión establecida y panel cargado");
+    record("6. Backoffice: Sidebar Lateral & Estilo Claro Moderno", adminLoaded, "Menú lateral w-64, tarjetas blancas y sin ruido visual");
 
     // 7. PESTAÑA APARIENCIA & DISEÑO
-    const appearanceTabCheck = await page.evaluate(async () => {
-      const tab = Array.from(document.querySelectorAll("button")).find(b => b.innerText.includes("Personalizar Apariencia"));
-      if (tab) tab.click();
-      return !!tab;
+    const appearanceTabCheck = await page.evaluate(() => {
+      const btn = Array.from(document.querySelectorAll("button")).find(b => b.innerText.includes("Diseño & Apariencia"));
+      if (btn) btn.click();
+      return !!btn;
     });
     await new Promise(r => setTimeout(r, 500));
 
     const appearanceFormVisible = await page.evaluate(() => {
       const text = document.body.innerText;
-      return text.includes("Color Primario") && text.includes("Título Principal de Portada");
+      return text.includes("Color Primario") && text.includes("Título de Portada");
     });
-    record("7. Backoffice: Editor Visual de Apariencia & Theming", appearanceTabCheck && appearanceFormVisible, "Color picker, textos de Hero y switches de secciones activos");
+    record("7. Backoffice: Editor Visual de Apariencia & Theming", appearanceTabCheck && appearanceFormVisible, "Color picker, textos de Hero y switches de módulos activos");
 
     // 8. PESTAÑA PRODUCTOS Y MODAL
     await page.evaluate(() => {
-      const tab = Array.from(document.querySelectorAll("button")).find(b => b.innerText.includes("Productos ("));
-      if (tab) tab.click();
+      const btn = Array.from(document.querySelectorAll("button")).find(b => b.innerText.includes("Catálogo de Productos"));
+      if (btn) btn.click();
     });
     await new Promise(r => setTimeout(r, 500));
 
@@ -102,7 +103,7 @@ async function runTestSuite() {
     await new Promise(r => setTimeout(r, 500));
 
     const modalVisible = await page.evaluate(() => !!document.querySelector("input[placeholder*='Botella']"));
-    record("8. Backoffice: Modal para Agregar Nuevos Productos", createModalCheck && modalVisible, "Formulario técnico de molde/alimento visible");
+    record("8. Backoffice: Modal para Agregar Nuevos Productos", createModalCheck && modalVisible, "Formulario técnico modal con fondo claro");
 
     // 9. API DE CREACIÓN EN SUPABASE
     const createApiTest = await page.evaluate(async () => {

@@ -23,7 +23,15 @@ import {
   Plus,
   Trash2,
   Palette,
-  FileSpreadsheet
+  FileSpreadsheet,
+  LayoutDashboard,
+  Boxes,
+  Paintbrush,
+  LogOut,
+  Store,
+  ChevronDown,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
@@ -90,7 +98,7 @@ export default function AdminDashboardView({
     return acc + (q.items?.reduce((sub, item) => sub + (item.total_units || 0), 0) || 0);
   }, 0);
 
-  // Filtrado
+  // Filtrado de cotizaciones
   const filteredQuotes = quotes.filter((q) => {
     const matchesStatus = filterStatus === 'all' || q.status === filterStatus;
     const matchesSearch =
@@ -139,30 +147,39 @@ export default function AdminDashboardView({
     }
   };
 
+  const handleLogout = async () => {
+    await fetch(`/api/admin/auth?shopSlug=${tenant.slug}`, { method: 'DELETE' });
+    window.location.reload();
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
         return (
-          <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-            <Clock className="w-3 h-3" /> Pendiente
+          <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+            Pendiente
           </span>
         );
       case 'contacted':
         return (
-          <span className="inline-flex items-center gap-1 bg-sky-500/10 text-sky-400 border border-sky-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-            <MessageCircle className="w-3 h-3" /> Contactado
+          <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            Contactado
           </span>
         );
       case 'approved':
         return (
-          <span className="inline-flex items-center gap-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-            <CheckCircle className="w-3 h-3" /> Aprobado
+          <span className="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Aprobado
           </span>
         );
       case 'rejected':
         return (
-          <span className="inline-flex items-center gap-1 bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-            <XCircle className="w-3 h-3" /> Descartado
+          <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 border border-rose-200 text-[11px] font-semibold px-2 py-0.5 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            Descartado
           </span>
         );
       default:
@@ -171,8 +188,8 @@ export default function AdminDashboardView({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
-      {/* Modal de Crear Producto */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex antialiased">
+      {/* Modal para Crear Producto */}
       <CreateProductModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
@@ -181,396 +198,485 @@ export default function AdminDashboardView({
         onProductCreated={(newProd) => setProducts((prev) => [newProd, ...prev])}
       />
 
-      {/* Header Backoffice */}
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg text-sm">
-              ⚙️
+      {/* =========================================================================
+          1. MENÚ LATERAL (SIDEBAR PROFESIONAL MODERNO)
+          ========================================================================= */}
+      <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col justify-between shrink-0 sticky top-0 h-screen z-30 shadow-sm">
+        <div className="p-5 space-y-6">
+          {/* Header del Sidebar */}
+          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white shadow-sm text-sm shrink-0">
+              {tenant.name.charAt(0)}
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base font-bold text-white tracking-tight">
-                  Panel de Administración B2B
-                </h1>
-                <span className="text-[10px] bg-slate-800 text-slate-400 border border-slate-700 px-2 py-0.5 rounded font-mono">
-                  {tenant.slug}
+            <div className="min-w-0 flex-1">
+              <h2 className="text-sm font-bold text-slate-900 truncate tracking-tight">
+                {tenant.name}
+              </h2>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="text-[11px] font-medium text-slate-500 uppercase tracking-wider truncate">
+                  {tenant.slug}.tenddy.shop
                 </span>
               </div>
-              <p className="text-xs text-slate-400">
-                {tenant.name} • {branches.length} Sucursal(es) • {products.length} Productos
-              </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* Navegación Principal */}
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
+              Gestión B2B
+            </span>
+
+            <button
+              onClick={() => setActiveTab('quotes')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'quotes'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <LayoutDashboard className="w-4 h-4" />
+                <span>Cotizaciones</span>
+              </div>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'quotes'
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {quotes.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('products')}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'products'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <Boxes className="w-4 h-4" />
+                <span>Catálogo de Productos</span>
+              </div>
+              <span
+                className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
+                  activeTab === 'products'
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-100 text-slate-600'
+                }`}
+              >
+                {products.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('appearance')}
+              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                activeTab === 'appearance'
+                  ? 'bg-slate-900 text-white shadow-sm'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Paintbrush className="w-4 h-4" />
+              <span>Diseño & Apariencia</span>
+            </button>
+          </div>
+
+          {/* Enlaces de Tienda */}
+          <div className="pt-4 border-t border-slate-100 space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
+              Canal de Venta
+            </span>
+
             <Link
               href={`/store/${tenant.slug}`}
               target="_blank"
-              className="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700/80 border border-slate-700 px-3 py-1.5 rounded-lg transition-colors"
+              className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
             >
-              <ExternalLink className="w-3.5 h-3.5" />
-              Ver Tienda Pública
+              <div className="flex items-center gap-2.5">
+                <Store className="w-4 h-4 text-slate-400" />
+                <span>Ver Tienda Pública</span>
+              </div>
+              <ArrowUpRight className="w-3.5 h-3.5 text-slate-400" />
             </Link>
           </div>
         </div>
 
-        {/* Barra de Navegación del Panel */}
-        <div className="max-w-7xl mx-auto mt-4 pt-3 border-t border-slate-800/60 flex items-center gap-6 text-xs font-semibold">
+        {/* Footer del Sidebar */}
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
           <button
-            onClick={() => setActiveTab('quotes')}
-            className={`pb-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'quotes'
-                ? 'text-sky-400 border-b-2 border-sky-400 font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={handleLogout}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
-            <MessageCircle className="w-3.5 h-3.5" />
-            <span>Cotizaciones ({quotes.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('products')}
-            className={`pb-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'products'
-                ? 'text-sky-400 border-b-2 border-sky-400 font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Package className="w-3.5 h-3.5" />
-            <span>Productos ({products.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('appearance')}
-            className={`pb-1 transition-colors cursor-pointer flex items-center gap-1.5 ${
-              activeTab === 'appearance'
-                ? 'text-sky-400 border-b-2 border-sky-400 font-bold'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Palette className="w-3.5 h-3.5" />
-            <span>Personalizar Apariencia & Diseño</span>
+            <LogOut className="w-4 h-4" />
+            <span>Cerrar Sesión</span>
           </button>
         </div>
-      </header>
+      </aside>
 
-      <main className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* PESTAÑA 1: COTIZACIONES */}
-        {activeTab === 'quotes' && (
-          <>
-            {/* Fila de Métricas Principales */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 backdrop-blur-sm">
-                <div className="flex items-center justify-between text-slate-400 text-xs">
-                  <span>Total Cotizaciones</span>
-                  <Building2 className="w-4 h-4 text-sky-400" />
+      {/* =========================================================================
+          2. ÁREA DE CONTENIDO PRINCIPAL (CLARA, LIMPIA, SIN RUIDO VISUAL)
+          ========================================================================= */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Navbar */}
+        <header className="h-16 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <h1 className="text-base font-bold text-slate-900 tracking-tight">
+              {activeTab === 'quotes' && 'Panel de Cotizaciones & Requerimientos'}
+              {activeTab === 'products' && 'Catálogo de Envases & Productos B2B'}
+              {activeTab === 'appearance' && 'Personalización de Marca & Diseño Web'}
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            {activeTab === 'products' && (
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nuevo Producto</span>
+              </button>
+            )}
+
+            <Link
+              href={`/store/${tenant.slug}`}
+              target="_blank"
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <span>{tenant.slug}.tenddy.shop</span>
+              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+            </Link>
+          </div>
+        </header>
+
+        {/* Contenedor de Vistas */}
+        <main className="p-8 space-y-8 flex-1 max-w-7xl mx-auto w-full">
+          {/* =========================================================================
+              PESTAÑA 1: COTIZACIONES
+              ========================================================================= */}
+          {activeTab === 'quotes' && (
+            <div className="space-y-6">
+              {/* Tarjetas de Métricas Claras */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                  <div className="text-xs font-medium text-slate-500">Total Cotizaciones</div>
+                  <div className="text-3xl font-extrabold text-slate-900 mt-2 font-mono">{totalQuotes}</div>
+                  <div className="text-[11px] text-slate-400 mt-1">Registradas en Supabase</div>
                 </div>
-                <div className="text-2xl font-bold text-white mt-2 font-mono">{totalQuotes}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Registradas en Supabase</div>
+
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                  <div className="text-xs font-medium text-slate-500">Pendientes de Contacto</div>
+                  <div className="text-3xl font-extrabold text-amber-600 mt-2 font-mono">{pendingQuotes}</div>
+                  <div className="text-[11px] text-amber-600/80 mt-1 font-medium">Atención requerida</div>
+                </div>
+
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                  <div className="text-xs font-medium text-slate-500">Aprobadas / En Producción</div>
+                  <div className="text-3xl font-extrabold text-emerald-600 mt-2 font-mono">{approvedQuotes}</div>
+                  <div className="text-[11px] text-emerald-600/80 mt-1 font-medium">Cotizaciones cerradas</div>
+                </div>
+
+                <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs">
+                  <div className="text-xs font-medium text-slate-500">Volumen en Demanda</div>
+                  <div className="text-3xl font-extrabold text-blue-600 mt-2 font-mono">
+                    {totalUnitsQuoted.toLocaleString()}
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Unidades totales solicitadas</div>
+                </div>
               </div>
 
-              <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 backdrop-blur-sm">
-                <div className="flex items-center justify-between text-slate-400 text-xs">
-                  <span>Pendientes de Atención</span>
-                  <Clock className="w-4 h-4 text-amber-400" />
-                </div>
-                <div className="text-2xl font-bold text-amber-400 mt-2 font-mono">{pendingQuotes}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Requieren contacto comercial</div>
-              </div>
+              {/* Bandeja de Requerimientos + Detalle Lateral */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                {/* Lista de Cotizaciones */}
+                <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-5 space-y-4 shadow-xs">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h3 className="font-bold text-sm text-slate-900">
+                      Requerimientos Recibidos
+                    </h3>
 
-              <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 backdrop-blur-sm">
-                <div className="flex items-center justify-between text-slate-400 text-xs">
-                  <span>Aprobadas / En Producción</span>
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-2xl font-bold text-emerald-400 mt-2 font-mono">{approvedQuotes}</div>
-                <div className="text-[11px] text-slate-500 mt-1">Cerradas con éxito</div>
-              </div>
+                    <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-xs">
+                      {['all', 'pending', 'contacted', 'approved', 'rejected'].map((st) => (
+                        <button
+                          key={st}
+                          onClick={() => setFilterStatus(st)}
+                          className={`px-3 py-1 rounded-lg capitalize font-semibold transition-all cursor-pointer ${
+                            filterStatus === st
+                              ? 'bg-white text-slate-900 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-900'
+                          }`}
+                        >
+                          {st === 'all' ? 'Todos' : st}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
 
-              <div className="bg-slate-900/60 border border-slate-800 rounded-xl p-5 backdrop-blur-sm">
-                <div className="flex items-center justify-between text-slate-400 text-xs">
-                  <span>Volumen Total Cotizado</span>
-                  <Package className="w-4 h-4 text-cyan-400" />
-                </div>
-                <div className="text-2xl font-bold text-cyan-400 mt-2 font-mono">
-                  {totalUnitsQuoted.toLocaleString()}
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1">Unidades de envases en demanda</div>
-              </div>
-            </div>
+                  {/* Buscador */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar por # cotización, empresa, cliente o teléfono..."
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
+                    />
+                  </div>
 
-            {/* Bandeja de Cotizaciones */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-7 bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col space-y-4">
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                  <h2 className="font-bold text-base text-white flex items-center gap-2">
-                    <MessageCircle className="w-4 h-4 text-sky-400" />
-                    Bandeja de Requerimientos B2B
-                  </h2>
+                  {/* Lista de Cotizaciones */}
+                  <div className="space-y-2 max-h-[520px] overflow-y-auto pr-1">
+                    {filteredQuotes.length === 0 ? (
+                      <div className="text-center py-16 text-slate-400 text-xs">
+                        No hay cotizaciones con los filtros seleccionados.
+                      </div>
+                    ) : (
+                      filteredQuotes.map((q) => {
+                        const isSelected = selectedQuote?.id === q.id;
+                        const quoteTotalUnits = q.items?.reduce(
+                          (sum, i) => sum + (i.total_units || 0),
+                          0
+                        ) || 0;
 
-                  <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 p-1 rounded-lg text-xs">
-                    {['all', 'pending', 'contacted', 'approved', 'rejected'].map((st) => (
-                      <button
-                        key={st}
-                        onClick={() => setFilterStatus(st)}
-                        className={`px-2.5 py-1 rounded capitalize transition-colors cursor-pointer ${
-                          filterStatus === st
-                            ? 'bg-sky-600 text-white font-bold'
-                            : 'text-slate-400 hover:text-white'
-                        }`}
-                      >
-                        {st === 'all' ? 'Todos' : st}
-                      </button>
-                    ))}
+                        return (
+                          <div
+                            key={q.id}
+                            onClick={() => setSelectedQuote(q)}
+                            className={`p-4 rounded-xl border transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-slate-50 border-slate-900 shadow-xs'
+                                : 'bg-white border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-mono text-xs font-bold text-slate-900">
+                                {q.quote_number}
+                              </span>
+                              {getStatusBadge(q.status)}
+                            </div>
+
+                            <div className="flex items-baseline justify-between">
+                              <h4 className="font-bold text-slate-900 text-sm truncate max-w-[280px]">
+                                {q.company_name ? `${q.company_name} • ${q.customer_name}` : q.customer_name}
+                              </h4>
+                              <span className="text-xs font-mono font-bold text-slate-900">
+                                {quoteTotalUnits.toLocaleString()} uds
+                              </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-[11px] text-slate-500 mt-2">
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                {q.delivery_city || 'Sin ciudad'}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                                {new Date(q.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
 
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-500" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Buscar por # cotización, empresa, cliente o teléfono..."
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:border-sky-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
-                  {filteredQuotes.length === 0 ? (
-                    <div className="text-center py-12 text-slate-500 text-xs">
-                      No hay cotizaciones con los filtros seleccionados.
-                    </div>
-                  ) : (
-                    filteredQuotes.map((q) => {
-                      const isSelected = selectedQuote?.id === q.id;
-                      const quoteTotalUnits = q.items?.reduce(
-                        (sum, i) => sum + (i.total_units || 0),
-                        0
-                      ) || 0;
-
-                      return (
-                        <div
-                          key={q.id}
-                          onClick={() => setSelectedQuote(q)}
-                          className={`p-4 rounded-xl border transition-all cursor-pointer ${
-                            isSelected
-                              ? 'bg-slate-900 border-sky-500 shadow-md shadow-sky-500/10'
-                              : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1.5">
-                            <span className="font-mono text-xs font-bold text-sky-400">
-                              {q.quote_number}
-                            </span>
-                            {getStatusBadge(q.status)}
-                          </div>
-
-                          <div className="flex items-baseline justify-between">
-                            <h4 className="font-semibold text-white text-sm truncate max-w-[280px]">
-                              {q.company_name ? `${q.company_name} • ${q.customer_name}` : q.customer_name}
-                            </h4>
-                            <span className="text-[11px] font-mono font-bold text-emerald-400">
-                              {quoteTotalUnits.toLocaleString()} uds
-                            </span>
-                          </div>
-
-                          <div className="flex items-center justify-between text-[11px] text-slate-400 mt-2">
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3 text-slate-500" />
-                              {q.delivery_city || 'Sin ciudad'}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3 text-slate-500" />
-                              {new Date(q.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
+                {/* Detalle Lateral de la Cotización */}
+                <div className="lg:col-span-5 bg-white border border-slate-200/80 rounded-2xl p-6 space-y-5 shadow-xs sticky top-24">
+                  {selectedQuote ? (
+                    <>
+                      <div className="border-b border-slate-100 pb-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-xs font-bold text-slate-500">
+                            {selectedQuote.quote_number}
+                          </span>
+                          {getStatusBadge(selectedQuote.status)}
                         </div>
-                      );
-                    })
+                        <h3 className="font-extrabold text-lg text-slate-900 mt-1">
+                          {selectedQuote.company_name || selectedQuote.customer_name}
+                        </h3>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                          Recibido el {new Date(selectedQuote.created_at).toLocaleString()}
+                        </p>
+                      </div>
+
+                      {/* Actualizar Estado */}
+                      <div className="space-y-1.5">
+                        <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                          Cambiar Estado Comercial
+                        </label>
+                        <div className="grid grid-cols-4 gap-1.5 text-xs">
+                          {(['pending', 'contacted', 'approved', 'rejected'] as const).map((st) => (
+                            <button
+                              key={st}
+                              disabled={isUpdating || selectedQuote.status === st}
+                              onClick={() => handleUpdateStatus(selectedQuote.id, st)}
+                              className={`py-1.5 px-2 rounded-lg font-semibold text-[11px] capitalize transition-all cursor-pointer disabled:opacity-40 ${
+                                selectedQuote.status === st
+                                  ? 'bg-slate-900 text-white shadow-xs'
+                                  : 'bg-slate-50 text-slate-600 hover:text-slate-900 border border-slate-200'
+                              }`}
+                            >
+                              {st}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Datos de Contacto */}
+                      <div className="bg-slate-50/80 border border-slate-200/80 rounded-xl p-4 space-y-2.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 font-medium">WhatsApp / Teléfono:</span>
+                          <a
+                            href={`https://wa.me/${selectedQuote.customer_phone}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-emerald-600 hover:text-emerald-700 font-bold font-mono flex items-center gap-1"
+                          >
+                            <span>+{selectedQuote.customer_phone}</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </a>
+                        </div>
+
+                        {selectedQuote.customer_email && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500 font-medium">Correo:</span>
+                            <span className="text-slate-900 font-medium">{selectedQuote.customer_email}</span>
+                          </div>
+                        )}
+
+                        {selectedQuote.delivery_city && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-slate-500 font-medium">Destino de entrega:</span>
+                            <span className="text-slate-900 font-medium">{selectedQuote.delivery_city}</span>
+                          </div>
+                        )}
+
+                        {selectedQuote.notes && (
+                          <div className="pt-2 border-t border-slate-200 text-slate-700">
+                            <span className="text-slate-400 block text-[10px] uppercase font-bold mb-0.5">
+                              Notas del Cliente:
+                            </span>
+                            {selectedQuote.notes}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Productos Solicitados */}
+                      <div className="space-y-2">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                          Envases Solicitados ({selectedQuote.items?.length || 0})
+                        </span>
+
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {selectedQuote.items?.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs flex justify-between items-center"
+                            >
+                              <div>
+                                <div className="font-bold text-slate-900">{item.name}</div>
+                                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                                  SKU: {item.sku} • {item.package_count} fardos ({item.units_per_package} u/fardo)
+                                </div>
+                              </div>
+                              <div className="text-right font-mono font-bold text-slate-900">
+                                {item.total_units?.toLocaleString()} uds
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-slate-400 text-xs py-20">
+                      Selecciona una cotización para ver el detalle técnico.
+                    </div>
                   )}
                 </div>
               </div>
+            </div>
+          )}
 
-              {/* Detalle Lateral */}
-              <div className="lg:col-span-5 bg-slate-900/50 border border-slate-800 rounded-xl p-5 flex flex-col space-y-4">
-                {selectedQuote ? (
-                  <>
-                    <div className="border-b border-slate-800 pb-4">
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-sm font-bold text-sky-400">
-                          {selectedQuote.quote_number}
+          {/* =========================================================================
+              PESTAÑA 2: CATÁLOGO DE PRODUCTOS
+              ========================================================================= */}
+          {activeTab === 'products' && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 space-y-6 shadow-xs">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-base text-slate-900">
+                    Catálogo Activo ({products.length} Referencias)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Modifica y administra los productos visibles en tu catálogo público.
+                  </p>
+                </div>
+
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Agregar Producto</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {products.map((p) => (
+                  <div
+                    key={p.id}
+                    className="bg-slate-50/60 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between text-xs hover:border-slate-300 transition-all group"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="font-mono text-slate-500 text-[10px] font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                          {p.sku}
                         </span>
-                        {getStatusBadge(selectedQuote.status)}
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
+                          title="Eliminar producto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <h3 className="font-bold text-lg text-white mt-1">
-                        {selectedQuote.company_name || selectedQuote.customer_name}
-                      </h3>
-                      <p className="text-xs text-slate-400">
-                        Registrado el {new Date(selectedQuote.created_at).toLocaleString()}
+
+                      <h4 className="font-bold text-slate-900 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+                        {p.name}
+                      </h4>
+                      <p className="text-slate-500 text-[11px] mt-1 line-clamp-2 leading-relaxed">
+                        {p.description}
                       </p>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-                        Actualizar Estado Comercial
-                      </label>
-                      <div className="grid grid-cols-4 gap-1.5 text-xs">
-                        {(['pending', 'contacted', 'approved', 'rejected'] as const).map((st) => (
-                          <button
-                            key={st}
-                            disabled={isUpdating || selectedQuote.status === st}
-                            onClick={() => handleUpdateStatus(selectedQuote.id, st)}
-                            className={`py-1.5 px-2 rounded-lg font-semibold text-[11px] capitalize transition-colors cursor-pointer disabled:opacity-40 ${
-                              selectedQuote.status === st
-                                ? 'bg-sky-600 text-white shadow-md'
-                                : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                            }`}
-                          >
-                            {st}
-                          </button>
-                        ))}
-                      </div>
+                    <div className="mt-4 pt-3 border-t border-slate-200/80 flex justify-between text-[11px] font-mono text-slate-600">
+                      <span>MOQ: {p.min_order_qty} uds</span>
+                      <span>{p.units_per_package} / fardo</span>
                     </div>
-
-                    <div className="bg-slate-950/70 border border-slate-800/80 rounded-xl p-4 space-y-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-emerald-400 shrink-0" />
-                        <a
-                          href={`https://wa.me/${selectedQuote.customer_phone}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-white hover:text-emerald-400 font-mono underline"
-                        >
-                          {selectedQuote.customer_phone} (Abrir Chat)
-                        </a>
-                      </div>
-
-                      {selectedQuote.customer_email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-sky-400 shrink-0" />
-                          <span className="text-slate-300">{selectedQuote.customer_email}</span>
-                        </div>
-                      )}
-
-                      {selectedQuote.delivery_city && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                          <span className="text-slate-300">
-                            Destino: {selectedQuote.delivery_city} {selectedQuote.delivery_address && `(${selectedQuote.delivery_address})`}
-                          </span>
-                        </div>
-                      )}
-
-                      {selectedQuote.notes && (
-                        <div className="pt-2 border-t border-slate-800/60 text-slate-300">
-                          <span className="text-slate-500 block text-[10px] uppercase font-semibold">
-                            Notas del Cliente:
-                          </span>
-                          {selectedQuote.notes}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="space-y-2 flex-1">
-                      <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                        Envases Solicitados ({selectedQuote.items?.length || 0} ítems)
-                      </span>
-
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                        {selectedQuote.items?.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="bg-slate-950/60 border border-slate-800 rounded-lg p-3 text-xs flex justify-between items-start"
-                          >
-                            <div>
-                              <div className="font-semibold text-white">{item.name}</div>
-                              <div className="text-[10px] text-slate-500 font-mono">
-                                SKU: {item.sku} • {item.package_count} fardos ({item.units_per_package} u/fardo)
-                              </div>
-                              {item.selected_color && (
-                                <div className="text-[10px] text-sky-400 mt-0.5">
-                                  Color: {item.selected_color}
-                                </div>
-                              )}
-                            </div>
-                            <div className="text-right font-mono font-bold text-emerald-400">
-                              {item.total_units?.toLocaleString()} uds
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="h-full flex items-center justify-center text-slate-500 text-xs py-20">
-                    Selecciona una cotización para ver el desglose técnico y gestionar su estado.
                   </div>
-                )}
+                ))}
               </div>
             </div>
-          </>
-        )}
+          )}
 
-        {/* PESTAÑA 2: PRODUCTOS */}
-        {activeTab === 'products' && (
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-bold text-base text-white flex items-center gap-2">
-                  <Package className="w-4 h-4 text-sky-400" />
-                  Catálogo de Productos Activos ({products.length})
-                </h2>
-                <p className="text-slate-400 text-xs mt-0.5">
-                  Gestiona las referencias, empaques y especificaciones que ven tus compradores.
-                </p>
-              </div>
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="text-xs font-semibold text-white bg-sky-600 hover:bg-sky-500 px-3.5 py-2 rounded-lg flex items-center gap-1.5 shadow-md shadow-sky-600/20 cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Agregar Producto
-              </button>
+          {/* =========================================================================
+              PESTAÑA 3: APARIENCIA & DISEÑO
+              ========================================================================= */}
+          {activeTab === 'appearance' && (
+            <div className="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+              <AppearanceTab
+                tenant={tenant}
+                onTenantUpdated={(updated) => setTenant(updated)}
+              />
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {products.map((p) => (
-                <div key={p.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between text-xs hover:border-slate-700 transition-colors">
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-mono text-sky-400 text-[10px] font-bold">{p.sku}</span>
-                      <button
-                        onClick={() => handleDeleteProduct(p.id)}
-                        className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
-                        title="Eliminar producto"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                    <h4 className="font-bold text-white text-sm line-clamp-1">{p.name}</h4>
-                    <p className="text-slate-500 text-[11px] mt-0.5 line-clamp-2">{p.description}</p>
-                  </div>
-
-                  <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between text-[11px] font-mono text-slate-400">
-                    <span>MOQ: {p.min_order_qty}</span>
-                    <span>{p.units_per_package} u/fardo</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* PESTAÑA 3: APARIENCIA & DISEÑO */}
-        {activeTab === 'appearance' && (
-          <AppearanceTab
-            tenant={tenant}
-            onTenantUpdated={(updated) => setTenant(updated)}
-          />
-        )}
-      </main>
+          )}
+        </main>
+      </div>
     </div>
   );
 }
