@@ -6,15 +6,15 @@ export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
 
-    // Protección anti-fuerza bruta: máximo 5 intentos de login cada 5 minutos por IP
+    // Protección anti-fuerza bruta: máximo 10 intentos cada 5 minutos por IP
     const { isAllowed, remaining } = checkRateLimit(`login_${clientIp}`, {
-      windowMs: 5 * 60 * 1000, // 5 minutos
-      maxRequests: 5,
+      windowMs: 5 * 60 * 1000,
+      maxRequests: 10,
     });
 
     if (!isAllowed) {
       return NextResponse.json(
-        { error: 'Demasiados intentos fallidos. Bloqueado temporalmente por seguridad por 5 minutos.' },
+        { error: 'Demasiados intentos fallidos. Bloqueado temporalmente por seguridad.' },
         { status: 429 }
       );
     }
@@ -29,14 +29,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cookie segura de sesión
+    // Cookie segura de sesión para todo el dominio / para que /api/admin/* pueda leerla
     const cookieStore = await cookies();
     cookieStore.set(`admin_session_${shopSlug}`, 'authenticated', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
-      path: `/store/${shopSlug}/admin`,
+      path: '/',
     });
 
     return NextResponse.json({ success: true });
@@ -49,6 +49,6 @@ export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const shopSlug = searchParams.get('shopSlug') || '';
   const cookieStore = await cookies();
-  cookieStore.delete(`admin_session_${shopSlug}`);
+  cookieStore.delete({ name: `admin_session_${shopSlug}`, path: '/' });
   return NextResponse.json({ success: true });
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Tenant, Branch, Product } from '@/lib/types';
+import { Tenant, Branch, Product, Category } from '@/lib/types';
 import AdminDashboardView, { QuoteRecord } from './AdminDashboardView';
 import AdminLoginForm from './AdminLoginForm';
 
@@ -10,6 +10,7 @@ interface AdminAuthWrapperProps {
   tenant: Tenant;
   branches: Branch[];
   products: Product[];
+  categories?: Category[];
   initialQuotes: QuoteRecord[];
   initiallyAuthenticated: boolean;
 }
@@ -19,6 +20,7 @@ export default function AdminAuthWrapper({
   tenant,
   branches,
   products,
+  categories = [],
   initialQuotes,
   initiallyAuthenticated,
 }: AdminAuthWrapperProps) {
@@ -42,6 +44,7 @@ export default function AdminAuthWrapper({
       tenant={tenant}
       branches={branches}
       products={products}
+      categories={categories}
       initialQuotes={initialQuotes}
     />
   );

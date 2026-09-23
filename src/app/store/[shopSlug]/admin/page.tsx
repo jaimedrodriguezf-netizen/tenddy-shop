@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import { getAdminClient } from '@/lib/supabase';
-import AdminDashboardView, { QuoteRecord } from '@/components/AdminDashboardView';
+import { QuoteRecord } from '@/components/AdminDashboardView';
 import AdminAuthWrapper from '@/components/AdminAuthWrapper';
 
 interface AdminPageProps {
@@ -25,7 +25,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
   const sessionCookie = cookieStore.get(`admin_session_${shopSlug}`);
   const isAuthenticated = sessionCookie?.value === 'authenticated';
 
-  const { products, branches } = await getTenantCatalog(tenant.id);
+  const { products, branches, categories } = await getTenantCatalog(tenant.id);
 
   // Si está autenticado, cargamos las cotizaciones de forma segura con el service role
   let quotes: QuoteRecord[] = [];
@@ -46,6 +46,7 @@ export default async function AdminPage({ params }: AdminPageProps) {
       tenant={tenant}
       branches={branches}
       products={products}
+      categories={categories}
       initialQuotes={quotes}
       initiallyAuthenticated={isAuthenticated}
     />

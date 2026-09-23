@@ -19,9 +19,12 @@ import {
   ExternalLink,
   ShieldCheck,
   RefreshCw,
-  Search
+  Search,
+  Plus,
+  Trash2
 } from 'lucide-react';
-import { Tenant, Branch, Product } from '@/lib/types';
+import { Tenant, Branch, Product, Category } from '@/lib/types';
+import CreateProductModal from './CreateProductModal';
 
 interface QuoteItem {
   product_id: string;
@@ -55,20 +58,24 @@ interface AdminDashboardViewProps {
   tenant: Tenant;
   branches: Branch[];
   products: Product[];
+  categories?: Category[];
   initialQuotes: QuoteRecord[];
 }
 
 export default function AdminDashboardView({
   tenant,
   branches,
-  products,
+  products: initialProducts,
+  categories = [],
   initialQuotes,
 }: AdminDashboardViewProps) {
   const [quotes, setQuotes] = useState<QuoteRecord[]>(initialQuotes);
+  const [products, setProducts] = useState<Product[]>(initialProducts);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(quotes[0] || null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Métricas
   const totalQuotes = quotes.length;
@@ -95,7 +102,7 @@ export default function AdminDashboardView({
       const res = await fetch('/api/admin/quotes', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ quote_id: quoteId, status: newStatus }),
+        body: JSON.stringify({ quote_id: quoteId, status: newStatus, shopSlug: tenant.slug }),
       });
       const data = await res.json();
       if (res.ok && data.quote) {
@@ -110,6 +117,20 @@ export default function AdminDashboardView({
       console.error('Error actualizando estado:', err);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('¿Estás seguro de eliminar este producto del catálogo?')) return;
+    try {
+      const res = await fetch(`/api/admin/products?productId=${productId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setProducts((prev) => prev.filter((p) => p.id !== productId));
+      }
+    } catch (e) {
+      console.error('Error borrando producto:', e);
     }
   };
 
@@ -146,6 +167,15 @@ export default function AdminDashboardView({
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans">
+      {/* Modal de Crear Producto */}
+      <CreateProductModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        tenant={tenant}
+        categories={categories}
+        onProductCreated={(newProd) => setProducts((prev) => [newProd, ...prev])}
+      />
+
       {/* Header Backoffice */}
       <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -169,6 +199,13 @@ export default function AdminDashboardView({
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="text-xs font-bold text-white bg-sky-600 hover:bg-sky-500 px-3.5 py-1.5 rounded-lg flex items-center gap-1.5 shadow-md shadow-sky-600/20 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Nuevo Producto
+            </button>
             <Link
               href={`/store/${tenant.slug}`}
               target="_blank"
@@ -264,7 +301,7 @@ export default function AdminDashboardView({
             </div>
 
             {/* Lista Scrollable */}
-            <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
               {filteredQuotes.length === 0 ? (
                 <div className="text-center py-12 text-slate-500 text-xs">
                   No hay cotizaciones con los filtros seleccionados.
@@ -408,7 +445,7 @@ export default function AdminDashboardView({
                     Envases Solicitados ({selectedQuote.items?.length || 0} ítems)
                   </span>
 
-                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {selectedQuote.items?.map((item, idx) => (
                       <div
                         key={idx}
@@ -438,6 +475,49 @@ export default function AdminDashboardView({
                 Selecciona una cotización para ver el desglose técnico y gestionar su estado.
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Fila: Catálogo Activo & Gestión de Productos */}
+        <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-bold text-base text-white flex items-center gap-2">
+              <Package className="w-4 h-4 text-sky-400" />
+              Catálogo de Productos Activos ({products.length})
+            </h2>
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="text-xs font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 bg-slate-950 border border-slate-800 px-3 py-1.5 rounded-lg"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Agregar Referencia
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {products.map((p) => (
+              <div key={p.id} className="bg-slate-950 border border-slate-800 rounded-xl p-4 flex flex-col justify-between text-xs">
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-mono text-sky-400 text-[10px] font-bold">{p.sku}</span>
+                    <button
+                      onClick={() => handleDeleteProduct(p.id)}
+                      className="text-slate-500 hover:text-rose-400 p-1"
+                      title="Eliminar producto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <h4 className="font-bold text-white text-sm line-clamp-1">{p.name}</h4>
+                  <p className="text-slate-500 text-[11px] mt-0.5 line-clamp-2">{p.description}</p>
+                </div>
+
+                <div className="mt-3 pt-2 border-t border-slate-800/80 flex justify-between text-[11px] font-mono text-slate-400">
+                  <span>MOQ: {p.min_order_qty}</span>
+                  <span>{p.units_per_package} u/fardo</span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
