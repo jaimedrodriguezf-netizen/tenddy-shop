@@ -1,24 +1,41 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // Protección anti-fuerza bruta: máximo 5 intentos de login cada 5 minutos por IP
+    const { isAllowed, remaining } = checkRateLimit(`login_${clientIp}`, {
+      windowMs: 5 * 60 * 1000, // 5 minutos
+      maxRequests: 5,
+    });
+
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Demasiados intentos fallidos. Bloqueado temporalmente por seguridad por 5 minutos.' },
+        { status: 429 }
+      );
+    }
+
     const { password, shopSlug } = await request.json();
-    
-    // Obtener la clave administrativa desde variable de entorno o fallback seguro
     const adminSecret = process.env.ADMIN_SECRET_KEY || 'tenddy2026';
 
     if (!password || password !== adminSecret) {
-      return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
+      return NextResponse.json(
+        { error: `Clave incorrecta. Intentos restantes: ${remaining}` },
+        { status: 401 }
+      );
     }
 
-    // Establecer cookie HttpOnly segura para la sesión administrativa
+    // Cookie segura de sesión
     const cookieStore = await cookies();
     cookieStore.set(`admin_session_${shopSlug}`, 'authenticated', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 7, // 7 días de sesión
+      maxAge: 60 * 60 * 24 * 7,
       path: `/store/${shopSlug}/admin`,
     });
 
@@ -28,7 +45,6 @@ export async function POST(request: Request) {
   }
 }
 
-// Cerrar sesión
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
   const shopSlug = searchParams.get('shopSlug') || '';
