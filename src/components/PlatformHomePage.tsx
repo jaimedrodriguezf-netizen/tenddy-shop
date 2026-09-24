@@ -18,6 +18,7 @@ import {
   Lock
 } from 'lucide-react';
 import AdminLoginModal from './AdminLoginModal';
+import VersionBadge from './VersionBadge';
 
 export default function PlatformHomePage() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -236,7 +237,10 @@ export default function PlatformHomePage() {
       {/* Footer */}
       <footer className="border-t border-slate-800 py-8 text-xs text-slate-500 text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p>© {new Date().getFullYear()} tenddy.shop — Plataforma B2B Multi-Tenant.</p>
+          <div className="flex items-center gap-3">
+            <p>© {new Date().getFullYear()} tenddy.shop — Plataforma B2B Multi-Tenant.</p>
+            <VersionBadge className="bg-slate-900 border-slate-800 text-slate-400" />
+          </div>
           <div className="flex gap-6 text-slate-400">
             <button
               onClick={() => setIsAdminModalOpen(true)}

@@ -21,6 +21,7 @@ import {
   Eye
 } from 'lucide-react';
 import SuperadminUsersManager, { B2BAccount, TenantStaffMember } from './SuperadminUsersManager';
+import VersionBadge from './VersionBadge';
 
 export interface SuperadminTenantSummary {
   id: string;
@@ -138,6 +139,8 @@ export default function SuperadminDashboardView({
               <LogOut className="w-3.5 h-3.5" />
               <span>Salir</span>
             </button>
+
+            <VersionBadge className="bg-slate-900 border-slate-800 text-slate-300" />
           </div>
         </div>
 
