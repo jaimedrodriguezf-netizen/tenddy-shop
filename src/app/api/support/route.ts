@@ -2,6 +2,33 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
+// Función para obtener credenciales de Telegram desde Supabase o variables de entorno
+async function getTelegramConfig() {
+  let botToken = process.env.TELEGRAM_BOT_TOKEN;
+  let chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!botToken || !chatId) {
+    try {
+      const admin = getAdminClient();
+      const { data: settings } = await admin
+        .from('platform_settings')
+        .select('key, value')
+        .in('key', ['telegram_bot_token', 'telegram_chat_id']);
+
+      if (settings) {
+        settings.forEach((s) => {
+          if (s.key === 'telegram_bot_token' && !botToken) botToken = s.value;
+          if (s.key === 'telegram_chat_id' && !chatId) chatId = s.value;
+        });
+      }
+    } catch (e) {
+      console.error('Error leyendo config de Telegram en Supabase:', e);
+    }
+  }
+
+  return { botToken, chatId };
+}
+
 // Función para enviar notificación y foto a Telegram vía Bot API
 async function sendTelegramNotification(ticket: {
   ticket_number: string;
@@ -12,11 +39,10 @@ async function sendTelegramNotification(ticket: {
   category: string;
   image_url?: string | null;
 }) {
-  const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_CHAT_ID;
+  const { botToken, chatId } = await getTelegramConfig();
 
   if (!botToken || !chatId) {
-    console.warn('Telegram Bot Token o Chat ID no configurados en variables de entorno.');
+    console.warn('Telegram Bot Token o Chat ID pendientes de configuración.');
     return;
   }
 
@@ -34,7 +60,6 @@ ${ticket.message}
 🌐 _Enviado desde tenddy.shop_`;
 
   try {
-    // Si adjuntó imagen Base64, enviarla como Photo a Telegram
     if (ticket.image_url && ticket.image_url.startsWith('data:image')) {
       const base64Data = ticket.image_url.split(',')[1];
       const buffer = Buffer.from(base64Data, 'base64');
@@ -50,7 +75,6 @@ ${ticket.message}
         body: formData,
       });
     } else {
-      // Si no hay foto, enviar mensaje de texto normal
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -91,7 +115,7 @@ export async function POST(request: Request) {
       sender_email,
       subject,
       message,
-      image_data, // Imagen en Base64
+      image_data,
       tenant_id,
       category,
       _hp_check,
@@ -137,7 +161,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // Disparar notificación directa a Telegram de forma asíncrona
+    // Disparar notificación directa a Telegram leyendo de Supabase
     sendTelegramNotification({
       ticket_number,
       sender_name: sender_name.trim(),
