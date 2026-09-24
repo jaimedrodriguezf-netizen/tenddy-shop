@@ -15,20 +15,29 @@ import {
   Zap,
   TrendingUp,
   Cpu,
-  Lock
+  Lock,
+  LifeBuoy
 } from 'lucide-react';
 import AdminLoginModal from './AdminLoginModal';
+import SupportTicketModal from './SupportTicketModal';
 import VersionBadge from './VersionBadge';
 
 export default function PlatformHomePage() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500 selection:text-white">
-      {/* Modal de Acceso para Administradores de Tiendas */}
+      {/* Modales */}
       <AdminLoginModal
         isOpen={isAdminModalOpen}
         onClose={() => setIsAdminModalOpen(false)}
+      />
+
+      <SupportTicketModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        shopName="tenddy.shop Plataforma"
       />
 
       {/* Header Central de la Plataforma */}
@@ -47,11 +56,16 @@ export default function PlatformHomePage() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
             <a href="#features" className="hover:text-white transition-colors">Características B2B</a>
             <a href="#cases" className="hover:text-white transition-colors">Casos de Uso</a>
-            <a href="#architecture" className="hover:text-white transition-colors">Arquitectura</a>
+            <button
+              onClick={() => setIsSupportModalOpen(true)}
+              className="text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <LifeBuoy className="w-4 h-4 text-amber-400" />
+              <span>Soporte Técnico</span>
+            </button>
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Botón Acceso Administrador */}
             <button
               onClick={() => setIsAdminModalOpen(true)}
               className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3.5 py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
@@ -98,11 +112,11 @@ export default function PlatformHomePage() {
               <ArrowRight className="w-4 h-4" />
             </Link>
             <button
-              onClick={() => setIsAdminModalOpen(true)}
+              onClick={() => setIsSupportModalOpen(true)}
               className="bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm px-6 py-3.5 rounded-xl transition-all cursor-pointer flex items-center gap-2"
             >
-              <Lock className="w-4 h-4 text-amber-400" />
-              <span>Entrar como Administrador</span>
+              <LifeBuoy className="w-4 h-4 text-amber-400" />
+              <span>Mesa de Ayuda & Soporte</span>
             </button>
           </div>
 
@@ -132,7 +146,7 @@ export default function PlatformHomePage() {
         </div>
       </section>
 
-      {/* Casos de Uso / Tenants Activos */}
+      {/* Casos de Uso */}
       <section id="cases" className="max-w-7xl mx-auto px-4 py-20">
         <div className="text-center max-w-2xl mx-auto mb-14">
           <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
@@ -222,7 +236,7 @@ export default function PlatformHomePage() {
           <p className="text-sm text-slate-400 max-w-xl mx-auto">
             Crea tu tienda B2B hoy mismo. Recibe cotizaciones formales por WhatsApp y gestiona tus clientes en un panel privado.
           </p>
-          <div className="pt-2">
+          <div className="pt-2 flex justify-center gap-4">
             <Link
               href="/registro"
               className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-xl shadow-sky-600/30 transition-all inline-flex items-center gap-2"
@@ -230,6 +244,13 @@ export default function PlatformHomePage() {
               <span>Registrar Mi Empresa Gratis</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
+            <button
+              onClick={() => setIsSupportModalOpen(true)}
+              className="bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-sm px-6 py-3.5 rounded-xl border border-slate-700 transition-all cursor-pointer flex items-center gap-2"
+            >
+              <LifeBuoy className="w-4 h-4 text-amber-400" />
+              <span>Contactar Soporte</span>
+            </button>
           </div>
         </div>
       </section>
@@ -243,14 +264,19 @@ export default function PlatformHomePage() {
           </div>
           <div className="flex gap-6 text-slate-400">
             <button
+              onClick={() => setIsSupportModalOpen(true)}
+              className="hover:text-white cursor-pointer text-xs flex items-center gap-1"
+            >
+              <LifeBuoy className="w-3.5 h-3.5 text-amber-400" />
+              <span>Soporte</span>
+            </button>
+            <button
               onClick={() => setIsAdminModalOpen(true)}
               className="hover:text-white cursor-pointer text-xs"
             >
               Acceso Administrador
             </button>
             <Link href="/registro" className="hover:text-white">Crear Tienda</Link>
-            <Link href="/store/ayme-pet" className="hover:text-white">Demo Plásticos</Link>
-            <Link href="/store/dulcelandia" className="hover:text-white">Demo Confitería</Link>
           </div>
         </div>
       </footer>

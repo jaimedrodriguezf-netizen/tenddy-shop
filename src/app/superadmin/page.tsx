@@ -3,6 +3,7 @@ import { getAdminClient } from '@/lib/supabase';
 import SuperadminDashboardView, { SuperadminTenantSummary } from '@/components/SuperadminDashboardView';
 import SuperadminLoginForm from '@/components/SuperadminLoginForm';
 import { B2BAccount, TenantStaffMember } from '@/components/SuperadminUsersManager';
+import { SupportTicketRecord } from '@/components/SuperadminSupportManager';
 
 export const metadata = {
   title: 'Torre de Control Superadmin | tenddy.shop',
@@ -20,13 +21,14 @@ export default async function SuperadminPage() {
 
   const admin = getAdminClient();
 
-  // Consultar métricas y usuarios en paralelo
-  const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes] = await Promise.all([
+  // Consultar métricas, usuarios y tickets de soporte en paralelo
+  const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes, ticketsRes] = await Promise.all([
     admin.from('tenants').select('id, slug, name, industry_type, is_active, views_count, created_at').order('created_at', { ascending: false }),
     admin.from('quotes').select('id, estimated_total, items'),
     admin.from('products').select('id, tenant_id'),
     admin.from('b2b_accounts').select('*').order('created_at', { ascending: false }),
     admin.from('tenant_members').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
+    admin.from('support_tickets').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
   ]);
 
   const rawTenants = tenantsRes.data || [];
@@ -34,6 +36,7 @@ export default async function SuperadminPage() {
   const rawProducts = productsRes.data || [];
   const rawBuyers = (accountsRes.data || []) as B2BAccount[];
   const rawStaff = (staffRes.data || []) as TenantStaffMember[];
+  const rawTickets = (ticketsRes.data || []) as SupportTicketRecord[];
 
   // Calcular métricas agregadas por tenant
   const tenantsSummary: SuperadminTenantSummary[] = rawTenants.map((t) => {
@@ -74,6 +77,7 @@ export default async function SuperadminPage() {
       totalB2BAccounts={totalB2BAccounts}
       initialBuyers={rawBuyers}
       initialStaff={rawStaff}
+      initialTickets={rawTickets}
     />
   );
 }

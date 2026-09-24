@@ -18,9 +18,11 @@ import {
   Calendar,
   LogOut,
   Users,
-  Eye
+  Eye,
+  LifeBuoy
 } from 'lucide-react';
 import SuperadminUsersManager, { B2BAccount, TenantStaffMember } from './SuperadminUsersManager';
+import SuperadminSupportManager, { SupportTicketRecord } from './SuperadminSupportManager';
 import VersionBadge from './VersionBadge';
 
 export interface SuperadminTenantSummary {
@@ -46,6 +48,7 @@ interface SuperadminDashboardViewProps {
   totalB2BAccounts: number;
   initialBuyers?: B2BAccount[];
   initialStaff?: TenantStaffMember[];
+  initialTickets?: SupportTicketRecord[];
 }
 
 export default function SuperadminDashboardView({
@@ -57,9 +60,10 @@ export default function SuperadminDashboardView({
   totalB2BAccounts,
   initialBuyers = [],
   initialStaff = [],
+  initialTickets = [],
 }: SuperadminDashboardViewProps) {
   const [tenants, setTenants] = useState<SuperadminTenantSummary[]>(initialTenants);
-  const [activeTab, setActiveTab] = useState<'tenants' | 'users'>('tenants');
+  const [activeTab, setActiveTab] = useState<'tenants' | 'users' | 'support'>('tenants');
   const [search, setSearch] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -167,7 +171,19 @@ export default function SuperadminDashboardView({
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>CRUD de Usuarios & Cuentas B2B ({initialBuyers.length + initialStaff.length})</span>
+            <span>Usuarios & Cuentas B2B ({initialBuyers.length + initialStaff.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('support')}
+            className={`pb-1 transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'support'
+                ? 'text-amber-400 border-b-2 border-amber-400'
+                : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <LifeBuoy className="w-4 h-4" />
+            <span>Mesa de Ayuda & Soporte ({initialTickets.length})</span>
           </button>
         </div>
       </header>
@@ -363,6 +379,15 @@ export default function SuperadminDashboardView({
             <SuperadminUsersManager
               initialBuyers={initialBuyers}
               initialStaff={initialStaff}
+            />
+          </div>
+        )}
+
+        {/* PESTAÑA 3: MESA DE AYUDA & SOPORTE CON CAPTURAS */}
+        {activeTab === 'support' && (
+          <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-sm">
+            <SuperadminSupportManager
+              initialTickets={initialTickets}
             />
           </div>
         )}
