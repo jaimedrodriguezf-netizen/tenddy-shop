@@ -1,8 +1,8 @@
 {
-  "version": "v1.0.0",
+  "version": "v1.0.0-dev.0fd7167",
   "baseVersion": "1.0.0",
-  "branch": "main",
-  "commit": "b3751c8",
-  "environment": "production",
-  "builtAt": "2026-09-24T01:11:40.940Z"
+  "branch": "develop",
+  "commit": "0fd7167",
+  "environment": "development",
+  "builtAt": "2026-09-24T01:13:15.189Z"
 }
