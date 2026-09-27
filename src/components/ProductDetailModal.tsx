@@ -24,15 +24,25 @@ interface ProductDetailModalProps {
   selectedBranch: Branch;
 }
 
-export default function ProductDetailModal({
+export default function ProductDetailModal(props: ProductDetailModalProps) {
+  if (!props.product) return null;
+  return <ProductModalContent {...props} product={props.product} />;
+}
+
+interface ProductModalContentProps {
+  product: Product;
+  onClose: () => void;
+  tenant: Tenant;
+  selectedBranch: Branch | null;
+}
+
+function ProductModalContent({
   product,
   onClose,
   tenant,
   selectedBranch,
-}: ProductDetailModalProps) {
+}: ProductModalContentProps) {
   const { addItem } = useCartStore();
-
-  if (!product) return null;
 
   const specs = product.attributes?.specs || {};
   const features: string[] = product.attributes?.features || [];

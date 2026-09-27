@@ -24,7 +24,7 @@ export default async function SuperadminPage() {
   // Consultar métricas, usuarios y tickets de soporte en paralelo
   const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes, ticketsRes] = await Promise.all([
     admin.from('tenants').select('id, slug, name, industry_type, is_active, views_count, created_at').order('created_at', { ascending: false }),
-    admin.from('quotes').select('id, estimated_total, items'),
+    admin.from('quotes').select('id, tenant_id, estimated_total, items'),
     admin.from('products').select('id, tenant_id'),
     admin.from('b2b_accounts').select('*').order('created_at', { ascending: false }),
     admin.from('tenant_members').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
