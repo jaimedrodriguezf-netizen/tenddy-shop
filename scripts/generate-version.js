@@ -11,8 +11,16 @@ try {
   // Fallback si corre en entorno sin binario git
 }
 
+// Leer versión base dinámicamente desde package.json
+let baseVersion = '1.0.0';
+try {
+  const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  if (pkg.version) baseVersion = pkg.version;
+} catch (err) {
+  // Mantener fallback
+}
+
 const isProduction = branch === 'main';
-const baseVersion = '1.0.0';
 const fullVersion = isProduction ? `v${baseVersion}` : `v${baseVersion}-dev.${commit}`;
 
 const versionInfo = {
