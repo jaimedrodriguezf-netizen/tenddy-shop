@@ -22,10 +22,16 @@ export default function GoogleSignInButton({
       setLoading(true);
       const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tenddy.shop';
       
-      const { data, error } = await supabase.auth.signInWithOAuth({
+      // El callback siempre debe ser /auth/callback con el destino final en `next`
+      const callbackUrl = new URL('/auth/callback', origin);
+      if (redirectTo && redirectTo !== '/auth/callback') {
+        callbackUrl.searchParams.set('next', redirectTo);
+      }
+
+      const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${origin}${redirectTo}`,
+          redirectTo: callbackUrl.toString(),
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -37,8 +43,9 @@ export default function GoogleSignInButton({
         alert('Error al conectar con Google: ' + error.message);
         setLoading(false);
       }
-    } catch (err: any) {
-      alert('Error inesperado: ' + err.message);
+    } catch (err: unknown) {
+      const errorMsg = err instanceof Error ? err.message : 'Error inesperado';
+      alert('Error: ' + errorMsg);
       setLoading(false);
     }
   };
