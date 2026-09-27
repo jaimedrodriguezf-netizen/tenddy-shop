@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
@@ -191,6 +192,29 @@ export async function POST(request: Request) {
         is_active: true,
       }))
     );
+
+    // 7. Si viene email del creador autenticado con Google, registrarlo como Dueño (Owner)
+    if (email) {
+      await admin.from('tenant_members').insert({
+        tenant_id: tenant.id,
+        full_name: body.creatorName || companyName.trim(),
+        email: email.trim().toLowerCase(),
+        phone: whatsapp || null,
+        password_hash: 'google_oauth_managed',
+        role: 'owner',
+        is_active: true,
+      });
+
+      // 8. Iniciar sesión administrativa inmediatamente para el nuevo tenant
+      const cookieStore = await cookies();
+      cookieStore.set(`admin_session_${tenant.slug}`, 'authenticated', {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 24 * 7,
+        path: '/',
+      });
+    }
 
     return NextResponse.json({
       success: true,
