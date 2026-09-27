@@ -88,10 +88,10 @@ export default function SupportTicketModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div onClick={onClose} className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" />
 
-      <div className="relative w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-7 text-slate-900 shadow-2xl z-10 space-y-5">
+      <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 text-slate-900 shadow-2xl z-10 space-y-4 sm:space-y-5">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white">
