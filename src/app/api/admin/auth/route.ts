@@ -20,9 +20,26 @@ export async function POST(request: Request) {
     }
 
     const { password, shopSlug } = await request.json();
-    const adminSecret = process.env.ADMIN_SECRET_KEY || 'tenddy2026';
 
-    if (!password || password !== adminSecret) {
+    if (!shopSlug || typeof shopSlug !== 'string' || !/^[a-z0-9-]+$/i.test(shopSlug.trim())) {
+      return NextResponse.json({ error: 'Identificador de tienda inválido' }, { status: 400 });
+    }
+
+    const cleanSlug = shopSlug.trim().toLowerCase();
+
+    // Verificación estricta de secreto: no permitir fallback inseguro en producción
+    const adminSecret = process.env.ADMIN_SECRET_KEY;
+    if (!adminSecret && process.env.NODE_ENV === 'production') {
+      console.error('CRITICAL: ADMIN_SECRET_KEY no configurado en producción.');
+      return NextResponse.json(
+        { error: 'Error de configuración de seguridad del servidor' },
+        { status: 500 }
+      );
+    }
+
+    const effectiveSecret = adminSecret || 'tenddy2026';
+
+    if (!password || password !== effectiveSecret) {
       return NextResponse.json(
         { error: `Clave incorrecta. Intentos restantes: ${remaining}` },
         { status: 401 }
@@ -31,7 +48,7 @@ export async function POST(request: Request) {
 
     // Cookie segura de sesión para todo el dominio / para que /api/admin/* pueda leerla
     const cookieStore = await cookies();
-    cookieStore.set(`admin_session_${shopSlug}`, 'authenticated', {
+    cookieStore.set(`admin_session_${cleanSlug}`, 'authenticated', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
@@ -40,15 +57,18 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 
 export async function DELETE(request: Request) {
   const { searchParams } = new URL(request.url);
-  const shopSlug = searchParams.get('shopSlug') || '';
+  const rawSlug = searchParams.get('shopSlug') || '';
+  const cleanSlug = rawSlug.trim().toLowerCase();
+
   const cookieStore = await cookies();
-  cookieStore.delete({ name: `admin_session_${shopSlug}`, path: '/' });
+  cookieStore.delete({ name: `admin_session_${cleanSlug}`, path: '/' });
   return NextResponse.json({ success: true });
 }

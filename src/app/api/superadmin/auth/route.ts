@@ -20,9 +20,20 @@ export async function POST(request: Request) {
     }
 
     const { secretKey } = await request.json();
-    const platformSecret = process.env.SUPERADMIN_SECRET_KEY || 'tenddy_master_2026';
 
-    if (!secretKey || secretKey !== platformSecret) {
+    // Verificación estricta de secreto: no permitir fallback inseguro en producción
+    const platformSecret = process.env.SUPERADMIN_SECRET_KEY;
+    if (!platformSecret && process.env.NODE_ENV === 'production') {
+      console.error('CRITICAL: SUPERADMIN_SECRET_KEY no configurado en producción.');
+      return NextResponse.json(
+        { error: 'Error de configuración de seguridad del servidor' },
+        { status: 500 }
+      );
+    }
+
+    const effectiveSecret = platformSecret || 'tenddy_master_2026';
+
+    if (!secretKey || secretKey !== effectiveSecret) {
       return NextResponse.json({ error: 'Clave maestra de plataforma inválida' }, { status: 401 });
     }
 
@@ -37,8 +48,9 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 

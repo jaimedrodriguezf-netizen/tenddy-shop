@@ -1,25 +1,15 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifyTenantAdmin } from '@/lib/auth-guard';
 
 // Actualizar estado de una cotización
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { quote_id, status, shopSlug } = body;
+    const { quote_id, status } = body;
 
     if (!quote_id || !status) {
       return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
-    }
-
-    // Validar autorización de sesión
-    const cookieStore = await cookies();
-    const hasAuthCookie = Array.from(cookieStore.getAll()).some(
-      (c) => c.name.startsWith('admin_session_') && c.value === 'authenticated'
-    );
-
-    if (!hasAuthCookie) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     // Validar estados válidos permitidos
@@ -29,6 +19,24 @@ export async function PATCH(request: Request) {
     }
 
     const admin = getAdminClient();
+
+    // 1. Obtener la cotización para saber a qué tenant pertenece
+    const { data: targetQuote, error: fetchErr } = await admin
+      .from('quotes')
+      .select('id, tenant_id')
+      .eq('id', quote_id)
+      .single();
+
+    if (fetchErr || !targetQuote) {
+      return NextResponse.json({ error: 'Cotización no encontrada' }, { status: 404 });
+    }
+
+    // 2. Validar autorización estricta para este tenant
+    const auth = await verifyTenantAdmin({ tenantId: targetQuote.tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
     const { data, error } = await admin
       .from('quotes')
       .update({ status, updated_at: new Date().toISOString() })
@@ -41,7 +49,8 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ success: true, quote: data });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

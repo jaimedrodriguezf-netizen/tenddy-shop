@@ -1,20 +1,10 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifyTenantAdmin } from '@/lib/auth-guard';
 
 // Actualizar apariencia y configuración del Tenant
 export async function PATCH(request: Request) {
   try {
-    // 1. Validar autenticación de sesión
-    const cookieStore = await cookies();
-    const hasAuthCookie = Array.from(cookieStore.getAll()).some(
-      (c) => c.name.startsWith('admin_session_') && c.value === 'authenticated'
-    );
-
-    if (!hasAuthCookie) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const body = await request.json();
     const {
       tenant_id,
@@ -31,6 +21,12 @@ export async function PATCH(request: Request) {
 
     if (!tenant_id) {
       return NextResponse.json({ error: 'Falta tenant_id' }, { status: 400 });
+    }
+
+    // 1. Validar autorización estricta para este tenant
+    const auth = await verifyTenantAdmin({ tenantId: tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -62,7 +58,7 @@ export async function PATCH(request: Request) {
       show_branches: show_branches !== undefined ? show_branches : currentTenant.landing_config?.show_branches,
     };
 
-    const updatePayload: Record<string, any> = {
+    const updatePayload: Record<string, unknown> = {
       theme_config: updatedTheme,
       landing_config: updatedLanding,
       updated_at: new Date().toISOString(),
@@ -83,7 +79,8 @@ export async function PATCH(request: Request) {
     }
 
     return NextResponse.json({ success: true, tenant: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error del servidor' }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

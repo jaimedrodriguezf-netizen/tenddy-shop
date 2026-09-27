@@ -1,20 +1,10 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifyTenantAdmin } from '@/lib/auth-guard';
 
 // Obtener o crear productos desde el panel administrativo
 export async function POST(request: Request) {
   try {
-    // 1. Validar autenticación de sesión
-    const cookieStore = await cookies();
-    const hasAuthCookie = Array.from(cookieStore.getAll()).some(
-      (c) => c.name.startsWith('admin_session_') && c.value === 'authenticated'
-    );
-
-    if (!hasAuthCookie) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const body = await request.json();
     const {
       tenant_id,
@@ -34,6 +24,12 @@ export async function POST(request: Request) {
         { error: 'El nombre, SKU y tenant son obligatorios' },
         { status: 400 }
       );
+    }
+
+    // 1. Validar autorización estricta para este tenant específico
+    const auth = await verifyTenantAdmin({ tenantId: tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     // Generar slug URL-friendly
@@ -72,23 +68,15 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, product });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message || 'Error del servidor' }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 
 // Eliminar producto
 export async function DELETE(request: Request) {
   try {
-    const cookieStore = await cookies();
-    const hasAuthCookie = Array.from(cookieStore.getAll()).some(
-      (c) => c.name.startsWith('admin_session_') && c.value === 'authenticated'
-    );
-
-    if (!hasAuthCookie) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
-    }
-
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
 
@@ -97,6 +85,24 @@ export async function DELETE(request: Request) {
     }
 
     const admin = getAdminClient();
+
+    // 1. Obtener a qué tenant pertenece el producto antes de permitir borrarlo
+    const { data: targetProduct, error: fetchErr } = await admin
+      .from('products')
+      .select('id, tenant_id')
+      .eq('id', productId)
+      .single();
+
+    if (fetchErr || !targetProduct) {
+      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    }
+
+    // 2. Validar autorización estricta para este tenant específico
+    const auth = await verifyTenantAdmin({ tenantId: targetProduct.tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
     const { error } = await admin.from('products').delete().eq('id', productId);
 
     if (error) {
@@ -104,7 +110,8 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }

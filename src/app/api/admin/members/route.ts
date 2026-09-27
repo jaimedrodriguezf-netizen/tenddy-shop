@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifyTenantAdmin } from '@/lib/auth-guard';
 
 // Listar miembros del equipo de la fábrica
 export async function GET(request: Request) {
@@ -10,6 +10,12 @@ export async function GET(request: Request) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Falta tenantId' }, { status: 400 });
+    }
+
+    // 1. Validar autorización estricta para este tenant
+    const auth = await verifyTenantAdmin({ tenantId });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -24,8 +30,9 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json({ success: true, members: members || [] });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 
@@ -40,6 +47,12 @@ export async function POST(request: Request) {
         { error: 'Nombre, correo, rol y tenant son requeridos' },
         { status: 400 }
       );
+    }
+
+    // 1. Validar autorización estricta para este tenant
+    const auth = await verifyTenantAdmin({ tenantId: tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -65,8 +78,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ success: true, member });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
 
@@ -81,6 +95,24 @@ export async function DELETE(request: Request) {
     }
 
     const admin = getAdminClient();
+
+    // 1. Obtener el tenant al que pertenece el miembro antes de borrarlo
+    const { data: targetMember, error: fetchErr } = await admin
+      .from('tenant_members')
+      .select('id, tenant_id')
+      .eq('id', memberId)
+      .single();
+
+    if (fetchErr || !targetMember) {
+      return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 });
+    }
+
+    // 2. Validar autorización estricta para este tenant
+    const auth = await verifyTenantAdmin({ tenantId: targetMember.tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
     const { error } = await admin.from('tenant_members').delete().eq('id', memberId);
 
     if (error) {
@@ -88,7 +120,8 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
   }
 }
