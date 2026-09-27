@@ -23,7 +23,8 @@ export function proxy(request: NextRequest) {
     currentHost === 'localhost' ||
     currentHost === '127.0.0.1' ||
     currentHost === rootDomain ||
-    currentHost === `www.${rootDomain}`;
+    currentHost === `www.${rootDomain}` ||
+    currentHost.endsWith('.vercel.app');
 
   // Rutas globales que no deben ser capturadas por el enrutador de tiendas
   if (
@@ -43,7 +44,8 @@ export function proxy(request: NextRequest) {
     detectedSlug = currentHost.replace('.localhost', '');
   } else if (
     currentHost !== rootDomain &&
-    currentHost !== `www.${rootDomain}`
+    currentHost !== `www.${rootDomain}` &&
+    !currentHost.endsWith('.vercel.app')
   ) {
     // Dominio personalizado propio (ej: envasesayme.com)
     detectedSlug = currentHost;

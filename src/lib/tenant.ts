@@ -30,16 +30,7 @@ export async function getTenantByHostOrSlug(hostOrSlug: string): Promise<Tenant 
     if (tenant) return tenant as Tenant;
   }
 
-  // 3. Fallback: retornar el primer tenant activo si estamos en desarrollo
-  const { data: fallback } = await admin
-    .from('tenants')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .single();
-
-  return fallback as Tenant | null;
+  return null;
 }
 
 export async function getTenantCatalog(tenantId: string) {
