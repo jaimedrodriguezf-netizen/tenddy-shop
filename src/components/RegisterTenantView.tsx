@@ -126,10 +126,7 @@ export default function RegisterTenantView() {
             <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow-lg text-lg">
               T
             </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="font-extrabold text-lg text-white tracking-tight">tenddy</span>
-              <span className="text-sky-400 font-bold text-sm">.shop</span>
-            </div>
+            <span className="font-extrabold text-lg text-white tracking-tight">tenddy</span>
           </Link>
 
           <Link
@@ -159,7 +156,7 @@ export default function RegisterTenantView() {
                 ¡Plataforma B2B Creada con Éxito!
               </span>
               <h2 className="text-2xl md:text-3xl font-bold text-white mt-1">
-                Bienvenido a tenddy.shop
+                Bienvenido a tenddy
               </h2>
               <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
                 Tu tienda B2B ya está activa con tu cuenta de Google vinculada como Administrador Principal.

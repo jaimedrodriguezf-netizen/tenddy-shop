@@ -6,8 +6,8 @@ import { B2BAccount, TenantStaffMember } from '@/components/SuperadminUsersManag
 import { SupportTicketRecord } from '@/components/SuperadminSupportManager';
 
 export const metadata = {
-  title: 'Torre de Control Superadmin | tenddy.shop',
-  description: 'Panel de control global para el propietario del SaaS tenddy.shop',
+  title: 'Torre de Control Superadmin | tenddy',
+  description: 'Panel de control global para el propietario del SaaS tenddy',
 };
 
 export default async function SuperadminPage() {

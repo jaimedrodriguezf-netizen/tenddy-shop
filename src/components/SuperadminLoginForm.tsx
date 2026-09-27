@@ -46,7 +46,7 @@ export default function SuperadminLoginForm({ onSuccess }: SuperadminLoginFormPr
           </div>
           <h2 className="text-lg font-extrabold text-white tracking-tight">Torre de Control Superadmin</h2>
           <p className="text-xs text-slate-400">
-            Acceso exclusivo para el propietario de la plataforma <strong>tenddy.shop</strong>
+            Acceso exclusivo para el propietario de la plataforma <strong>tenddy</strong>
           </p>
         </div>
 

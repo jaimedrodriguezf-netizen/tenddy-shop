@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "tenddy.shop | Plataforma E-Commerce B2B para Fabricantes y Mayoristas",
+  title: "tenddy | Plataforma E-Commerce B2B para Fabricantes y Mayoristas",
   description: "Despliega tu catálogo B2B, pedidos por volumen y cotizaciones directas a WhatsApp.",
 };
 

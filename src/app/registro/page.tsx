@@ -1,7 +1,7 @@
 import RegisterTenantView from '@/components/RegisterTenantView';
 
 export const metadata = {
-  title: 'Crear Tienda B2B | tenddy.shop',
+  title: 'Crear Tienda B2B | tenddy',
   description: 'Abre tu e-commerce y catálogo mayorista B2B con subdominio propio en minutos.',
 };
 

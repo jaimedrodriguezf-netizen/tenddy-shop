@@ -121,7 +121,7 @@ export default function SuperadminDashboardView({
                 </span>
               </div>
               <p className="text-xs text-slate-400">
-                Gestión Central de la Red tenddy.shop • {tenants.length} Tiendas Registradas
+                Gestión Central de la Red tenddy • {tenants.length} Tiendas Registradas
               </p>
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function SuperadminDashboardView({
               target="_blank"
               className="text-xs font-semibold text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors"
             >
-              <span>Ver Portada tenddy.shop</span>
+              <span>Ver Portada tenddy</span>
               <ExternalLink className="w-3.5 h-3.5" />
             </Link>
 
@@ -254,7 +254,7 @@ export default function SuperadminDashboardView({
               <div>
                 <h2 className="text-base font-bold text-white flex items-center gap-2">
                   <Globe className="w-4 h-4 text-amber-400" />
-                  Directorio Global de Tiendas en tenddy.shop
+                  Directorio Global de Tiendas en tenddy
                 </h2>
                 <p className="text-xs text-slate-400 mt-0.5">
                   Supervisa el tráfico de visitas, catálogo y métricas de cada cliente en la plataforma.

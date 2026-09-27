@@ -36,7 +36,7 @@ export default function PlatformHomePage() {
       <SupportTicketModal
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}
-        shopName="tenddy.shop Plataforma"
+        shopName="tenddy Plataforma"
       />
 
       {/* Header Central de la Plataforma (Optimizado Móvil) */}
@@ -47,10 +47,7 @@ export default function PlatformHomePage() {
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-sky-500 via-indigo-600 to-blue-700 flex items-center justify-center font-bold text-white shadow-md shadow-sky-500/20 text-base sm:text-xl">
               T
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-extrabold text-lg sm:text-xl text-white tracking-tight">tenddy</span>
-              <span className="text-sky-400 font-bold text-xs sm:text-base">.shop</span>
-            </div>
+            <span className="font-extrabold text-lg sm:text-xl text-white tracking-tight">tenddy</span>
           </Link>
 
           {/* Navegación Desktop */}
@@ -161,7 +158,7 @@ export default function PlatformHomePage() {
             Agnosticidad Total de Industria
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-white mt-1">
-            Empresas y Sectores que Corren en tenddy.shop
+            Empresas y Sectores que Corren en tenddy
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-2 px-2">
             El mismo motor tecnológico adaptado a las necesidades de cada sector industrial.
@@ -267,7 +264,7 @@ export default function PlatformHomePage() {
       <footer className="border-t border-slate-800 py-6 sm:py-8 text-xs text-slate-500 text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-4">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-            <p>© {new Date().getFullYear()} tenddy.shop — Plataforma B2B Multi-Tenant.</p>
+            <p>© {new Date().getFullYear()} tenddy — Plataforma B2B Multi-Tenant.</p>
             <VersionBadge className="bg-slate-900 border-slate-800 text-slate-400" />
           </div>
           <div className="flex flex-wrap justify-center gap-4 sm:gap-6 text-slate-400">
