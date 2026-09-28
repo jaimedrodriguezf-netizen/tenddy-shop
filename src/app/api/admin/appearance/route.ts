@@ -46,6 +46,7 @@ export async function PATCH(request: Request) {
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),
       primary_color: primary_color || currentTenant.theme_config?.primary_color || '#0284c7',
+      store_template: body.store_template || currentTenant.theme_config?.store_template || 'temu',
     };
 
     const updatedLanding = {

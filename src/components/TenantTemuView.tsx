@@ -1,0 +1,350 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import {
+  Search,
+  ShoppingCart,
+  MessageCircle,
+  Package,
+  Plus,
+  ArrowRight,
+  ShieldCheck,
+  Tag,
+  LayoutDashboard,
+  CheckCircle2,
+  Store,
+  ChevronRight
+} from 'lucide-react';
+import { Tenant, Branch, Category, Product } from '@/lib/types';
+import { useCartStore } from '@/lib/store/cart';
+import CartDrawer from '@/components/CartDrawer';
+import ProductDetailModal from '@/components/ProductDetailModal';
+
+interface TenantTemuViewProps {
+  tenant: Tenant;
+  categories: Category[];
+  products: Product[];
+  branches: Branch[];
+  isAdmin?: boolean;
+}
+
+export default function TenantTemuView({
+  tenant,
+  categories,
+  products,
+  branches,
+  isAdmin = false,
+}: TenantTemuViewProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [modalProduct, setModalProduct] = useState<Product | null>(null);
+  const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
+
+  const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
+
+  const totalCartUnits = getTotalUnits();
+  const totalCartPackages = getTotalPackages();
+  const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
+  const mainWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default;
+
+  // Filtrado reactivo en vivo por categoría y búsqueda
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory;
+    const matchesSearch =
+      searchQuery.trim() === '' ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleQuickAdd = (p: Product) => {
+    const packSize = p.units_per_package || 1;
+    const minQty = p.min_order_qty || packSize;
+    const packs = Math.ceil(minQty / packSize);
+    addItem(p, packs, 'Estándar');
+    openCart();
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-24 selection:bg-sky-500 selection:text-white">
+      {/* Drawer del Carrito Cotizador */}
+      <CartDrawer
+        tenant={tenant}
+        branches={branches}
+        selectedBranch={selectedBranch}
+        onSelectBranch={setSelectedBranch}
+      />
+
+      {/* Modal Técnico de Producto */}
+      <ProductDetailModal
+        product={modalProduct}
+        onClose={() => setModalProduct(null)}
+        tenant={tenant}
+        selectedBranch={selectedBranch}
+      />
+
+      {/* =========================================================================
+          1. HEADER ULTRA-COMPACTO ESTILO TEMU / E-COMMERCE
+          ========================================================================= */}
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-xs">
+        {/* Barra superior con marca y acciones */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 flex items-center justify-between gap-3">
+          {/* Logo y Nombre */}
+          <div className="flex items-center gap-2.5 min-w-0">
+            {tenant.logo_url ? (
+              <div className="w-9 h-9 rounded-xl overflow-hidden border border-slate-200 bg-white p-0.5 shrink-0 flex items-center justify-center">
+                <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+              </div>
+            ) : (
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-white text-base shadow-sm shrink-0"
+                style={{ backgroundColor: primaryColor }}
+              >
+                {tenant.name.charAt(0)}
+              </div>
+            )}
+            <div className="min-w-0">
+              <h1 className="font-extrabold text-sm sm:text-base text-slate-900 tracking-tight truncate">
+                {tenant.name}
+              </h1>
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-medium">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="truncate">Venta Mayorista Directa</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Acciones del Header */}
+          <div className="flex items-center gap-2 shrink-0">
+            {isAdmin && (
+              <Link
+                href={`/store/${tenant.slug}/admin`}
+                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 border border-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-colors"
+                title="Volver a la administración de tu tienda"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5 text-amber-600" />
+                <span className="hidden sm:inline">Volver a Mi Panel</span>
+                <span className="sm:hidden text-[11px]">Panel</span>
+              </Link>
+            )}
+
+            {mainWhatsapp && (
+              <a
+                href={`https://wa.me/${mainWhatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-xl transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 text-emerald-600" />
+                <span>WhatsApp</span>
+              </a>
+            )}
+
+            {/* Botón Carrito Cotizador */}
+            <button
+              onClick={openCart}
+              className="relative p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              {totalCartUnits > 0 && (
+                <span className="bg-rose-500 text-white font-mono font-bold text-[10px] px-1.5 py-0.2 rounded-full">
+                  {totalCartPackages}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Buscador Integrado Estilo Temu */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 pb-2.5">
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar productos, códigos, medidas..."
+              className="w-full bg-slate-100 border border-slate-200 rounded-full pl-10 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* =========================================================================
+            2. BARRA DESLIZABLE DE CATEGORÍAS (PILLS ESTILO TEMU)
+            ========================================================================= */}
+        <div className="bg-white border-t border-slate-100 px-3 sm:px-6 py-2 overflow-x-auto scrollbar-none">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                selectedCategory === 'all'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              🔥 Todos los Productos
+            </button>
+
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setSelectedCategory(c.id)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                  selectedCategory === c.id
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      {/* Banner Informativo Rápido */}
+      <div className="bg-sky-600 text-white text-[11px] font-medium py-1.5 px-4 text-center">
+        <span>📦 Pedidos y cotizaciones directas a fábrica por bulto, fardo o pallet con despacho nacional</span>
+      </div>
+
+      {/* =========================================================================
+          3. GRILLA DENSA DE PRODUCTOS ESTILO TEMU (2 COLUMNAS EN MÓVIL)
+          ========================================================================= */}
+      <main className="max-w-7xl mx-auto px-2.5 sm:px-6 py-4">
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3 my-6">
+            <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
+              <Package className="w-7 h-7" />
+            </div>
+            <h3 className="text-base font-bold text-slate-800">No se encontraron productos</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              {searchQuery
+                ? `No hay coincidencias para "${searchQuery}". Intenta con otro término.`
+                : 'Aún no hay productos publicados en esta categoría.'}
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
+            {filteredProducts.map((p) => {
+              const packSize = p.units_per_package || 100;
+              const minQty = p.min_order_qty || packSize;
+              const imageSrc = p.images?.[0] || '/assets/products/ayme-001.svg';
+
+              return (
+                <div
+                  key={p.id}
+                  className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all group"
+                >
+                  {/* Foto con Badges */}
+                  <div
+                    onClick={() => setModalProduct(p)}
+                    className="relative aspect-square bg-slate-50 flex items-center justify-center p-3 cursor-pointer overflow-hidden"
+                  >
+                    <img
+                      src={imageSrc}
+                      alt={p.name}
+                      className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+                    />
+
+                    {/* Badge MOQ / Volumen */}
+                    <div className="absolute top-2 left-2 bg-slate-900/85 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
+                      Mín: {minQty.toLocaleString()} uds
+                    </div>
+
+                    {p.sku && (
+                      <div className="absolute bottom-2 left-2 bg-white/90 text-slate-600 font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-xs">
+                        {p.sku}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Datos del Producto */}
+                  <div className="p-2.5 sm:p-3 space-y-2 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3
+                        onClick={() => setModalProduct(p)}
+                        className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2 hover:text-sky-600 cursor-pointer"
+                      >
+                        {p.name}
+                      </h3>
+
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1">
+                        <Package className="w-3 h-3 text-slate-400 shrink-0" />
+                        <span>Fardo / Bulto x {packSize} uds</span>
+                      </div>
+                    </div>
+
+                    {/* Botones de Acción */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5">
+                      <button
+                        onClick={() => setModalProduct(p)}
+                        className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] py-1.5 px-2 rounded-xl transition-colors cursor-pointer text-center"
+                      >
+                        Ficha
+                      </button>
+                      <button
+                        onClick={() => handleQuickAdd(p)}
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
+                        title="Agregar fardo al cotizador"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Cotizar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* =========================================================================
+          4. BARRA FLOTANTE INFERIOR DE CARRITO / WHATSAPP PARA MÓVIL
+          ========================================================================= */}
+      {totalCartUnits > 0 && (
+        <div className="fixed bottom-4 inset-x-3 z-40 max-w-md mx-auto animate-fade-in">
+          <div
+            onClick={openCart}
+            className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 hover:scale-[1.02] transition-transform"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-sky-500 flex items-center justify-center font-bold text-white shadow">
+                <ShoppingCart className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold">Cotizador Listo</div>
+                <div className="text-[11px] text-slate-300 font-mono">
+                  {totalCartUnits.toLocaleString()} unidades ({totalCartPackages} bultos)
+                </div>
+              </div>
+            </div>
+
+            <button
+              className="bg-white text-slate-900 font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1 shadow"
+            >
+              <span>Ver Pedido</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Footer Minimalista */}
+      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
+        <p>© {new Date().getFullYear()} {tenant.name} — Plataforma B2B impulsada por tenddy.</p>
+      </footer>
+    </div>
+  );
+}

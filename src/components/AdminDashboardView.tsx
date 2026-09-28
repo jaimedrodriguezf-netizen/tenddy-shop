@@ -20,10 +20,12 @@ import {
   Menu,
   X,
   MapPin,
-  LifeBuoy
+  LifeBuoy,
+  Tag
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
+import CreateCategoryModal from './CreateCategoryModal';
 import AppearanceTab from './AppearanceTab';
 import TeamTab, { TenantMember } from './TeamTab';
 import SupportTicketModal from './SupportTicketModal';
@@ -70,11 +72,13 @@ export default function AdminDashboardView({
   tenant: initialTenant,
   branches,
   products: initialProducts,
-  categories = [],
+  categories: initialCategories = [],
   initialQuotes,
   initialMembers = [],
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'quotes' | 'products' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -329,6 +333,14 @@ export default function AdminDashboardView({
         tenant={tenant}
         categories={categories}
         onProductCreated={(newProd) => setProducts((prev) => [newProd, ...prev])}
+      />
+
+      {/* Modal para Crear Categoría */}
+      <CreateCategoryModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        tenantId={tenant.id}
+        onCategoryCreated={(newCat) => setCategories((prev) => [...prev, newCat])}
       />
 
       {/* Modal de Soporte Técnico y Mesa de Ayuda */}
@@ -742,7 +754,7 @@ export default function AdminDashboardView({
             </div>
           )}
 
-          {/* PESTAÑA 2: PRODUCTOS */}
+          {/* PESTAÑA 2: PRODUCTOS & CATEGORÍAS */}
           {activeTab === 'products' && (
             <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -751,17 +763,45 @@ export default function AdminDashboardView({
                     Catálogo Activo ({products.length} Referencias)
                   </h3>
                   <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-                    Modifica y administra los productos visibles en tu catálogo público.
+                    Modifica tus artículos y crea categorías para tu catálogo mayorista.
                   </p>
                 </div>
 
-                <button
-                  onClick={() => setIsCreateModalOpen(true)}
-                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer w-full sm:w-auto"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Agregar Producto</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsCategoryModalOpen(true)}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Tag className="w-3.5 h-3.5 text-slate-500" />
+                    <span>+ Nueva Categoría</span>
+                  </button>
+
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Producto</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Lista de Categorías de la Tienda */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-100 scrollbar-none">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Categorías:</span>
+                {categories.length === 0 ? (
+                  <span className="text-xs text-slate-400 italic">Sin categorías creadas</span>
+                ) : (
+                  categories.map((cat) => (
+                    <span
+                      key={cat.id}
+                      className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-lg font-medium shrink-0"
+                    >
+                      <Tag className="w-3 h-3 text-slate-400" />
+                      <span>{cat.name}</span>
+                    </span>
+                  ))
+                )}
               </div>
 
               {products.length === 0 ? (

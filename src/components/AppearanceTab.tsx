@@ -10,7 +10,8 @@ import {
   AlertCircle,
   Loader2,
   Sliders,
-  Sparkles
+  Sparkles,
+  LayoutDashboard
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
 
@@ -29,6 +30,9 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [heroImageUrl, setHeroImageUrl] = useState(tenant.landing_config?.hero_image_url || '');
   const [showServices, setShowServices] = useState(tenant.landing_config?.show_services ?? true);
   const [showBranches, setShowBranches] = useState(tenant.landing_config?.show_branches ?? true);
+  const [storeTemplate, setStoreTemplate] = useState<'temu' | 'landing'>(
+    (tenant.theme_config as any)?.store_template || 'temu'
+  );
 
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
@@ -58,6 +62,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           tenant_id: tenant.id,
           name,
           primary_color: primaryColor,
+          store_template: storeTemplate,
           logo_url: logoUrl || null,
           hero_title: heroTitle,
           hero_subtitle: heroSubtitle,
@@ -99,6 +104,63 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           <span>{errorMsg}</span>
         </div>
       )}
+
+      {/* Bloque 0: Selector de Plantilla */}
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <LayoutDashboard className="w-4 h-4 text-slate-500" />
+            Plantilla y Formato de Tienda
+          </h4>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Selecciona la experiencia de compra para tus clientes mayoristas.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            onClick={() => setStoreTemplate('temu')}
+            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+              storeTemplate === 'temu'
+                ? 'border-sky-500 bg-sky-50/50 shadow-sm'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                🛍️ E-Commerce Directo (Estilo Temu)
+              </span>
+              <span className="text-[10px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">
+                Predeterminado
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Enfocado 100% en conversión y venta rápida. Buscador superior, categorías en píldoras y grilla densa de productos sin textos de relleno.
+            </p>
+          </div>
+
+          <div
+            onClick={() => setStoreTemplate('landing')}
+            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+              storeTemplate === 'landing'
+                ? 'border-sky-500 bg-sky-50/50 shadow-sm'
+                : 'border-slate-200 bg-white hover:border-slate-300'
+            }`}
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
+                🏭 Landing Corporativa (Personalizada)
+              </span>
+              <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
+                Fábrica
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Diseño con video de portada, historia de la planta, sección de maquila/servicios industriales y sucursales.
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* Bloque 1: Identidad & Color */}
       <div className="space-y-4">
