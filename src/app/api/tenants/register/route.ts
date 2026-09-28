@@ -24,11 +24,13 @@ export async function POST(request: Request) {
     const {
       companyName,
       slug,
+      taxId,
       industryType,
-      city,
       address,
       whatsapp,
       email,
+      creatorName,
+      logoData,
       primaryColor,
       _hp_check,
     } = body;
@@ -92,14 +94,45 @@ export async function POST(request: Request) {
     const heroTitle = `Catálogo Mayorista de ${companyName}`;
     const heroSubtitle = `Fabricación y distribución B2B directa con entregas a nivel nacional e internacional.`;
 
+    // 2.1 Procesar y subir logotipo a Storage si se adjuntó
+    let finalLogoUrl: string | null = null;
+    if (logoData && typeof logoData === 'string' && logoData.startsWith('data:image')) {
+      try {
+        const matches = logoData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1];
+          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
+          const buffer = Buffer.from(matches[2], 'base64');
+          const filePath = `logos/${cleanSlug}-${Date.now()}.${ext}`;
+
+          const { error: uploadErr } = await admin.storage
+            .from('support-attachments')
+            .upload(filePath, buffer, {
+              contentType: mimeType,
+              upsert: true,
+            });
+
+          if (!uploadErr) {
+            const { data: pubData } = admin.storage
+              .from('support-attachments')
+              .getPublicUrl(filePath);
+            finalLogoUrl = pubData?.publicUrl || null;
+          }
+        }
+      } catch (err) {
+        console.error('Error subiendo logo de tenant:', err);
+      }
+    }
+
     // 3. Crear Tenant en Supabase
     const { data: tenant, error: tenantError } = await admin
       .from('tenants')
       .insert({
         slug: cleanSlug,
         name: companyName.trim(),
+        tax_id: taxId ? taxId.trim().toUpperCase() : null,
         industry_type: industryType,
-        logo_url: null,
+        logo_url: finalLogoUrl,
         theme_config: {
           primary_color: color,
           secondary_color: '#0ea5e9',
@@ -115,9 +148,9 @@ export async function POST(request: Request) {
           whatsapp_default: whatsapp.replace(/[^0-9]/g, ''),
           display_phone: whatsapp,
           email: email || null,
-          address: address || `${city || 'Ciudad Central'}`,
+          address: address ? address.trim() : 'Sede Principal',
           hours: 'Lunes a Viernes: 8:00 AM - 5:30 PM',
-          plant_location: city || 'Planta Principal',
+          plant_location: address ? address.trim() : 'Planta Principal',
           show_catalog: true,
           show_branches: true,
           show_services: false,
@@ -157,10 +190,10 @@ export async function POST(request: Request) {
     await admin.from('branches').insert({
       tenant_id: tenant.id,
       slug: 'sede-principal',
-      name: `Sede Principal ${city ? `- ${city}` : ''}`,
+      name: 'Sede Principal',
       branch_type: 'plant',
-      city: city || 'Sede Central',
-      address: address || 'Dirección de Despacho Principal',
+      city: address ? address.trim() : 'Sede Principal',
+      address: address ? address.trim() : 'Dirección de Despacho Principal',
       phone_whatsapp: whatsapp.replace(/[^0-9]/g, ''),
       email: email || null,
       is_main_branch: true,
@@ -197,7 +230,7 @@ export async function POST(request: Request) {
     if (email) {
       await admin.from('tenant_members').insert({
         tenant_id: tenant.id,
-        full_name: body.creatorName || companyName.trim(),
+        full_name: creatorName || companyName.trim(),
         email: email.trim().toLowerCase(),
         phone: whatsapp || null,
         password_hash: 'google_oauth_managed',

@@ -2,6 +2,7 @@ export interface Tenant {
   id: string;
   slug: string;
   name: string;
+  tax_id?: string;
   industry_type: string;
   logo_url: string;
   views_count?: number;

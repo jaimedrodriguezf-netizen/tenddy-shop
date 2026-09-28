@@ -15,7 +15,11 @@ import {
   Lock,
   ShieldCheck,
   LogOut,
-  Palette
+  Palette,
+  Upload,
+  Image as ImageIcon,
+  X,
+  FileText
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import GoogleSignInButton from './GoogleSignInButton';
@@ -25,12 +29,13 @@ export default function RegisterTenantView() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   const [companyName, setCompanyName] = useState('');
+  const [taxId, setTaxId] = useState('');
   const [slug, setSlug] = useState('');
   const [industryType, setIndustryType] = useState('plastics');
-  const [city, setCity] = useState('');
   const [address, setAddress] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#0284c7');
+  const [logoBase64, setLogoBase64] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -71,6 +76,22 @@ export default function RegisterTenantView() {
       .slice(0, 25);
   };
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 3 * 1024 * 1024) {
+      alert('El logotipo no debe superar los 3 MB.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoBase64(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setCurrentUser(null);
@@ -80,6 +101,16 @@ export default function RegisterTenantView() {
     e.preventDefault();
     if (!currentUser) {
       setErrorMsg('Debes iniciar sesión con Google para crear tu tienda');
+      return;
+    }
+
+    if (!taxId.trim()) {
+      setErrorMsg('El RUC / NIT es obligatorio para verificar la empresa mayorista');
+      return;
+    }
+
+    if (!address.trim()) {
+      setErrorMsg('La dirección de la sede o planta es obligatoria');
       return;
     }
 
@@ -93,10 +124,11 @@ export default function RegisterTenantView() {
         body: JSON.stringify({
           companyName,
           slug,
+          taxId: taxId.trim(),
           industryType,
-          city,
-          address,
+          address: address.trim(),
           whatsapp,
+          logoData: logoBase64,
           email: currentUser.email,
           creatorName: currentUser.name,
           primaryColor,
@@ -296,12 +328,59 @@ export default function RegisterTenantView() {
 
             <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-6 shadow-2xl">
               <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Bloque 1: Empresa & Dominio */}
+                {/* Bloque 1: Logotipo Corporativo */}
+                <div className="space-y-3 pb-4 border-b border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-white flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-sky-400" />
+                        Logotipo de la Empresa
+                      </h3>
+                      <p className="text-[11px] text-slate-400 mt-0.5">
+                        Recomendado: 500x500 px (cuadrado 1:1, formato PNG con fondo transparente o SVG). Máx 3 MB.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {logoBase64 ? (
+                      <div className="relative w-20 h-20 rounded-2xl border border-slate-700 bg-slate-950 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                        <img src={logoBase64} alt="Logo preview" className="w-full h-full object-contain" />
+                        <button
+                          type="button"
+                          onClick={() => setLogoBase64(null)}
+                          className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-0.5"
+                          title="Quitar logotipo"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl border-2 border-dashed border-slate-800 bg-slate-950 flex flex-col items-center justify-center text-slate-500 shrink-0">
+                        <ImageIcon className="w-6 h-6" />
+                        <span className="text-[9px] mt-1 font-mono">Sin logo</span>
+                      </div>
+                    )}
+
+                    <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors">
+                      <Upload className="w-3.5 h-3.5 text-sky-400" />
+                      <span>{logoBase64 ? 'Cambiar Logotipo' : 'Subir Logotipo (PNG / SVG)'}</span>
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                        onChange={handleLogoChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* Bloque 2: Identidad & Validación Fiscal Mayorista */}
                 <div className="space-y-4">
                   <div className="border-b border-slate-800 pb-2">
                     <h3 className="font-bold text-sm text-white flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-sky-400" />
-                      Identidad Corporativa & Subdominio
+                      Identidad Corporativa & Validación Mayorista
                     </h3>
                   </div>
 
@@ -322,6 +401,28 @@ export default function RegisterTenantView() {
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        RUC / NIT / Identificación Tributaria *
+                      </label>
+                      <div className="relative">
+                        <FileText className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
+                        <input
+                          type="text"
+                          required
+                          value={taxId}
+                          onChange={(e) => setTaxId(e.target.value)}
+                          placeholder="Ej. 20123456789 o 900.123.456-7"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white uppercase font-mono focus:border-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Confirma que tu empresa es fabricante o distribuidor mayorista formal.
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
                         Subdominio en tenddy.shop *
                       </label>
                       <div className="flex items-center">
@@ -338,33 +439,33 @@ export default function RegisterTenantView() {
                         </span>
                       </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Sector / Industria Principal *
-                    </label>
-                    <select
-                      value={industryType}
-                      onChange={(e) => setIndustryType(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                    >
-                      <option value="plastics">Plásticos & Empaques Industriales (PET, PEAD, Tapas)</option>
-                      <option value="confectionery">Alimentos, Confitería & Chocolatería Mayorista</option>
-                      <option value="cosmetics">Cosmética, Químicos & Envases Especializados</option>
-                      <option value="textiles">Textil, Dotaciones & Confección al por mayor</option>
-                      <option value="hardware">Ferretería, Metalmecánica & Construcción</option>
-                      <option value="general">Distribución Mayorista / Manufactura General</option>
-                    </select>
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                        Sector / Industria Principal *
+                      </label>
+                      <select
+                        value={industryType}
+                        onChange={(e) => setIndustryType(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                      >
+                        <option value="plastics">Plásticos & Empaques Industriales (PET, PEAD, Tapas)</option>
+                        <option value="confectionery">Alimentos, Confitería & Chocolatería Mayorista</option>
+                        <option value="cosmetics">Cosmética, Químicos & Envases Especializados</option>
+                        <option value="textiles">Textil, Dotaciones & Confección al por mayor</option>
+                        <option value="hardware">Ferretería, Metalmecánica & Construcción</option>
+                        <option value="general">Distribución Mayorista / Manufactura General</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
 
-                {/* Bloque 2: Contacto & Operación */}
+                {/* Bloque 3: Contacto & Operación (Un solo campo para Dirección) */}
                 <div className="space-y-4">
                   <div className="border-b border-slate-800 pb-2">
                     <h3 className="font-bold text-sm text-white flex items-center gap-2">
                       <Phone className="w-4 h-4 text-emerald-400" />
-                      Canal Comercial de Cotización
+                      Canal Comercial & Sede Principal
                     </h3>
                   </div>
 
@@ -388,37 +489,27 @@ export default function RegisterTenantView() {
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        Ciudad de la Sede / Planta *
+                        Dirección de Planta o Sede Principal *
                       </label>
-                      <input
-                        type="text"
-                        required
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        placeholder="Ej. Bogotá, Lima, Medellín..."
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Dirección de Planta o Despacho Principal
-                    </label>
-                    <div className="relative">
-                      <MapPin className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
-                      <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        placeholder="Ej. Zona Industrial Calle 15 # 45-20"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                      />
+                      <div className="relative">
+                        <MapPin className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
+                        <input
+                          type="text"
+                          required
+                          value={address}
+                          onChange={(e) => setAddress(e.target.value)}
+                          placeholder="Ej. Calle 15 # 45-20, Zona Industrial"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
+                        />
+                      </div>
+                      <span className="text-[10px] text-slate-500 mt-1 block">
+                        Ubicación física para despachos o retiro en fábrica.
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Bloque 3: Color de Marca */}
+                {/* Bloque 4: Color de Marca */}
                 <div className="space-y-4">
                   <div className="border-b border-slate-800 pb-2">
                     <h3 className="font-bold text-sm text-white flex items-center gap-2">
@@ -453,7 +544,7 @@ export default function RegisterTenantView() {
 
                 <button
                   type="submit"
-                  disabled={loading || !slug || !companyName}
+                  disabled={loading || !slug || !companyName || !taxId || !address}
                   className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all cursor-pointer text-sm"
                 >
                   {loading ? (
