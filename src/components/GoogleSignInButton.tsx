@@ -20,7 +20,10 @@ export default function GoogleSignInButton({
   const handleGoogleLogin = async () => {
     try {
       setLoading(true);
-      const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tenddy.shop';
+      let origin = typeof window !== 'undefined' ? window.location.origin : 'https://tenddy.shop';
+      if (origin.includes('0.0.0.0')) {
+        origin = origin.replace('0.0.0.0', 'localhost').replace('https://', 'http://');
+      }
       
       // El callback siempre debe ser /auth/callback con el destino final en `next`
       const callbackUrl = new URL('/auth/callback', origin);

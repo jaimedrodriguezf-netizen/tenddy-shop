@@ -20,10 +20,22 @@ import {
 import AdminLoginModal from './AdminLoginModal';
 import SupportTicketModal from './SupportTicketModal';
 import VersionBadge from './VersionBadge';
+import { supabase } from '@/lib/supabase';
 
 export default function PlatformHomePage() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+
+  // Detección automática en caso de retorno con hash de tokens OAuth
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          window.location.href = '/registro';
+        }
+      });
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500 selection:text-white">
