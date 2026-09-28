@@ -709,41 +709,60 @@ export default function AdminDashboardView({
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                {products.map((p) => (
-                  <div
-                    key={p.id}
-                    className="bg-slate-50/60 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between text-xs hover:border-slate-300 transition-all group"
+              {products.length === 0 ? (
+                <div className="text-center py-16 text-slate-400 text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
+                    <Boxes className="w-6 h-6" />
+                  </div>
+                  <h4 className="font-bold text-slate-800 text-sm">Tu catálogo aún está vacío</h4>
+                  <p className="max-w-xs mx-auto text-slate-500">
+                    Agrega tu primer producto mayorista con sus unidades por fardo, pedido mínimo y ficha técnica.
+                  </p>
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-xl inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
                   >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="font-mono text-slate-500 text-[10px] font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                          {p.sku}
-                        </span>
-                        <button
-                          onClick={() => handleDeleteProduct(p.id)}
-                          className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
-                          title="Eliminar producto"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar Primer Producto</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+                  {products.map((p) => (
+                    <div
+                      key={p.id}
+                      className="bg-slate-50/60 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between text-xs hover:border-slate-300 transition-all group"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="font-mono text-slate-500 text-[10px] font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                            {p.sku}
+                          </span>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
+                            title="Eliminar producto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          {p.name}
+                        </h4>
+                        <p className="text-slate-500 text-[11px] mt-1 line-clamp-2 leading-relaxed">
+                          {p.description}
+                        </p>
                       </div>
 
-                      <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
-                        {p.name}
-                      </h4>
-                      <p className="text-slate-500 text-[11px] mt-1 line-clamp-2 leading-relaxed">
-                        {p.description}
-                      </p>
+                      <div className="mt-4 pt-3 border-t border-slate-200/80 flex justify-between text-[11px] font-mono text-slate-600">
+                        <span>MOQ: {p.min_order_qty} uds</span>
+                        <span>{p.units_per_package} / fardo</span>
+                      </div>
                     </div>
-
-                    <div className="mt-4 pt-3 border-t border-slate-200/80 flex justify-between text-[11px] font-mono text-slate-600">
-                      <span>MOQ: {p.min_order_qty} uds</span>
-                      <span>{p.units_per_package} / fardo</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
