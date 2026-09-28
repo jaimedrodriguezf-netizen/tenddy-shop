@@ -21,8 +21,8 @@ export default function GoogleSignInButton({
     try {
       setLoading(true);
       let origin = typeof window !== 'undefined' ? window.location.origin : 'https://tenddy.shop';
-      if (origin.includes('0.0.0.0')) {
-        origin = origin.replace('0.0.0.0', 'localhost').replace('https://', 'http://');
+      if (origin.includes('0.0.0.0') || origin.includes('127.0.0.1')) {
+        origin = process.env.NODE_ENV === 'production' ? 'https://tenddy.shop' : 'http://localhost:3000';
       }
       
       // El callback siempre debe ser /auth/callback con el destino final en `next`

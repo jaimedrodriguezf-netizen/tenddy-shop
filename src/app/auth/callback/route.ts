@@ -3,17 +3,37 @@ import { createServerClient } from '@supabase/ssr';
 import { getAdminClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 
+// Helper para calcular el origen público real detrás de proxies inversos (Hostinger, Nginx, Vercel)
+function getSafeOrigin(request: Request): string {
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  const forwardedProto = request.headers.get('x-forwarded-proto');
+  const host = forwardedHost || request.headers.get('host');
+  const proto = forwardedProto || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+
+  // Si el host interno reporta IP de bind local como 0.0.0.0 o 127.0.0.1
+  if (!host || host.includes('0.0.0.0') || host.includes('127.0.0.1')) {
+    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tenddy.shop';
+    if (process.env.NODE_ENV === 'production' || !host) {
+      return `https://${rootDomain}`;
+    }
+    return 'http://localhost:3000';
+  }
+
+  // En producción con dominios tenddy.shop o vercel siempre forzar HTTPS
+  if (host.includes('tenddy.shop') || host.includes('vercel.app')) {
+    return `https://${host}`;
+  }
+
+  return `${proto}://${host}`;
+}
+
 // Manejador del intercambio de código OAuth de Supabase (PKCE Flow)
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
   const next = url.searchParams.get('next') || '/';
 
-  // Normalizar origin para evitar 0.0.0.0 o esquemas caídos en localhost
-  let safeOrigin = url.origin;
-  if (safeOrigin.includes('0.0.0.0')) {
-    safeOrigin = safeOrigin.replace('0.0.0.0', 'localhost').replace('https://', 'http://');
-  }
+  const safeOrigin = getSafeOrigin(request);
 
   if (code) {
     const cookieStore = await cookies();
