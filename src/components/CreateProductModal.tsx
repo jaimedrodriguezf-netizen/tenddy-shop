@@ -1,8 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Plus, X, Package, Check, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Plus,
+  X,
+  Package,
+  Check,
+  AlertCircle,
+  Loader2,
+  Upload,
+  Clipboard,
+  Image as ImageIcon
+} from 'lucide-react';
 import { Tenant, Category, Product } from '@/lib/types';
+import { compressImage } from '@/lib/image-compressor';
 
 interface CreateProductModalProps {
   isOpen: boolean;
@@ -25,24 +36,104 @@ export default function CreateProductModal({
   const [sku, setSku] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
   const [description, setDescription] = useState('');
-  const [minOrderQty, setMinOrderQty] = useState(500);
-  const [unitsPerPackage, setUnitsPerPackage] = useState(100);
+  const [minOrderQty, setMinOrderQty] = useState(100);
+  const [unitsPerPackage, setUnitsPerPackage] = useState(50);
+  const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
+  const [compressingImage, setCompressingImage] = useState(false);
 
-  // Atributos dinámicos
-  const [attr1, setAttr1] = useState(isPlastics ? '500 ml' : 'Chocolate de Leche');
-  const [attr2, setAttr2] = useState(isPlastics ? '28mm PCO 1881' : '18 Meses');
-  const [attr3, setAttr3] = useState(isPlastics ? '24 gramos' : 'Bolsa x 12 uds');
-  const [attrMaterial, setAttrMaterial] = useState(isPlastics ? 'PET 100% Virgen' : 'Fino de Aroma 42%');
+  // Atributos dinámicos adaptados según industria o generales
+  const [attr1, setAttr1] = useState(isPlastics ? '500 ml' : 'Caja x 24 unidades');
+  const [attr2, setAttr2] = useState(isPlastics ? '28mm PCO 1881' : 'Estándar');
+  const [attr3, setAttr3] = useState(isPlastics ? '24 gramos' : 'Bulto Termoencogible');
+  const [attrMaterial, setAttrMaterial] = useState(isPlastics ? 'PET 100% Virgen' : 'Calidad Mayorista');
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const processImageFile = async (file: File) => {
+    try {
+      setCompressingImage(true);
+      // Comprime fotos pesadas de smartphones (hasta 15MB) a ~200KB WebP de alta fidelidad
+      const compressed = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.85,
+        outputFormat: 'image/webp',
+      });
+      setProductImageBase64(compressed);
+    } catch (err) {
+      console.error('Error comprimiendo imagen:', err);
+    } finally {
+      setCompressingImage(false);
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent | ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        const blob = item.getAsFile();
+        if (blob) {
+          processImageFile(blob);
+          if (typeof e.preventDefault === 'function') {
+            e.preventDefault();
+          }
+          break;
+        }
+      }
+    }
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find((t) => t.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const file = new File([blob], 'producto.png', { type: imageType });
+            processImageFile(file);
+            return;
+          }
+        }
+        alert('No se detectó ninguna imagen en el portapapeles. Copia una imagen primero.');
+      } else {
+        alert('Presiona Ctrl + V en tu teclado para pegar la foto del producto.');
+      }
+    } catch {
+      alert('Presiona Ctrl + V en tu teclado para pegar la foto directamente.');
+    }
+  };
+
+  // Escuchar pegado global cuando el modal está abierto
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const globalPasteListener = (e: ClipboardEvent) => {
+      handlePaste(e);
+    };
+
+    window.addEventListener('paste', globalPasteListener);
+    return () => {
+      window.removeEventListener('paste', globalPasteListener);
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !sku) {
-      setErrorMsg('Nombre y SKU son requeridos');
+      setErrorMsg('El nombre y el SKU/Código son requeridos');
       return;
     }
 
@@ -57,10 +148,10 @@ export default function CreateProductModal({
           material: attrMaterial,
         }
       : {
-          sabor: attr1,
-          vida_util: attr2,
-          presentacion: attr3,
-          tipo: attrMaterial,
+          presentacion: attr1,
+          variante: attr2,
+          empaque: attr3,
+          material: attrMaterial,
         };
 
     try {
@@ -70,13 +161,13 @@ export default function CreateProductModal({
         body: JSON.stringify({
           tenant_id: tenant.id,
           category_id: categoryId || null,
-          name,
-          sku,
-          description,
-          min_order_qty: minOrderQty,
-          units_per_package: unitsPerPackage,
+          name: name.trim(),
+          sku: sku.trim().toUpperCase(),
+          description: description ? description.trim() : null,
+          min_order_qty: Number(minOrderQty) || 1,
+          units_per_package: Number(unitsPerPackage) || 1,
           attributes: { specs, badge: 'Nuevo' },
-          images: [isPlastics ? '/assets/products/ayme-001.svg' : '/assets/products/ayme-006.svg'],
+          imageData: productImageBase64,
         }),
       });
 
@@ -87,8 +178,9 @@ export default function CreateProductModal({
 
       onProductCreated(data.product);
       onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error de conexión');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error de conexión';
+      setErrorMsg(msg);
     } finally {
       setLoading(false);
     }
@@ -96,16 +188,19 @@ export default function CreateProductModal({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div onClick={onClose} className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" />
+      <div onClick={onClose} className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs" />
 
-      <div className="min-h-full flex items-center justify-center p-4">
-        <div className="relative w-full max-w-xl bg-white border border-slate-200 rounded-3xl p-7 text-slate-900 shadow-xl z-10 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+      <div className="min-h-full flex items-center justify-center p-3 sm:p-4">
+        <div
+          onPaste={handlePaste}
+          className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 text-slate-900 shadow-2xl z-10 space-y-5"
+        >
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div>
               <h3 className="font-extrabold text-base text-slate-900">Agregar Nueva Referencia</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Ingresa los datos técnicos y empaque para tus clientes mayoristas.</p>
+              <p className="text-xs text-slate-500 mt-0.5">Ingresa la foto, datos técnicos y empaque para tus clientes mayoristas.</p>
             </div>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -118,15 +213,77 @@ export default function CreateProductModal({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="col-span-2">
+            {/* Foto del Producto (Subir o Pegar) */}
+            <div className="space-y-2 p-3 bg-slate-50 border border-slate-200/80 rounded-2xl">
+              <label className="block text-slate-800 font-bold text-xs">
+                Foto del Producto
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <label className="flex items-center gap-2 px-3.5 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer transition-colors text-xs font-semibold shadow-xs">
+                  {compressingImage ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5 text-slate-500" />
+                  )}
+                  <span>
+                    {compressingImage
+                      ? 'Optimizando foto...'
+                      : productImageBase64
+                      ? 'Cambiar Foto'
+                      : 'Subir Foto'}
+                  </span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageChange}
+                    className="hidden"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  disabled={compressingImage}
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer transition-colors text-xs font-semibold disabled:opacity-50"
+                  title="Pegar imagen del portapapeles"
+                >
+                  <Clipboard className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Pegar Foto (Ctrl + V)</span>
+                </button>
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                Sube la foto del producto o presiona <strong>Ctrl + V</strong>. La imagen se optimiza y comprime automáticamente para carga ultra-rápida.
+              </p>
+
+              {productImageBase64 && (
+                <div className="relative mt-2 w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-white p-1.5 shadow-sm group flex items-center justify-center">
+                  <img src={productImageBase64} alt="Producto preview" className="w-full h-full object-contain" />
+                  <button
+                    type="button"
+                    onClick={() => setProductImageBase64(null)}
+                    className="absolute top-1.5 right-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-1 shadow-md transition-colors cursor-pointer"
+                    title="Quitar foto"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  <span className="absolute bottom-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                    Lista
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="sm:col-span-2">
                 <label className="block text-slate-700 mb-1 font-semibold">Nombre del Producto *</label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder={isPlastics ? 'Botella Cilíndrica 1 Litro' : 'Caja Bombones Surtidos'}
+                  placeholder={isPlastics ? 'Botella Cilíndrica 1 Litro' : 'Nombre de tu producto mayorista'}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
                 />
               </div>
@@ -137,13 +294,13 @@ export default function CreateProductModal({
                   required
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
-                  placeholder="PET-1000"
+                  placeholder="COD-001"
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 font-mono uppercase focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-slate-700 mb-1 font-semibold">Categoría</label>
                 <select
@@ -168,7 +325,7 @@ export default function CreateProductModal({
                 />
               </div>
               <div>
-                <label className="block text-slate-700 mb-1 font-semibold">Uds por Fardo / Caja</label>
+                <label className="block text-slate-700 mb-1 font-semibold">Uds por Bulto / Caja</label>
                 <input
                   type="number"
                   required
@@ -186,7 +343,7 @@ export default function CreateProductModal({
                 rows={2}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Detalles sobre acabado, inocuidad o aplicaciones..."
+                placeholder="Detalles sobre presentación, empaque o características clave..."
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all resize-none"
               />
             </div>
@@ -194,12 +351,12 @@ export default function CreateProductModal({
             {/* Atributos Específicos */}
             <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2.5">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block">
-                {isPlastics ? 'Especificaciones de Fabricación' : 'Especificaciones de Alimento'}
+                {isPlastics ? 'Especificaciones de Fabricación' : 'Especificaciones y Presentación'}
               </span>
 
-              <div className="grid grid-cols-2 gap-2.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div>
-                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Capacidad (ml/oz)' : 'Sabor / Variedad'}</label>
+                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Capacidad (ml/oz)' : 'Presentación / Tamaño'}</label>
                   <input
                     type="text"
                     value={attr1}
@@ -208,7 +365,7 @@ export default function CreateProductModal({
                   />
                 </div>
                 <div>
-                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Boca / Rosca' : 'Vida Útil'}</label>
+                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Boca / Rosca' : 'Variante / Color'}</label>
                   <input
                     type="text"
                     value={attr2}
@@ -217,7 +374,7 @@ export default function CreateProductModal({
                   />
                 </div>
                 <div>
-                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Gramaje Preforma' : 'Presentación'}</label>
+                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Gramaje Preforma' : 'Empaque / Despacho'}</label>
                   <input
                     type="text"
                     value={attr3}
@@ -226,7 +383,7 @@ export default function CreateProductModal({
                   />
                 </div>
                 <div>
-                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Material / Resina' : 'Tipo / Registro'}</label>
+                  <label className="text-slate-600 text-[11px] font-medium">{isPlastics ? 'Material / Resina' : 'Material / Composición'}</label>
                   <input
                     type="text"
                     value={attrMaterial}
@@ -241,17 +398,26 @@ export default function CreateProductModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-xl text-slate-700 font-semibold cursor-pointer transition-colors"
+                className="px-4 py-2 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="px-5 py-2 bg-slate-900 hover:bg-slate-800 rounded-xl text-white font-bold flex items-center gap-1.5 shadow-sm cursor-pointer transition-all"
+                disabled={loading || !name.trim() || !sku.trim()}
+                className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                <span>Guardar Producto</span>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Guardando y subiendo foto...</span>
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Guardar Producto</span>
+                  </>
+                )}
               </button>
             </div>
           </form>

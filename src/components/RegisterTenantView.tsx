@@ -22,6 +22,7 @@ import {
   FileText
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { compressImage } from '@/lib/image-compressor';
 import GoogleSignInButton from './GoogleSignInButton';
 
 export default function RegisterTenantView() {
@@ -68,20 +69,25 @@ export default function RegisterTenantView() {
       .slice(0, 30);
   };
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 3 * 1024 * 1024) {
-      alert('El logotipo no debe superar los 3 MB.');
-      return;
+    try {
+      const compressed = await compressImage(file, {
+        maxWidth: 800,
+        maxHeight: 800,
+        quality: 0.9,
+        outputFormat: 'image/webp',
+      });
+      setLogoBase64(compressed);
+    } catch {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleSignOut = async () => {

@@ -14,6 +14,7 @@ import {
   Clipboard
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { compressImage } from '@/lib/image-compressor';
 
 interface SupportTicketModalProps {
   isOpen: boolean;
@@ -41,6 +42,7 @@ export default function SupportTicketModal({
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('technical');
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [compressingImage, setCompressingImage] = useState(false);
   const [showEditContact, setShowEditContact] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -92,17 +94,21 @@ export default function SupportTicketModal({
     }
   }, [isOpen, defaultName, defaultPhone, defaultEmail, shopName, subject]);
 
-  const processImageFile = (file: File) => {
-    if (file.size > 4 * 1024 * 1024) {
-      alert('La imagen no debe superar los 4 MB.');
-      return;
+  const processImageFile = async (file: File) => {
+    try {
+      setCompressingImage(true);
+      const compressed = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.82,
+        outputFormat: 'image/webp',
+      });
+      setImageBase64(compressed);
+    } catch (err) {
+      console.error('Error comprimiendo captura:', err);
+    } finally {
+      setCompressingImage(false);
     }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImageBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {

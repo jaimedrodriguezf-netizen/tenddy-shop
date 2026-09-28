@@ -43,6 +43,43 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
+    // 2. Procesar y subir imagen a Supabase Storage si se envió base64
+    let finalImages: string[] = Array.isArray(images) && images.length > 0 ? images : [];
+    if (body.imageData && typeof body.imageData === 'string' && body.imageData.startsWith('data:image')) {
+      try {
+        const matches = body.imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1];
+          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+          const buffer = Buffer.from(matches[2], 'base64');
+          const cleanSku = sku.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const filePath = `products/${tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
+
+          const { error: uploadErr } = await admin.storage
+            .from('support-attachments')
+            .upload(filePath, buffer, {
+              contentType: mimeType,
+              upsert: true,
+            });
+
+          if (!uploadErr) {
+            const { data: pubData } = admin.storage
+              .from('support-attachments')
+              .getPublicUrl(filePath);
+            if (pubData?.publicUrl) {
+              finalImages = [pubData.publicUrl];
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error subiendo imagen de producto a Storage:', err);
+      }
+    }
+
+    if (finalImages.length === 0) {
+      finalImages = ['/assets/products/ayme-001.svg'];
+    }
+
     const { data: product, error } = await admin
       .from('products')
       .insert({
@@ -55,7 +92,7 @@ export async function POST(request: Request) {
         min_order_qty: Number(min_order_qty) || 1,
         units_per_package: Number(units_per_package) || 1,
         attributes: attributes || {},
-        images: images && images.length > 0 ? images : ['/assets/products/ayme-001.svg'],
+        images: finalImages,
         price_tiers: price_tiers || [],
         is_active: true,
       })
