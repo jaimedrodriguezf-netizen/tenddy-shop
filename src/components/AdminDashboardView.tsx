@@ -19,12 +19,14 @@ import {
   Eye,
   Menu,
   X,
-  MapPin
+  MapPin,
+  LifeBuoy
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
 import AppearanceTab from './AppearanceTab';
 import TeamTab, { TenantMember } from './TeamTab';
+import SupportTicketModal from './SupportTicketModal';
 import VersionBadge from './VersionBadge';
 
 interface QuoteItem {
@@ -82,6 +84,7 @@ export default function AdminDashboardView({
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
   // Métricas
   const totalQuotes = quotes.length;
@@ -268,8 +271,21 @@ export default function AdminDashboardView({
 
       <div className="pt-4 border-t border-slate-100 space-y-1">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
-          Canal de Venta
+          Asistencia & Soporte
         </span>
+
+        <button
+          onClick={() => {
+            setIsSupportModalOpen(true);
+            setIsMobileSidebarOpen(false);
+          }}
+          className="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-2.5">
+            <LifeBuoy className="w-4 h-4 text-amber-500" />
+            <span>Mesa de Ayuda & Soporte</span>
+          </div>
+        </button>
 
         <Link
           href={`/store/${tenant.slug}`}
@@ -295,6 +311,14 @@ export default function AdminDashboardView({
         tenant={tenant}
         categories={categories}
         onProductCreated={(newProd) => setProducts((prev) => [newProd, ...prev])}
+      />
+
+      {/* Modal de Soporte Técnico y Mesa de Ayuda */}
+      <SupportTicketModal
+        isOpen={isSupportModalOpen}
+        onClose={() => setIsSupportModalOpen(false)}
+        tenantId={tenant.id}
+        shopName={tenant.name}
       />
 
       {/* =========================================================================
@@ -422,6 +446,16 @@ export default function AdminDashboardView({
                 <span className="sm:hidden">Nuevo</span>
               </button>
             )}
+
+            {/* Botón Soporte Técnico Directo */}
+            <button
+              onClick={() => setIsSupportModalOpen(true)}
+              className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Abrir mesa de ayuda y soporte técnico con captura de pantalla"
+            >
+              <LifeBuoy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span className="hidden sm:inline">Soporte</span>
+            </button>
 
             <Link
               href={`/store/${tenant.slug}`}
