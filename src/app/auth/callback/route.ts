@@ -40,7 +40,35 @@ export async function GET(request: Request) {
 
       const admin = getAdminClient();
 
-      // 1. Si el destino es un panel administrativo de tienda (/store/[shopSlug]/admin)
+      // 1. Si el destino es /admin (Acceso inteligente automático desde el botón Admin)
+      // Detectar automáticamente a qué tienda pertenece este usuario en tenant_members
+      if (email && (next === '/admin' || next.startsWith('/admin'))) {
+        const { data: userMemberships } = await admin
+          .from('tenant_members')
+          .select('id, role, is_active, tenant_id, tenants(id, slug, name, is_active)')
+          .eq('email', email)
+          .eq('is_active', true);
+
+        if (userMemberships && userMemberships.length > 0) {
+          // Tomar la primera tienda asignada activa
+          const targetStore = (userMemberships[0] as unknown as { tenants: { slug: string; name: string } })?.tenants;
+          if (targetStore && targetStore.slug) {
+            cookieStore.set(`admin_session_${targetStore.slug}`, 'authenticated', {
+              httpOnly: true,
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: 'lax',
+              maxAge: 60 * 60 * 24 * 7,
+              path: '/',
+            });
+            return NextResponse.redirect(`${origin}/store/${targetStore.slug}/admin`);
+          }
+        }
+
+        // Si no tiene ninguna tienda asignada, llevarlo al Onboarding (/registro) para crearla
+        return NextResponse.redirect(`${origin}/registro`);
+      }
+
+      // 2. Si el destino es un panel administrativo de tienda específico (/store/[shopSlug]/admin)
       // Verificar si el usuario autenticado con Google es un miembro activo registrado de esa tienda
       if (next.startsWith('/store/') && next.includes('/admin')) {
         const slugMatch = next.match(/\/store\/([^/]+)\/admin/);
@@ -75,7 +103,7 @@ export async function GET(request: Request) {
         }
       }
 
-      // 2. Si es un comprador B2B, registrar o vincular en b2b_accounts automáticamente
+      // 3. Si es un comprador B2B, registrar o vincular en b2b_accounts automáticamente
       if (email) {
         const { data: existingAccount } = await admin
           .from('b2b_accounts')
@@ -93,7 +121,7 @@ export async function GET(request: Request) {
         }
       }
 
-      // 3. Establecer cookie de sesión de comprador B2B
+      // 4. Establecer cookie de sesión de comprador B2B
       cookieStore.set('tenddy_b2b_user', JSON.stringify({ email, name: fullName }), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
