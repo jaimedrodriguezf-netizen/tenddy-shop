@@ -429,7 +429,7 @@ export default function AdminDashboardView({
               className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors flex items-center gap-1"
             >
               <Store className="w-3.5 h-3.5 text-slate-400 sm:hidden" />
-              <span className="hidden sm:inline">{tenant.slug}.tenddy.shop</span>
+              <span className="hidden sm:inline">{tenant.slug}.tenddy</span>
               <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400" />
             </Link>
           </div>

@@ -602,7 +602,7 @@ export default function TenantLandingView({
           <div>
             <div className="text-white font-bold text-base mb-1">{tenant.name}</div>
             <p className="text-slate-500">
-              © {new Date().getFullYear()} Todos los derechos reservados. Plataforma B2B impulsada por tenddy-shop.
+              © {new Date().getFullYear()} Todos los derechos reservados. Plataforma B2B impulsada por tenddy.
             </p>
           </div>
           <div className="flex items-center gap-6">

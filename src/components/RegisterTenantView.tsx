@@ -31,7 +31,6 @@ export default function RegisterTenantView() {
   const [companyName, setCompanyName] = useState('');
   const [taxId, setTaxId] = useState('');
   const [slug, setSlug] = useState('');
-  const [industryType, setIndustryType] = useState('plastics');
   const [address, setAddress] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#0284c7');
@@ -125,7 +124,6 @@ export default function RegisterTenantView() {
           companyName,
           slug,
           taxId: taxId.trim(),
-          industryType,
           address: address.trim(),
           whatsapp,
           logoData: logoBase64,
@@ -197,8 +195,8 @@ export default function RegisterTenantView() {
 
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 max-w-md mx-auto text-left space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Tu Dominio Oficial:</span>
-                <span className="text-sky-400 font-bold">{successData.slug}.tenddy.shop</span>
+                <span className="text-slate-400">Tu Identificador Oficial:</span>
+                <span className="text-sky-400 font-bold">{successData.slug}.tenddy</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
                 <span className="text-slate-400">Ruta Directa:</span>
@@ -420,42 +418,22 @@ export default function RegisterTenantView() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        Subdominio en tenddy.shop *
-                      </label>
-                      <div className="flex items-center">
-                        <input
-                          type="text"
-                          required
-                          value={slug}
-                          onChange={(e) => setSlug(formatSlug(e.target.value))}
-                          placeholder="miempresa"
-                          className="w-full bg-slate-950 border border-slate-700 rounded-l-xl px-3.5 py-2.5 text-xs text-sky-400 font-mono focus:border-sky-500 focus:outline-none text-right"
-                        />
-                        <span className="bg-slate-800 border border-l-0 border-slate-700 text-slate-400 text-xs px-3.5 py-2.5 rounded-r-xl font-mono">
-                          .tenddy.shop
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        Sector / Industria Principal *
-                      </label>
-                      <select
-                        value={industryType}
-                        onChange={(e) => setIndustryType(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                      >
-                        <option value="plastics">Plásticos & Empaques Industriales (PET, PEAD, Tapas)</option>
-                        <option value="confectionery">Alimentos, Confitería & Chocolatería Mayorista</option>
-                        <option value="cosmetics">Cosmética, Químicos & Envases Especializados</option>
-                        <option value="textiles">Textil, Dotaciones & Confección al por mayor</option>
-                        <option value="hardware">Ferretería, Metalmecánica & Construcción</option>
-                        <option value="general">Distribución Mayorista / Manufactura General</option>
-                      </select>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
+                      Subdominio en tenddy *
+                    </label>
+                    <div className="flex items-center">
+                      <input
+                        type="text"
+                        required
+                        value={slug}
+                        onChange={(e) => setSlug(formatSlug(e.target.value))}
+                        placeholder="miempresa"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-l-xl px-3.5 py-2.5 text-xs text-sky-400 font-mono focus:border-sky-500 focus:outline-none text-right"
+                      />
+                      <span className="bg-slate-800 border border-l-0 border-slate-700 text-slate-400 text-xs px-3.5 py-2.5 rounded-r-xl font-mono">
+                        .tenddy
+                      </span>
                     </div>
                   </div>
                 </div>

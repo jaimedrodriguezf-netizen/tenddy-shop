@@ -185,7 +185,7 @@ export default function PlatformHomePage() {
                 <span className="text-[11px] sm:text-xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded">
                   Industria del Plástico & Empaques
                 </span>
-                <span className="text-[11px] text-slate-500 font-mono">ayme.tenddy.shop</span>
+                <span className="text-[11px] text-slate-500 font-mono">ayme.tenddy</span>
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-white mb-1.5 sm:mb-2">AYME INDUSTRIAS PET</h3>
               <p className="text-xs text-slate-400 leading-relaxed mb-4">
@@ -217,7 +217,7 @@ export default function PlatformHomePage() {
                 <span className="text-[11px] sm:text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded">
                   Confitería & Alimentos Mayoristas
                 </span>
-                <span className="text-[11px] text-slate-500 font-mono">dulcelandia.tenddy.shop</span>
+                <span className="text-[11px] text-slate-500 font-mono">dulcelandia.tenddy</span>
               </div>
               <h3 className="text-lg sm:text-xl font-bold text-white mb-1.5 sm:mb-2">Dulcelandia Chocolates & Gomitas</h3>
               <p className="text-xs text-slate-400 leading-relaxed mb-4">

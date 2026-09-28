@@ -41,9 +41,9 @@ export async function POST(request: Request) {
     }
 
     // Validaciones
-    if (!companyName || !slug || !whatsapp || !industryType) {
+    if (!companyName || !slug || !whatsapp) {
       return NextResponse.json(
-        { error: 'Empresa, subdominio, WhatsApp e industria son requeridos.' },
+        { error: 'Empresa, subdominio y WhatsApp son requeridos.' },
         { status: 400 }
       );
     }
@@ -89,8 +89,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Definir theming y copys según la industria
-    const color = primaryColor || (industryType === 'confectionery' ? '#e11d48' : '#0284c7');
+    // 2. Definir theming y copys base
+    const color = primaryColor || '#0284c7';
+    const effectiveIndustry = industryType || 'general';
     const heroTitle = `Catálogo Mayorista de ${companyName}`;
     const heroSubtitle = `Fabricación y distribución B2B directa con entregas a nivel nacional e internacional.`;
 
@@ -131,7 +132,7 @@ export async function POST(request: Request) {
         slug: cleanSlug,
         name: companyName.trim(),
         tax_id: taxId ? taxId.trim().toUpperCase() : null,
-        industry_type: industryType,
+        industry_type: effectiveIndustry,
         logo_url: finalLogoUrl,
         theme_config: {
           primary_color: color,
@@ -200,31 +201,16 @@ export async function POST(request: Request) {
       is_active: true,
     });
 
-    // 6. Crear Categorías Iniciales Base
-    const defaultCategories = industryType === 'plastics'
-      ? [
-          { slug: 'botellas', name: 'Botellas & Envases' },
-          { slug: 'tapas', name: 'Tapas & Accesorios' },
-        ]
-      : industryType === 'confectionery'
-      ? [
-          { slug: 'dulces', name: 'Caramelos & Golosinas' },
-          { slug: 'chocolates', name: 'Chocolates & Coberturas' },
-        ]
-      : [
-          { slug: 'linea-estandar', name: 'Línea Estándar' },
-          { slug: 'linea-especial', name: 'Línea Especial / Mayorista' },
-        ];
-
-    await admin.from('categories').insert(
-      defaultCategories.map((c, i) => ({
+    // 6. Crear Categoría Inicial Base Universal
+    await admin.from('categories').insert([
+      {
         tenant_id: tenant.id,
-        slug: c.slug,
-        name: c.name,
-        sort_order: i,
+        slug: 'general',
+        name: 'Catálogo General',
+        sort_order: 0,
         is_active: true,
-      }))
-    );
+      },
+    ]);
 
     // 7. Si viene email del creador autenticado con Google, registrarlo como Dueño (Owner)
     if (email) {
