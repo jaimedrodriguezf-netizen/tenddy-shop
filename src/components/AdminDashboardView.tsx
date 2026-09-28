@@ -319,6 +319,9 @@ export default function AdminDashboardView({
         onClose={() => setIsSupportModalOpen(false)}
         tenantId={tenant.id}
         shopName={tenant.name}
+        defaultName={initialMembers[0]?.full_name || tenant.name}
+        defaultPhone={tenant.landing_config?.whatsapp_default || branches[0]?.phone_whatsapp || initialMembers[0]?.phone || ''}
+        defaultEmail={initialMembers[0]?.email || tenant.landing_config?.email || ''}
       />
 
       {/* =========================================================================

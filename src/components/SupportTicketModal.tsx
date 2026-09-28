@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LifeBuoy,
   X,
@@ -9,14 +9,19 @@ import {
   AlertCircle,
   CheckCircle,
   Loader2,
-  Image as ImageIcon
+  User,
+  Edit2
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 interface SupportTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   tenantId?: string;
   shopName?: string;
+  defaultName?: string;
+  defaultPhone?: string;
+  defaultEmail?: string;
 }
 
 export default function SupportTicketModal({
@@ -24,18 +29,67 @@ export default function SupportTicketModal({
   onClose,
   tenantId,
   shopName,
+  defaultName = '',
+  defaultPhone = '',
+  defaultEmail = '',
 }: SupportTicketModalProps) {
-  const [senderName, setSenderName] = useState('');
-  const [senderPhone, setSenderPhone] = useState('');
-  const [senderEmail, setSenderEmail] = useState('');
-  const [subject, setSubject] = useState('');
+  const [senderName, setSenderName] = useState(defaultName);
+  const [senderPhone, setSenderPhone] = useState(defaultPhone);
+  const [senderEmail, setSenderEmail] = useState(defaultEmail);
+  const [subject, setSubject] = useState(shopName ? `Soporte para ${shopName}` : '');
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('technical');
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [showEditContact, setShowEditContact] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdTicket, setCreatedTicket] = useState<{ ticket_number: string } | null>(null);
+
+  // Auto-llenar datos del usuario autenticado o props
+  useEffect(() => {
+    async function prefill() {
+      let name = defaultName;
+      let phone = defaultPhone;
+      let email = defaultEmail;
+
+      if (shopName && !subject) {
+        setSubject(`Requerimiento de ${shopName}`);
+      }
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          if (!name) {
+            name = user.user_metadata?.full_name || user.email?.split('@')[0] || '';
+          }
+          if (!email && user.email) {
+            email = user.email;
+          }
+          if (!phone && user.phone) {
+            phone = user.phone;
+          }
+        }
+      } catch (e) {
+        // Ignorar si no hay sesión activa
+      }
+
+      if (name) setSenderName(name);
+      if (phone) setSenderPhone(phone);
+      if (email) setSenderEmail(email);
+
+      // Si ya tenemos nombre o teléfono, ocultar los campos repetitivos
+      if (name || phone) {
+        setShowEditContact(false);
+      } else {
+        setShowEditContact(true);
+      }
+    }
+
+    if (isOpen) {
+      prefill();
+    }
+  }, [isOpen, defaultName, defaultPhone, defaultEmail, shopName]);
 
   if (!isOpen) return null;
 
@@ -60,16 +114,19 @@ export default function SupportTicketModal({
     setLoading(true);
     setErrorMsg(null);
 
+    const finalName = senderName.trim() || shopName || 'Titular de Tienda';
+    const finalPhone = senderPhone.trim() || 'WhatsApp Registrado';
+
     try {
       const res = await fetch('/api/support', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sender_name: senderName,
-          sender_phone: senderPhone,
-          sender_email: senderEmail,
-          subject: subject || `Soporte de ${shopName || 'tenddy.shop'}`,
-          message,
+          sender_name: finalName,
+          sender_phone: finalPhone,
+          sender_email: senderEmail ? senderEmail.trim().toLowerCase() : null,
+          subject: subject.trim() || `Soporte de ${shopName || 'tenddy'}`,
+          message: message.trim(),
           category,
           image_data: imageBase64,
           tenant_id: tenantId || null,
@@ -80,8 +137,9 @@ export default function SupportTicketModal({
       if (!res.ok) throw new Error(data.error || 'Error al enviar ticket');
 
       setCreatedTicket({ ticket_number: data.ticket.ticket_number });
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Error de conexión');
+    } catch (err: unknown) {
+      const errorText = err instanceof Error ? err.message : 'Error de conexión';
+      setErrorMsg(errorText);
     } finally {
       setLoading(false);
     }
@@ -99,10 +157,10 @@ export default function SupportTicketModal({
             </div>
             <div>
               <h3 className="font-extrabold text-sm text-slate-900">Mesa de Ayuda & Soporte</h3>
-              {shopName && <p className="text-[11px] text-slate-500">Empresa: {shopName}</p>}
+              {shopName && <p className="text-[11px] text-slate-500">Tienda: {shopName}</p>}
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -131,72 +189,108 @@ export default function SupportTicketModal({
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             {errorMsg && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-2.5 rounded-xl flex items-center gap-2">
+              <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Tu Nombre *</label>
-                <input
-                  type="text"
-                  required
-                  value={senderName}
-                  onChange={(e) => setSenderName(e.target.value)}
-                  placeholder="Ej. Ing. Carlos Mendoza"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Teléfono / WhatsApp *</label>
-                <input
-                  type="tel"
-                  required
-                  value={senderPhone}
-                  onChange={(e) => setSenderPhone(e.target.value)}
-                  placeholder="0998765432"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Asunto / Resumen</label>
-                <input
-                  type="text"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Ej. Error visual en catálogo"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-slate-700 font-semibold mb-1">Tipo de Consulta</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
+            {/* Barra de Contacto Prellenada Automáticamente */}
+            {(senderName || senderPhone) && !showEditContact ? (
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    <User className="w-4 h-4 text-sky-400" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-bold text-slate-800 truncate">{senderName || shopName}</span>
+                      <span className="text-[10px] bg-emerald-50 text-emerald-600 border border-emerald-200 px-1.5 py-0.2 rounded font-semibold">
+                        Datos del Panel
+                      </span>
+                    </div>
+                    <span className="text-slate-500 font-mono text-[11px] truncate block">
+                      {senderPhone} {senderEmail ? `• ${senderEmail}` : ''}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEditContact(true)}
+                  className="text-[11px] text-sky-600 hover:text-sky-700 font-semibold flex items-center gap-1 px-2 py-1 rounded hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
                 >
-                  <option value="technical">🔧 Falla Técnica / Error</option>
-                  <option value="catalog">📦 Catálogo / Productos</option>
-                  <option value="billing">💳 Pagos / Suscripción</option>
-                  <option value="general">💬 Consulta General</option>
-                </select>
+                  <Edit2 className="w-3 h-3" />
+                  <span>Modificar</span>
+                </button>
               </div>
+            ) : null}
+
+            {/* Campos de Contacto Manuales (Visibles solo si no están prellenados o si el usuario toca "Modificar") */}
+            {showEditContact && (
+              <div className="space-y-3 p-3 bg-slate-50/60 border border-slate-200/60 rounded-2xl">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Tu Nombre *</label>
+                    <input
+                      type="text"
+                      required
+                      value={senderName}
+                      onChange={(e) => setSenderName(e.target.value)}
+                      placeholder="Ej. Carlos Mendoza"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:border-slate-900 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Teléfono / WhatsApp *</label>
+                    <input
+                      type="tel"
+                      required
+                      value={senderPhone}
+                      onChange={(e) => setSenderPhone(e.target.value)}
+                      placeholder="+573129876543"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:border-slate-900 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-1">Correo Electrónico (Opcional)</label>
+                  <input
+                    type="email"
+                    value={senderEmail}
+                    onChange={(e) => setSenderEmail(e.target.value)}
+                    placeholder="contacto@empresa.com"
+                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:border-slate-900 focus:outline-none"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Selector de Categoría / Tipo de Problema */}
+            <div>
+              <label className="block text-slate-700 font-semibold mb-1">¿Qué tipo de problema o consulta tienes?</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-medium focus:bg-white focus:border-slate-900 focus:outline-none"
+              >
+                <option value="technical">🔧 Falla Técnica / Error en pantalla</option>
+                <option value="catalog">📦 Catálogo / Carga de Productos</option>
+                <option value="billing">💳 Pagos / Plan de Suscripción</option>
+                <option value="general">💬 Consulta General / Asistencia</option>
+              </select>
             </div>
 
+            {/* Descripción del Problema */}
             <div>
-              <label className="block text-slate-700 font-semibold mb-1">Comentario o Descripción del Problema *</label>
+              <label className="block text-slate-700 font-semibold mb-1">Explica qué ocurrió o qué necesitas resolver *</label>
               <textarea
                 rows={3}
                 required
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Explica qué ocurrió, qué producto falló o qué necesitas resolver..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none resize-none"
+                placeholder="Describe el error, qué producto falló o qué necesitas ajustar..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none resize-none leading-relaxed"
               />
             </div>
 
@@ -204,9 +298,9 @@ export default function SupportTicketModal({
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Adjuntar Captura de Pantalla o Foto</label>
               <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-pointer transition-colors">
+                <label className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-pointer transition-colors">
                   <Upload className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{imageBase64 ? 'Cambiar Imagen' : 'Seleccionar Captura (PNG, JPG)'}</span>
+                  <span>{imageBase64 ? 'Cambiar Captura' : 'Subir Captura (PNG / JPG)'}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -216,16 +310,24 @@ export default function SupportTicketModal({
                 </label>
 
                 {imageBase64 && (
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-semibold">
+                  <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
                     <CheckCircle className="w-4 h-4" />
-                    <span>Captura adjuntada</span>
+                    <span>Captura lista</span>
                   </div>
                 )}
               </div>
 
               {imageBase64 && (
-                <div className="mt-2 w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                <div className="relative mt-2 w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
                   <img src={imageBase64} alt="Preview" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setImageBase64(null)}
+                    className="absolute top-1 right-1 bg-slate-900/80 text-white rounded-full p-0.5"
+                    title="Eliminar captura"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
               )}
             </div>
@@ -233,8 +335,8 @@ export default function SupportTicketModal({
             <div className="pt-2">
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                disabled={loading || !message.trim()}
+                className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer text-sm"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
