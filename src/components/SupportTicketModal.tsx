@@ -156,6 +156,29 @@ export default function SupportTicketModal({
     }
   };
 
+  // Botón explícito para pegar directamente del portapapeles
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imageType = item.types.find((t) => t.startsWith('image/'));
+          if (imageType) {
+            const blob = await item.getType(imageType);
+            const file = new File([blob], 'captura.png', { type: imageType });
+            processImageFile(file);
+            return;
+          }
+        }
+        alert('No se encontró ninguna imagen en el portapapeles. Copia o toma una captura primero.');
+      } else {
+        alert('Presiona Ctrl + V (o Cmd + V) en tu teclado para pegar la captura.');
+      }
+    } catch {
+      alert('Presiona Ctrl + V (o Cmd + V) en tu teclado para pegar la captura directamente.');
+    }
+  };
+
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -351,16 +374,17 @@ export default function SupportTicketModal({
               />
             </div>
 
-            {/* Adjuntar Imagen / Captura / Pegar con Ctrl+V */}
-            <div className="space-y-1.5">
+            {/* Dos opciones claras: Subir Archivo | Pegar Imagen */}
+            <div className="space-y-2">
               <label className="block text-slate-700 font-semibold mb-1">
-                Captura de Pantalla o Foto del Problema
+                Adjuntar Captura de Pantalla o Foto
               </label>
 
-              <div className="flex flex-wrap items-center gap-2.5">
-                <label className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-pointer transition-colors text-xs font-medium">
-                  <Upload className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{imageBase64 ? 'Cambiar Imagen' : 'Subir Archivo'}</span>
+              <div className="grid grid-cols-2 gap-2.5">
+                {/* Opción 1: Subir Archivo */}
+                <label className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer transition-colors text-xs font-semibold text-center">
+                  <Upload className="w-4 h-4 text-slate-500 shrink-0" />
+                  <span>Subir Archivo</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -369,11 +393,21 @@ export default function SupportTicketModal({
                   />
                 </label>
 
-                <div className="inline-flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 text-[11px] px-3 py-1.5 rounded-xl">
-                  <Clipboard className="w-3.5 h-3.5 text-sky-500" />
-                  <span>Tip: Puedes pegar con <strong>Ctrl + V</strong> (estilo Gemini)</span>
-                </div>
+                {/* Opción 2: Pegar Imagen */}
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer transition-colors text-xs font-semibold text-center"
+                  title="Pegar imagen copiada del portapapeles"
+                >
+                  <Clipboard className="w-4 h-4 text-sky-600 shrink-0" />
+                  <span>Pegar Imagen</span>
+                </button>
               </div>
+
+              <p className="text-[11px] text-slate-400">
+                Puedes subir un archivo o usar el botón <strong>Pegar Imagen</strong> (también funciona con <strong>Ctrl + V</strong>).
+              </p>
 
               {imageBase64 && (
                 <div className="relative mt-2 w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm group">
