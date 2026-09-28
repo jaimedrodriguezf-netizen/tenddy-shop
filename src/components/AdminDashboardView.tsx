@@ -75,14 +75,32 @@ export default function AdminDashboardView({
   initialMembers = [],
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
-  const [activeTab, setActiveTab] = useState<'quotes' | 'products' | 'team' | 'appearance'>('quotes');
+  const [activeTab, setActiveTab] = useState<'quotes' | 'products' | 'team' | 'appearance'>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam === 'products' || tabParam === 'quotes' || tabParam === 'team' || tabParam === 'appearance') {
+        return tabParam;
+      }
+      if (params.get('new') === '1' || initialProducts.length === 0) {
+        return 'products';
+      }
+    }
+    return initialProducts.length === 0 ? 'products' : 'quotes';
+  });
   const [quotes, setQuotes] = useState<QuoteRecord[]>(initialQuotes);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(quotes[0] || null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('new') === '1' || initialProducts.length === 0;
+    }
+    return initialProducts.length === 0;
+  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 

@@ -1,4 +1,7 @@
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
+import Link from 'next/link';
+import { LayoutDashboard } from 'lucide-react';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import TenantLandingView from '@/components/TenantLandingView';
 import ViewTracker from '@/components/ViewTracker';
@@ -18,11 +21,28 @@ export default async function ShopPage({ params }: ShopPageProps) {
     notFound();
   }
 
+  // Verificar si el visitante es el administrador o dueño de esta tienda
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(`admin_session_${tenant.slug}`);
+  const isSuperadminCookie = cookieStore.get('tenddy_superadmin_session');
+  const isAdmin = sessionCookie?.value === 'authenticated' || isSuperadminCookie?.value === 'authenticated';
+
   // Para AYME INDUSTRIAS PET servimos la réplica exacta en iframe 100% aislado
   if (tenant.slug === 'ayme-pet' || tenant.slug === 'plastpet') {
     return (
       <>
         <ViewTracker tenantId={tenant.id} />
+        {isAdmin && (
+          <div className="fixed top-3 right-3 z-[10000] animate-fade-in">
+            <Link
+              href={`/store/${tenant.slug}/admin`}
+              className="bg-slate-900/95 hover:bg-slate-900 text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <LayoutDashboard className="w-4 h-4 text-sky-400" />
+              <span>Volver a Mi Panel</span>
+            </Link>
+          </div>
+        )}
         <iframe
           src="/standalone.html"
           style={{
@@ -39,7 +59,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
     );
   }
 
-  // Para otros tenants (como Dulcelandia), usamos la vista modular dinámica
+  // Para otros tenants (como Dulcelandia o nuevos tenants), usamos la vista modular dinámica
   const { categories, products, branches } = await getTenantCatalog(tenant.id);
 
   return (
@@ -50,6 +70,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
         categories={categories}
         products={products}
         branches={branches}
+        isAdmin={isAdmin}
       />
     </>
   );

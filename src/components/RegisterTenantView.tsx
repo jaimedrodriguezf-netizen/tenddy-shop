@@ -134,6 +134,11 @@ export default function RegisterTenantView() {
       }
 
       setSuccessData(data);
+
+      // Redirigir automáticamente en 1.5s al panel de administración para cargar el primer producto
+      setTimeout(() => {
+        window.location.href = `${data.adminUrl}?tab=products&new=1`;
+      }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error de conexión';
       setErrorMsg(msg);
@@ -170,22 +175,26 @@ export default function RegisterTenantView() {
             <p className="text-xs text-slate-400">Verificando sesión segura...</p>
           </div>
         ) : successData ? (
-          /* Pantalla de Éxito */
+          /* Pantalla de Éxito y Redirección al Panel */
           <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl">
             <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center mx-auto text-emerald-400">
               <CheckCircle className="w-8 h-8" />
             </div>
 
-            <div>
+            <div className="space-y-2">
               <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
-                ¡Tienda Mayorista Creada con Éxito!
+                ¡Tienda Creada con Éxito!
               </span>
-              <h2 className="text-2xl md:text-3xl font-bold text-white mt-1">
+              <h2 className="text-2xl md:text-3xl font-bold text-white">
                 Bienvenido a tenddy
               </h2>
-              <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-                Tu tienda ya está lista con tu cuenta de Google vinculada como Administrador Principal.
+              <p className="text-sm text-slate-400 max-w-md mx-auto">
+                Redirigiendo a tu panel de control para que agregues tu primer producto mayorista al catálogo...
               </p>
+              <div className="flex items-center justify-center gap-2 text-xs text-sky-400 pt-2 font-mono">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Ingresando al Backoffice...</span>
+              </div>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 max-w-md mx-auto text-left space-y-2">
@@ -199,20 +208,13 @@ export default function RegisterTenantView() {
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row justify-center gap-3 pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row justify-center items-center gap-3">
               <Link
-                href={successData.redirectUrl}
-                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all"
+                href={`${successData.adminUrl}?tab=products&new=1`}
+                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all w-full sm:w-auto"
               >
-                <Globe className="w-4 h-4" />
-                Ver Mi Tienda Pública
-              </Link>
-              <Link
-                href={successData.adminUrl}
-                className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all"
-              >
-                <Lock className="w-4 h-4 text-amber-400" />
-                Entrar a Mi Panel de Control
+                <span>Ir al Panel y Cargar Mi Primer Producto</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
