@@ -5,9 +5,15 @@ import { cookies } from 'next/headers';
 
 // Manejador del intercambio de código OAuth de Supabase (PKCE Flow)
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
-  const code = searchParams.get('code');
-  const next = searchParams.get('next') || '/';
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const next = url.searchParams.get('next') || '/';
+
+  // Normalizar origin para evitar 0.0.0.0 o esquemas caídos en localhost
+  let safeOrigin = url.origin;
+  if (safeOrigin.includes('0.0.0.0')) {
+    safeOrigin = safeOrigin.replace('0.0.0.0', 'localhost').replace('https://', 'http://');
+  }
 
   if (code) {
     const cookieStore = await cookies();
@@ -60,12 +66,12 @@ export async function GET(request: Request) {
               maxAge: 60 * 60 * 24 * 7,
               path: '/',
             });
-            return NextResponse.redirect(`${origin}/store/${targetStore.slug}/admin`);
+            return NextResponse.redirect(`${safeOrigin}/store/${targetStore.slug}/admin`);
           }
         }
 
         // Si no tiene ninguna tienda asignada, llevarlo al Onboarding (/registro) para crearla
-        return NextResponse.redirect(`${origin}/registro`);
+        return NextResponse.redirect(`${safeOrigin}/registro`);
       }
 
       // 2. Si el destino es un panel administrativo de tienda específico (/store/[shopSlug]/admin)
@@ -130,12 +136,12 @@ export async function GET(request: Request) {
         path: '/',
       });
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${safeOrigin}${next}`);
     } else if (error) {
       console.error('Error intercambiando código OAuth por sesión:', error.message);
     }
   }
 
   // Si hubo error, redirigir con parámetro
-  return NextResponse.redirect(`${origin}/?auth_error=google_failed`);
+  return NextResponse.redirect(`${safeOrigin}/?auth_error=google_failed`);
 }
