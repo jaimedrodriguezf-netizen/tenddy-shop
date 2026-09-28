@@ -30,7 +30,6 @@ export default function RegisterTenantView() {
 
   const [companyName, setCompanyName] = useState('');
   const [taxId, setTaxId] = useState('');
-  const [slug, setSlug] = useState('');
   const [address, setAddress] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
   const [primaryColor, setPrimaryColor] = useState('#0284c7');
@@ -58,13 +57,6 @@ export default function RegisterTenantView() {
     loadUser();
   }, []);
 
-  const handleNameChange = (val: string) => {
-    setCompanyName(val);
-    if (!slug || slug === formatSlug(companyName)) {
-      setSlug(formatSlug(val));
-    }
-  };
-
   const formatSlug = (text: string) => {
     return text
       .toLowerCase()
@@ -72,7 +64,8 @@ export default function RegisterTenantView() {
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9]/g, '-')
       .replace(/-+/g, '-')
-      .slice(0, 25);
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 30);
   };
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -104,17 +97,19 @@ export default function RegisterTenantView() {
     }
 
     if (!taxId.trim()) {
-      setErrorMsg('El RUC / NIT es obligatorio para verificar la empresa mayorista');
+      setErrorMsg('El RUC o identificación es obligatorio');
       return;
     }
 
     if (!address.trim()) {
-      setErrorMsg('La dirección de la sede o planta es obligatoria');
+      setErrorMsg('La dirección es obligatoria');
       return;
     }
 
     setLoading(true);
     setErrorMsg(null);
+
+    const autoSlug = formatSlug(companyName);
 
     try {
       const res = await fetch('/api/tenants/register', {
@@ -122,7 +117,7 @@ export default function RegisterTenantView() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyName,
-          slug,
+          slug: autoSlug,
           taxId: taxId.trim(),
           address: address.trim(),
           whatsapp,
@@ -135,7 +130,7 @@ export default function RegisterTenantView() {
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Error al crear la tienda B2B');
+        throw new Error(data.error || 'Error al crear la tienda');
       }
 
       setSuccessData(data);
@@ -183,23 +178,23 @@ export default function RegisterTenantView() {
 
             <div>
               <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
-                ¡Plataforma B2B Creada con Éxito!
+                ¡Tienda Mayorista Creada con Éxito!
               </span>
               <h2 className="text-2xl md:text-3xl font-bold text-white mt-1">
                 Bienvenido a tenddy
               </h2>
               <p className="text-sm text-slate-400 mt-2 max-w-md mx-auto">
-                Tu tienda B2B ya está activa con tu cuenta de Google vinculada como Administrador Principal.
+                Tu tienda ya está lista con tu cuenta de Google vinculada como Administrador Principal.
               </p>
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-xl p-4 max-w-md mx-auto text-left space-y-2">
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Tu Identificador Oficial:</span>
+                <span className="text-slate-400">Identificador Asignado:</span>
                 <span className="text-sky-400 font-bold">{successData.slug}.tenddy</span>
               </div>
               <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-slate-400">Ruta Directa:</span>
+                <span className="text-slate-400">Ruta de tu Tienda:</span>
                 <span className="text-slate-300 font-bold">/store/{successData.slug}</span>
               </div>
             </div>
@@ -268,13 +263,13 @@ export default function RegisterTenantView() {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-slate-300">
                   <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Activación inmediata de subdominio propio</span>
+                  <span>Tu catálogo web se crea automáticamente</span>
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          /* PASO 2: FORMULARIO DE DATOS CORPORATIVOS TRAS ESTAR AUTENTICADO */
+          /* PASO 2: FORMULARIO ULTRA-SIMPLIFICADO DE DATOS */
           <div className="space-y-8">
             <div className="text-center space-y-2">
               <div className="inline-flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs px-3 py-1 rounded-full font-semibold uppercase tracking-wider">
@@ -285,7 +280,7 @@ export default function RegisterTenantView() {
                 Configura tu Catálogo Mayorista
               </h1>
               <p className="text-sm text-slate-400 max-w-xl mx-auto">
-                Ingresa los datos comerciales de tu fábrica para generar tu e-commerce y catálogo técnico en minutos.
+                Ingresa los datos comerciales básicos para generar tu tienda en minutos.
               </p>
             </div>
 
@@ -332,7 +327,7 @@ export default function RegisterTenantView() {
                     <div>
                       <h3 className="font-bold text-sm text-white flex items-center gap-2">
                         <ImageIcon className="w-4 h-4 text-sky-400" />
-                        Logotipo de la Empresa
+                        Logotipo de la Empresa (Opcional)
                       </h3>
                       <p className="text-[11px] text-slate-400 mt-0.5">
                         Recomendado: 500x500 px (cuadrado 1:1, formato PNG con fondo transparente o SVG). Máx 3 MB.
@@ -347,7 +342,7 @@ export default function RegisterTenantView() {
                         <button
                           type="button"
                           onClick={() => setLogoBase64(null)}
-                          className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-0.5"
+                          className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-0.5 cursor-pointer"
                           title="Quitar logotipo"
                         >
                           <X className="w-3 h-3" />
@@ -362,7 +357,7 @@ export default function RegisterTenantView() {
 
                     <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-xs font-semibold text-white cursor-pointer transition-colors">
                       <Upload className="w-3.5 h-3.5 text-sky-400" />
-                      <span>{logoBase64 ? 'Cambiar Logotipo' : 'Subir Logotipo (PNG / SVG)'}</span>
+                      <span>{logoBase64 ? 'Cambiar Logotipo' : 'Subir Logotipo'}</span>
                       <input
                         type="file"
                         accept="image/png,image/jpeg,image/svg+xml,image/webp"
@@ -373,12 +368,12 @@ export default function RegisterTenantView() {
                   </div>
                 </div>
 
-                {/* Bloque 2: Identidad & Validación Fiscal Mayorista */}
+                {/* Bloque 2: Datos de la Empresa & RUC */}
                 <div className="space-y-4">
                   <div className="border-b border-slate-800 pb-2">
                     <h3 className="font-bold text-sm text-white flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-sky-400" />
-                      Identidad Corporativa & Validación Mayorista
+                      Datos de la Empresa
                     </h3>
                   </div>
 
@@ -391,15 +386,15 @@ export default function RegisterTenantView() {
                         type="text"
                         required
                         value={companyName}
-                        onChange={(e) => handleNameChange(e.target.value)}
-                        placeholder="Ej. Envases Andinos S.A.S"
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="Ej. Envases Andinos"
                         className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        RUC / NIT / Identificación Tributaria *
+                        RUC / Identificación *
                       </label>
                       <div className="relative">
                         <FileText className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
@@ -408,66 +403,43 @@ export default function RegisterTenantView() {
                           required
                           value={taxId}
                           onChange={(e) => setTaxId(e.target.value)}
-                          placeholder="Ej. 20123456789 o 900.123.456-7"
+                          placeholder="Ej. 1791234567001"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white uppercase font-mono focus:border-sky-500 focus:outline-none"
                         />
                       </div>
                       <span className="text-[10px] text-slate-500 mt-1 block">
-                        Confirma que tu empresa es fabricante o distribuidor mayorista formal.
+                        Para certificar que eres un fabricante o mayorista formal.
                       </span>
                     </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                      Subdominio en tenddy *
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        type="text"
-                        required
-                        value={slug}
-                        onChange={(e) => setSlug(formatSlug(e.target.value))}
-                        placeholder="miempresa"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-l-xl px-3.5 py-2.5 text-xs text-sky-400 font-mono focus:border-sky-500 focus:outline-none text-right"
-                      />
-                      <span className="bg-slate-800 border border-l-0 border-slate-700 text-slate-400 text-xs px-3.5 py-2.5 rounded-r-xl font-mono">
-                        .tenddy
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Bloque 3: Contacto & Operación (Un solo campo para Dirección) */}
-                <div className="space-y-4">
-                  <div className="border-b border-slate-800 pb-2">
-                    <h3 className="font-bold text-sm text-white flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-emerald-400" />
-                      Canal Comercial & Sede Principal
-                    </h3>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        WhatsApp Comercial (Con código de país) *
+                        Número de WhatsApp *
                       </label>
-                      <input
-                        type="tel"
-                        required
-                        value={whatsapp}
-                        onChange={(e) => setWhatsapp(e.target.value)}
-                        placeholder="Ej. +573129876543"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
-                      />
+                      <div className="relative flex items-center">
+                        <span className="absolute left-3.5 text-xs text-slate-400 font-semibold flex items-center gap-1.5 select-none pointer-events-none">
+                          <span>🇪🇨</span>
+                          <span className="text-slate-500 font-mono">+593</span>
+                        </span>
+                        <input
+                          type="tel"
+                          required
+                          value={whatsapp}
+                          onChange={(e) => setWhatsapp(e.target.value)}
+                          placeholder="0998765432"
+                          className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-20 pr-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none font-mono"
+                        />
+                      </div>
                       <span className="text-[10px] text-slate-500 mt-1 block">
-                        Aquí llegarán los pedidos y cotizaciones automáticas.
+                        Ingresa tu celular habitual. Aquí recibirás los pedidos y cotizaciones.
                       </span>
                     </div>
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-400 mb-1.5">
-                        Dirección de Planta o Sede Principal *
+                        Dirección *
                       </label>
                       <div className="relative">
                         <MapPin className="w-4 h-4 absolute left-3.5 top-3 text-slate-500" />
@@ -476,18 +448,18 @@ export default function RegisterTenantView() {
                           required
                           value={address}
                           onChange={(e) => setAddress(e.target.value)}
-                          placeholder="Ej. Calle 15 # 45-20, Zona Industrial"
+                          placeholder="Ej. Av. Amazonas y República"
                           className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:border-sky-500 focus:outline-none"
                         />
                       </div>
                       <span className="text-[10px] text-slate-500 mt-1 block">
-                        Ubicación física para despachos o retiro en fábrica.
+                        Ubicación física de tu local o bodega.
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Bloque 4: Color de Marca */}
+                {/* Bloque 3: Color de Marca */}
                 <div className="space-y-4">
                   <div className="border-b border-slate-800 pb-2">
                     <h3 className="font-bold text-sm text-white flex items-center gap-2">
@@ -522,13 +494,13 @@ export default function RegisterTenantView() {
 
                 <button
                   type="submit"
-                  disabled={loading || !slug || !companyName || !taxId || !address}
+                  disabled={loading || !companyName.trim() || !taxId.trim() || !whatsapp.trim() || !address.trim()}
                   className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all cursor-pointer text-sm"
                 >
                   {loading ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Creando tienda y aprovisionando catálogo...</span>
+                      <span>Creando tu tienda...</span>
                     </>
                   ) : (
                     <>

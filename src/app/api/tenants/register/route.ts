@@ -3,6 +3,23 @@ import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
+// Helper para formatear automáticamente teléfonos de Ecuador a formato internacional WhatsApp (+593)
+function normalizeEcuadorPhone(phone: string): string {
+  let clean = phone.replace(/[^0-9]/g, '');
+  if (clean.startsWith('5930')) {
+    clean = '593' + clean.slice(4);
+  } else if (clean.startsWith('09')) {
+    clean = '593' + clean.slice(1);
+  } else if (clean.startsWith('9') && clean.length === 9) {
+    clean = '593' + clean;
+  } else if (clean.startsWith('0') && clean.length === 10) {
+    clean = '593' + clean.slice(1);
+  } else if (!clean.startsWith('593')) {
+    clean = '593' + clean;
+  }
+  return clean;
+}
+
 export async function POST(request: Request) {
   try {
     const clientIp = getClientIp(request);
@@ -40,42 +57,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, redirectUrl: '/store/demo' });
     }
 
-    // Validaciones
-    if (!companyName || !slug || !whatsapp) {
+    // Validaciones (Subdominio ya no es obligatorio; se genera automáticamente)
+    if (!companyName || !whatsapp) {
       return NextResponse.json(
-        { error: 'Empresa, subdominio y WhatsApp son requeridos.' },
+        { error: 'El nombre de la empresa y el número de WhatsApp son requeridos.' },
         { status: 400 }
       );
     }
 
-    // Sanitizar slug (solo letras, números y guiones)
-    const cleanSlug = slug
+    // Sanitizar o generar slug automáticamente desde el nombre de la empresa
+    let cleanSlug = (slug || companyName)
       .toLowerCase()
       .trim()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9-]/g, '')
-      .replace(/^-+|-+$/g, '');
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 30);
 
-    if (cleanSlug.length < 3 || cleanSlug.length > 30) {
-      return NextResponse.json(
-        { error: 'El subdominio debe tener entre 3 y 30 caracteres alfanuméricos.' },
-        { status: 400 }
-      );
+    if (!cleanSlug || cleanSlug.length < 2) {
+      cleanSlug = `tienda-${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
-    // Nombres reservados
     const reservedSlugs = ['admin', 'api', 'store', 'www', 'app', 'platform', 'registro', 'login', 'dashboard', 'tenddy'];
     if (reservedSlugs.includes(cleanSlug)) {
-      return NextResponse.json(
-        { error: 'Este subdominio es un término reservado por la plataforma. Elige otro.' },
-        { status: 400 }
-      );
+      cleanSlug = `${cleanSlug}-${Math.floor(100 + Math.random() * 900)}`;
     }
 
     const admin = getAdminClient();
 
-    // 1. Verificar disponibilidad del slug
+    // 1. Asignar slug único automáticamente sin fallar por duplicados
     const { data: existingTenant } = await admin
       .from('tenants')
       .select('id')
@@ -83,10 +95,7 @@ export async function POST(request: Request) {
       .single();
 
     if (existingTenant) {
-      return NextResponse.json(
-        { error: `El subdominio "${cleanSlug}.tenddy.shop" ya está en uso. Elige uno diferente.` },
-        { status: 409 }
-      );
+      cleanSlug = `${cleanSlug}-${Math.floor(100 + Math.random() * 900)}`;
     }
 
     // 2. Definir theming y copys base
@@ -125,6 +134,8 @@ export async function POST(request: Request) {
       }
     }
 
+    const normalizedPhone = normalizeEcuadorPhone(whatsapp);
+
     // 3. Crear Tenant en Supabase
     const { data: tenant, error: tenantError } = await admin
       .from('tenants')
@@ -146,8 +157,8 @@ export async function POST(request: Request) {
           hero_subtitle: heroSubtitle,
           hero_video_url: null,
           hero_image_url: null,
-          whatsapp_default: whatsapp.replace(/[^0-9]/g, ''),
-          display_phone: whatsapp,
+          whatsapp_default: normalizedPhone,
+          display_phone: whatsapp.trim(),
           email: email || null,
           address: address ? address.trim() : 'Sede Principal',
           hours: 'Lunes a Viernes: 8:00 AM - 5:30 PM',
@@ -194,8 +205,8 @@ export async function POST(request: Request) {
       name: 'Sede Principal',
       branch_type: 'plant',
       city: address ? address.trim() : 'Sede Principal',
-      address: address ? address.trim() : 'Dirección de Despacho Principal',
-      phone_whatsapp: whatsapp.replace(/[^0-9]/g, ''),
+      address: address ? address.trim() : 'Dirección Principal',
+      phone_whatsapp: normalizedPhone,
       email: email || null,
       is_main_branch: true,
       is_active: true,
