@@ -10,7 +10,8 @@ import {
   CheckCircle,
   Loader2,
   User,
-  Edit2
+  Edit2,
+  Clipboard
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -70,7 +71,7 @@ export default function SupportTicketModal({
             phone = user.phone;
           }
         }
-      } catch (e) {
+      } catch {
         // Ignorar si no hay sesión activa
       }
 
@@ -89,14 +90,9 @@ export default function SupportTicketModal({
     if (isOpen) {
       prefill();
     }
-  }, [isOpen, defaultName, defaultPhone, defaultEmail, shopName]);
+  }, [isOpen, defaultName, defaultPhone, defaultEmail, shopName, subject]);
 
-  if (!isOpen) return null;
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const processImageFile = (file: File) => {
     if (file.size > 4 * 1024 * 1024) {
       alert('La imagen no debe superar los 4 MB.');
       return;
@@ -108,6 +104,59 @@ export default function SupportTicketModal({
     };
     reader.readAsDataURL(file);
   };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+  };
+
+  // Interceptar pegado de imagen desde el portapapeles (Ctrl + V / Cmd + V) estilo Gemini
+  const handlePaste = (e: React.ClipboardEvent | ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        const blob = item.getAsFile();
+        if (blob) {
+          processImageFile(blob);
+          if (typeof e.preventDefault === 'function') {
+            e.preventDefault();
+          }
+          break;
+        }
+      }
+    }
+  };
+
+  // Escuchar pegado global en la ventana cuando el modal está abierto
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const globalPasteListener = (e: ClipboardEvent) => {
+      handlePaste(e);
+    };
+
+    window.addEventListener('paste', globalPasteListener);
+    return () => {
+      window.removeEventListener('paste', globalPasteListener);
+    };
+  }, [isOpen]);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      processImageFile(file);
+    }
+  };
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,7 +198,12 @@ export default function SupportTicketModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
       <div onClick={onClose} className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm" />
 
-      <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 text-slate-900 shadow-2xl z-10 space-y-4 sm:space-y-5">
+      <div
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        onPaste={handlePaste}
+        className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 text-slate-900 shadow-2xl z-10 space-y-4 sm:space-y-5"
+      >
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white">
@@ -179,6 +233,8 @@ export default function SupportTicketModal({
             <button
               onClick={() => {
                 setCreatedTicket(null);
+                setImageBase64(null);
+                setMessage('');
                 onClose();
               }}
               className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-6 py-2.5 rounded-xl transition-all cursor-pointer"
@@ -289,18 +345,22 @@ export default function SupportTicketModal({
                 required
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Describe el error, qué producto falló o qué necesitas ajustar..."
+                onPaste={handlePaste}
+                placeholder="Describe el error o lo que necesitas. También puedes pegar una captura directamente aquí con Ctrl + V..."
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none resize-none leading-relaxed"
               />
             </div>
 
-            {/* Adjuntar Imagen / Captura */}
-            <div>
-              <label className="block text-slate-700 font-semibold mb-1">Adjuntar Captura de Pantalla o Foto</label>
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-pointer transition-colors">
+            {/* Adjuntar Imagen / Captura / Pegar con Ctrl+V */}
+            <div className="space-y-1.5">
+              <label className="block text-slate-700 font-semibold mb-1">
+                Captura de Pantalla o Foto del Problema
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <label className="flex items-center gap-2 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-pointer transition-colors text-xs font-medium">
                   <Upload className="w-3.5 h-3.5 text-slate-500" />
-                  <span>{imageBase64 ? 'Cambiar Captura' : 'Subir Captura (PNG / JPG)'}</span>
+                  <span>{imageBase64 ? 'Cambiar Imagen' : 'Subir Archivo'}</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -309,25 +369,28 @@ export default function SupportTicketModal({
                   />
                 </label>
 
-                {imageBase64 && (
-                  <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Captura lista</span>
-                  </div>
-                )}
+                <div className="inline-flex items-center gap-1.5 bg-sky-50 border border-sky-100 text-sky-700 text-[11px] px-3 py-1.5 rounded-xl">
+                  <Clipboard className="w-3.5 h-3.5 text-sky-500" />
+                  <span>Tip: Puedes pegar con <strong>Ctrl + V</strong> (estilo Gemini)</span>
+                </div>
               </div>
 
               {imageBase64 && (
-                <div className="relative mt-2 w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-100">
+                <div className="relative mt-2 w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm group">
                   <img src={imageBase64} alt="Preview" className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => setImageBase64(null)}
-                    className="absolute top-1 right-1 bg-slate-900/80 text-white rounded-full p-0.5"
-                    title="Eliminar captura"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setImageBase64(null)}
+                      className="bg-rose-600 hover:bg-rose-500 text-white rounded-lg p-1.5 shadow-md transition-colors cursor-pointer"
+                      title="Eliminar captura"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <span className="absolute bottom-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                    Lista
+                  </span>
                 </div>
               )}
             </div>
