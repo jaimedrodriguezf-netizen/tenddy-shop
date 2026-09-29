@@ -86,11 +86,8 @@ export default function AdminDashboardView({
       if (tabParam === 'products' || tabParam === 'quotes' || tabParam === 'team' || tabParam === 'appearance') {
         return tabParam;
       }
-      if (params.get('new') === '1' || initialProducts.length === 0) {
-        return 'products';
-      }
     }
-    return initialProducts.length === 0 ? 'products' : 'quotes';
+    return 'quotes';
   });
   const [quotes, setQuotes] = useState<QuoteRecord[]>(initialQuotes);
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -98,13 +95,7 @@ export default function AdminDashboardView({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(quotes[0] || null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      return params.get('new') === '1' || initialProducts.length === 0;
-    }
-    return initialProducts.length === 0;
-  });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 

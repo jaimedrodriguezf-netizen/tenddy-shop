@@ -15,16 +15,57 @@ import {
   Lock,
   LifeBuoy,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  LogOut,
+  Store,
+  Plus,
+  LayoutDashboard,
+  User
 } from 'lucide-react';
 import AdminLoginModal from './AdminLoginModal';
 import SupportTicketModal from './SupportTicketModal';
 import VersionBadge from './VersionBadge';
 import { supabase } from '@/lib/supabase';
 
+interface UserSessionInfo {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl?: string | null;
+  storeSlug?: string | null;
+  storeName?: string | null;
+}
+
 export default function PlatformHomePage() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [userInfo, setUserInfo] = useState<UserSessionInfo | null>(null);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+
+  // Cargar sesión de usuario en portada
+  React.useEffect(() => {
+    async function loadUser() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data?.authenticated && data?.user) {
+          setUserInfo(data.user);
+        }
+      } catch {
+        // Ignorar
+      }
+    }
+    loadUser();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUserInfo(null);
+    setIsUserMenuOpen(false);
+    window.location.reload();
+  };
 
   // Detección automática en caso de retorno con hash de tokens OAuth
   React.useEffect(() => {
@@ -77,26 +118,121 @@ export default function PlatformHomePage() {
 
           {/* Acciones de Cabecera (Totalmente responsivas) */}
           <div className="flex items-center gap-1.5 sm:gap-3">
-            {/* Botón Acceso Administrador */}
-            <button
-              onClick={() => setIsAdminModalOpen(true)}
-              className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Acceso al panel administrativo de tu tienda"
-            >
-              <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              <span className="hidden sm:inline">Acceso Administrador</span>
-              <span className="sm:hidden text-[11px]">Admin</span>
-            </button>
+            {userInfo ? (
+              /* Usuario Autenticado: Muestra su Avatar de Google y acceso directo */
+              <div className="relative">
+                <button
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-slate-900 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer"
+                  title="Opciones de cuenta"
+                >
+                  {userInfo.avatarUrl ? (
+                    <img
+                      src={userInfo.avatarUrl}
+                      alt={userInfo.name}
+                      className="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border border-slate-700"
+                    />
+                  ) : (
+                    <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-xs">
+                      {userInfo.name.charAt(0).toUpperCase()}
+                    </div>
+                  )}
 
-            {/* Botón Crear Tienda */}
-            <Link
-              href="/registro"
-              className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md shadow-sky-600/30 transition-all flex items-center gap-1.5 shrink-0"
-            >
-              <span className="hidden sm:inline">Crear Tienda B2B</span>
-              <span className="sm:hidden text-[11px]">Crear Tienda</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+                  <div className="text-left hidden sm:block">
+                    <span className="block text-xs font-bold text-white truncate max-w-[120px]">
+                      {userInfo.name}
+                    </span>
+                    <span className="block text-[10px] text-sky-400 font-medium">
+                      {userInfo.storeName || 'Mi Tienda'}
+                    </span>
+                  </div>
+
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+
+                {/* Dropdown del Usuario */}
+                {isUserMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-2xl z-50 text-xs space-y-1">
+                    <div className="px-3 py-2 border-b border-slate-800">
+                      <span className="block font-bold text-white truncate">{userInfo.name}</span>
+                      <span className="block text-[10px] text-slate-400 font-mono truncate">{userInfo.email}</span>
+                    </div>
+
+                    {userInfo.storeSlug ? (
+                      <>
+                        <Link
+                          href={`/store/${userInfo.storeSlug}/admin`}
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-sky-400" />
+                          <span>Mi Panel de Tienda</span>
+                        </Link>
+                        <Link
+                          href={`/store/${userInfo.storeSlug}`}
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-slate-200 hover:bg-slate-800 hover:text-white transition-colors"
+                        >
+                          <Store className="w-4 h-4 text-slate-400" />
+                          <span>Ver Catálogo Público</span>
+                        </Link>
+                      </>
+                    ) : (
+                      <Link
+                        href="/registro"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-sky-400 hover:bg-slate-800 transition-colors font-semibold"
+                      >
+                        <Plus className="w-4 h-4" />
+                        <span>Crear Mi Tienda B2B</span>
+                      </Link>
+                    )}
+
+                    <div className="pt-1 border-t border-slate-800">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>Cerrar Sesión</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              /* Usuario No Autenticado: Muestra botón normal de Login */
+              <button
+                onClick={() => setIsAdminModalOpen(true)}
+                className="text-xs font-semibold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Acceso al panel administrativo de tu tienda"
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                <span className="hidden sm:inline">Acceso Administrador</span>
+                <span className="sm:hidden text-[11px]">Admin</span>
+              </button>
+            )}
+
+            {/* Botón Principal (Panel si tiene tienda, Crear si no tiene) */}
+            {userInfo?.storeSlug ? (
+              <Link
+                href={`/store/${userInfo.storeSlug}/admin`}
+                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md shadow-sky-600/30 transition-all flex items-center gap-1.5 shrink-0"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Mi Panel</span>
+                <span className="sm:hidden text-[11px]">Panel</span>
+              </Link>
+            ) : (
+              <Link
+                href="/registro"
+                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg shadow-md shadow-sky-600/30 transition-all flex items-center gap-1.5 shrink-0"
+              >
+                <span className="hidden sm:inline">Crear Tienda B2B</span>
+                <span className="sm:hidden text-[11px]">Crear Tienda</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            )}
           </div>
         </div>
       </header>

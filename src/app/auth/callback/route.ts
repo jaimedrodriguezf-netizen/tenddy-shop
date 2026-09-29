@@ -79,14 +79,15 @@ export async function GET(request: Request) {
           // Tomar la primera tienda asignada activa
           const targetStore = (userMemberships[0] as unknown as { tenants: { slug: string; name: string } })?.tenants;
           if (targetStore && targetStore.slug) {
-            cookieStore.set(`admin_session_${targetStore.slug}`, 'authenticated', {
+            const redirectRes = NextResponse.redirect(`${safeOrigin}/store/${targetStore.slug}/admin`);
+            redirectRes.cookies.set(`admin_session_${targetStore.slug}`, 'authenticated', {
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
-              maxAge: 60 * 60 * 24 * 7,
+              maxAge: 60 * 60 * 24 * 30,
               path: '/',
             });
-            return NextResponse.redirect(`${safeOrigin}/store/${targetStore.slug}/admin`);
+            return redirectRes;
           }
         }
 
@@ -116,14 +117,15 @@ export async function GET(request: Request) {
               .single();
 
             if (member) {
-              // Otorgar sesión administrativa segura para esta tienda
-              cookieStore.set(`admin_session_${targetSlug}`, 'authenticated', {
+              const redirectRes = NextResponse.redirect(`${safeOrigin}${next}`);
+              redirectRes.cookies.set(`admin_session_${targetSlug}`, 'authenticated', {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
-                maxAge: 60 * 60 * 24 * 7,
+                maxAge: 60 * 60 * 24 * 30,
                 path: '/',
               });
+              return redirectRes;
             }
           }
         }
@@ -147,8 +149,9 @@ export async function GET(request: Request) {
         }
       }
 
-      // 4. Establecer cookie de sesión de comprador B2B
-      cookieStore.set('tenddy_b2b_user', JSON.stringify({ email, name: fullName }), {
+      // 4. Establecer cookie de sesión de comprador B2B y redirigir
+      const finalRes = NextResponse.redirect(`${safeOrigin}${next}`);
+      finalRes.cookies.set('tenddy_b2b_user', JSON.stringify({ email, name: fullName }), {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
@@ -156,7 +159,7 @@ export async function GET(request: Request) {
         path: '/',
       });
 
-      return NextResponse.redirect(`${safeOrigin}${next}`);
+      return finalRes;
     } else if (error) {
       console.error('Error intercambiando código OAuth por sesión:', error.message);
     }

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import AdminDashboardView, { QuoteRecord } from './AdminDashboardView';
 import AdminLoginForm from './AdminLoginForm';
@@ -27,7 +28,20 @@ export default function AdminAuthWrapper({
   initialMembers = [],
   initiallyAuthenticated,
 }: AdminAuthWrapperProps) {
-  const [isAuthenticated, setIsAuthenticated] = useState(initiallyAuthenticated);
+  const [manualAuth, setManualAuth] = useState(false);
+  const isAuthenticated = initiallyAuthenticated || manualAuth;
+
+  // Verificación de respaldo en cliente si la sesión está activa en Supabase Auth
+  useEffect(() => {
+    if (!isAuthenticated) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user?.email) {
+          // El usuario tiene sesión de Google activa, sincronizar para entrar directamente
+          window.location.reload();
+        }
+      });
+    }
+  }, [isAuthenticated]);
 
   if (!isAuthenticated) {
     return (
@@ -35,7 +49,7 @@ export default function AdminAuthWrapper({
         shopSlug={shopSlug}
         tenantName={tenant.name}
         onSuccess={() => {
-          setIsAuthenticated(true);
+          setManualAuth(true);
           window.location.reload();
         }}
       />

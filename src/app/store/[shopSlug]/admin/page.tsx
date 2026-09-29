@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import { getAdminClient } from '@/lib/supabase';
 import { QuoteRecord } from '@/components/AdminDashboardView';
@@ -21,10 +22,66 @@ export default async function AdminPage({ params }: AdminPageProps) {
     notFound();
   }
 
-  // Verificar cookie de sesión administrativa
   const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get(`admin_session_${shopSlug}`);
-  const isAuthenticated = sessionCookie?.value === 'authenticated';
+
+  // 1. Verificación primaria: Cookie de sesión de tienda o Superadmin
+  const sessionCookie = cookieStore.get(`admin_session_${tenant.slug}`);
+  const isSuperadmin = cookieStore.get('tenddy_superadmin_session')?.value === 'authenticated';
+  let isAuthenticated = sessionCookie?.value === 'authenticated' || isSuperadmin;
+
+  // 2. Verificación Dual de Respaldo: Sesión persistente de Google / Supabase Auth
+  // Si el usuario dio "Atrás" en el navegador o la cookie temporal se perdió, validamos su sesión de Google
+  if (!isAuthenticated) {
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+            setAll(cookiesToSet) {
+              try {
+                cookiesToSet.forEach(({ name, value, options }) =>
+                  cookieStore.set(name, value, options)
+                );
+              } catch {
+                // Server Component
+              }
+            },
+          },
+        }
+      );
+
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user?.email) {
+        const admin = getAdminClient();
+        const { data: membership } = await admin
+          .from('tenant_members')
+          .select('id, role, is_active')
+          .eq('tenant_id', tenant.id)
+          .eq('email', user.email.toLowerCase())
+          .eq('is_active', true)
+          .single();
+
+        if (membership) {
+          isAuthenticated = true;
+          // Reactivar la cookie por 30 días para que la sesión sea permanente
+          cookieStore.set(`admin_session_${tenant.slug}`, 'authenticated', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 30, // 30 días
+            path: '/',
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error validando sesión persistente:', err);
+    }
+  }
 
   const { products, branches, categories } = await getTenantCatalog(tenant.id);
 

@@ -141,9 +141,9 @@ export default function RegisterTenantView() {
 
       setSuccessData(data);
 
-      // Redirigir automáticamente en 1.5s al panel de administración para cargar el primer producto
+      // Redirigir automáticamente en 1.5s al panel de administración
       setTimeout(() => {
-        window.location.href = `${data.adminUrl}?tab=products&new=1`;
+        window.location.href = data.adminUrl;
       }, 1500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error de conexión';
@@ -216,10 +216,10 @@ export default function RegisterTenantView() {
 
             <div className="pt-2 flex flex-col sm:flex-row justify-center items-center gap-3">
               <Link
-                href={`${successData.adminUrl}?tab=products&new=1`}
+                href={successData.adminUrl}
                 className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all w-full sm:w-auto"
               >
-                <span>Ir al Panel y Cargar Mi Primer Producto</span>
+                <span>Ir a Mi Panel de Control</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
