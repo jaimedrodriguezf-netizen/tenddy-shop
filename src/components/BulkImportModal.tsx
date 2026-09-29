@@ -52,31 +52,31 @@ export default function BulkImportModal({
   const downloadTemplate = () => {
     const headers = [
       'Código',
+      'Nombre de Prenda',
+      'Categoría',
       'Color',
       'Tallas',
       'Descripción y Costuras (Detalles para Moldes y Patronaje)',
-      'Nombre de Prenda',
-      'Categoría',
       'Enlace Foto Principal'
     ];
 
     const sampleRows = [
       [
         'OXF-001',
+        'Camisa Oxford Manga Larga',
+        'Camisas',
         'Azul Cielo',
         'S, M, L, XL',
         'Costura reforzada doble pespunte en sisas y cuello fusionado para alta durabilidad',
-        'Camisa Oxford Manga Larga',
-        'Camisas',
         'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800'
       ],
       [
         'DRL-002',
+        'Pantalón Drill Operativo',
+        'Pantalones',
         'Kaki / Beige',
         '28, 30, 32, 34, 36',
         'Pretina anatómica con pasadores dobles y triple costura en tiro y entrepierna',
-        'Pantalón Drill Operativo',
-        'Pantalones',
         'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800'
       ]
     ];
@@ -332,17 +332,20 @@ export default function BulkImportModal({
               </button>
             </div>
 
-            {/* Guía de Columnas Oficiales */}
-            <div className="p-3 bg-slate-50/60 rounded-xl border border-slate-200/60 text-[11px] text-slate-500 space-y-1">
-              <span className="font-bold text-slate-700 block">Encabezados soportados en tu archivo:</span>
+            {/* Guía de Columnas Oficiales Ordenadas */}
+            <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-2">
+              <div className="flex items-center gap-1.5 font-bold">
+                <span>⚠️</span>
+                <span>Importante: Tu archivo debe seguir este orden exacto de columnas para una importación exitosa:</span>
+              </div>
               <div className="flex flex-wrap gap-1.5 font-mono text-[10px]">
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Código</span>
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Nombre de Prenda</span>
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Color</span>
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Tallas</span>
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Categoría</span>
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Descripción y Costuras (Detalles para Moldes y Patronaje)</span>
-                <span className="bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-700">Enlace Foto Principal</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">1. Código</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">2. Nombre de Prenda</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">3. Categoría</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">4. Color</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">5. Tallas</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">6. Descripción y Costuras</span>
+                <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">7. Enlace Foto Principal</span>
               </div>
             </div>
           </div>
@@ -369,12 +372,13 @@ export default function BulkImportModal({
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-slate-100 text-slate-600 font-bold sticky top-0 text-[10px] uppercase tracking-wider">
                     <tr>
-                      <th className="p-2.5 border-b border-slate-200">Código</th>
-                      <th className="p-2.5 border-b border-slate-200">Prenda</th>
-                      <th className="p-2.5 border-b border-slate-200">Categoría</th>
-                      <th className="p-2.5 border-b border-slate-200">Color</th>
-                      <th className="p-2.5 border-b border-slate-200">Tallas</th>
-                      <th className="p-2.5 border-b border-slate-200">Foto</th>
+                      <th className="p-2.5 border-b border-slate-200">1. Código</th>
+                      <th className="p-2.5 border-b border-slate-200">2. Prenda</th>
+                      <th className="p-2.5 border-b border-slate-200">3. Categoría</th>
+                      <th className="p-2.5 border-b border-slate-200">4. Color</th>
+                      <th className="p-2.5 border-b border-slate-200">5. Tallas</th>
+                      <th className="p-2.5 border-b border-slate-200">6. Costuras / Ficha</th>
+                      <th className="p-2.5 border-b border-slate-200">7. Foto</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 font-medium">
@@ -387,6 +391,9 @@ export default function BulkImportModal({
                         </td>
                         <td className="p-2.5 text-slate-600">{p.color || '-'}</td>
                         <td className="p-2.5 font-mono text-[11px] text-slate-700">{p.tallas || '-'}</td>
+                        <td className="p-2.5 text-slate-500 truncate max-w-[140px] text-[11px]" title={p.description_and_seams}>
+                          {p.description_and_seams || '-'}
+                        </td>
                         <td className="p-2.5 text-[11px]">
                           {p.image_url ? (
                             <span className="text-emerald-600 font-semibold flex items-center gap-1">
