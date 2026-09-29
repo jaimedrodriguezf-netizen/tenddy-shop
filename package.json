@@ -1,6 +1,6 @@
 {
   "name": "tenddy-shop",
-  "version": "1.0.22",
+  "version": "1.0.23",
   "private": true,
   "scripts": {
     "prebuild": "node scripts/generate-version.js",
@@ -16,7 +16,7 @@
     "@supabase/supabase-js": "^2.116.0",
     "clsx": "^2.1.1",
     "lucide-react": "^1.47.0",
-    "next": "16.3.5",
+    "next": "^16.3.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "tailwind-merge": "^3.7.0",
@@ -28,7 +28,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.5",
+    "eslint-config-next": "^16.3.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
