@@ -11,7 +11,8 @@ import {
   Loader2,
   User,
   Edit2,
-  Clipboard
+  Clipboard,
+  Maximize2
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compressor';
@@ -44,6 +45,7 @@ export default function SupportTicketModal({
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [compressingImage, setCompressingImage] = useState(false);
   const [showEditContact, setShowEditContact] = useState(false);
+  const [zoomImage, setZoomImage] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -416,24 +418,69 @@ export default function SupportTicketModal({
               </p>
 
               {imageBase64 && (
-                <div className="relative mt-2 w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm group">
-                  <img src={imageBase64} alt="Preview" className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="space-y-1 mt-2">
+                  <div className="relative w-full max-w-sm h-36 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 p-2 shadow-xs group flex items-center justify-center">
+                    <img
+                      src={imageBase64}
+                      alt="Preview"
+                      className="max-h-full max-w-full object-contain cursor-pointer"
+                      onClick={() => setZoomImage(true)}
+                    />
+                    
+                    {/* Botón flotante para ver en grande */}
+                    <div
+                      onClick={() => setZoomImage(true)}
+                      className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold backdrop-blur-xs cursor-pointer"
+                    >
+                      <Maximize2 className="w-4 h-4" />
+                      <span>Click para ver imagen completa</span>
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => setImageBase64(null)}
-                      className="bg-rose-600 hover:bg-rose-500 text-white rounded-lg p-1.5 shadow-md transition-colors cursor-pointer"
+                      className="absolute top-2 right-2 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-1 shadow-md transition-colors cursor-pointer z-10"
                       title="Eliminar captura"
                     >
-                      <X className="w-4 h-4" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
+
+                    <span className="absolute bottom-2 left-2 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+                      Lista (Click para ampliar)
+                    </span>
                   </div>
-                  <span className="absolute bottom-1.5 left-1.5 bg-emerald-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
-                    Lista
-                  </span>
                 </div>
               )}
             </div>
+
+            {/* Modal Zoom Pantalla Completa */}
+            {zoomImage && imageBase64 && (
+              <div
+                onClick={() => setZoomImage(false)}
+                className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md cursor-pointer animate-fade-in"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="relative max-w-5xl max-h-[92vh] flex flex-col items-center"
+                >
+                  <div className="flex items-center justify-between w-full pb-2 text-white text-xs font-bold">
+                    <span>Vista Previa de Captura Completa</span>
+                    <button
+                      onClick={() => setZoomImage(false)}
+                      className="text-white hover:text-rose-400 p-1 flex items-center gap-1 cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                      <span>Cerrar</span>
+                    </button>
+                  </div>
+                  <img
+                    src={imageBase64}
+                    alt="Captura completa"
+                    className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl border border-slate-800 bg-slate-900"
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="pt-2">
               <button

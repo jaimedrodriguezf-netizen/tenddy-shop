@@ -21,11 +21,13 @@ import {
   X,
   MapPin,
   LifeBuoy,
-  Tag
+  Tag,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
 import CreateCategoryModal from './CreateCategoryModal';
+import BulkImportModal from './BulkImportModal';
 import AppearanceTab from './AppearanceTab';
 import TeamTab, { TenantMember } from './TeamTab';
 import SupportTicketModal from './SupportTicketModal';
@@ -96,6 +98,7 @@ export default function AdminDashboardView({
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(quotes[0] || null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
 
@@ -332,6 +335,16 @@ export default function AdminDashboardView({
         onClose={() => setIsCategoryModalOpen(false)}
         tenantId={tenant.id}
         onCategoryCreated={(newCat) => setCategories((prev) => [...prev, newCat])}
+      />
+
+      {/* Modal para Carga Masiva de Productos (Excel / CSV) */}
+      <BulkImportModal
+        isOpen={isBulkModalOpen}
+        onClose={() => setIsBulkModalOpen(false)}
+        tenantId={tenant.id}
+        onProductsImported={(newProducts) => {
+          setProducts((prev) => [...newProducts, ...prev]);
+        }}
       />
 
       {/* Modal de Soporte Técnico y Mesa de Ayuda */}
@@ -758,7 +771,17 @@ export default function AdminDashboardView({
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={() => setIsBulkModalOpen(true)}
+                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    title="Cargar productos en lote desde Excel o CSV"
+                  >
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                    <span className="hidden sm:inline">Carga Masiva (Excel)</span>
+                    <span className="sm:hidden">Excel</span>
+                  </button>
+
                   <button
                     onClick={() => setIsCategoryModalOpen(true)}
                     className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
