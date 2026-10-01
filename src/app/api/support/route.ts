@@ -2,22 +2,28 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
-// Subir imagen base64 a Supabase Storage y devolver URL pública
-async function uploadImageToStorage(
+// Subir adjunto base64 (imagen, Excel, CSV o PDF) a Supabase Storage y devolver URL pública
+async function uploadAttachmentToStorage(
   base64DataUrl: string,
   ticketNumber: string
 ): Promise<string | null> {
   try {
-    const matches = base64DataUrl.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-    if (!matches || matches.length !== 3) {
-      return null;
-    }
+    const commaIndex = base64DataUrl.indexOf(',');
+    if (commaIndex === -1) return null;
 
-    const mimeType = matches[1];
-    const base64Data = matches[2];
+    const mimeMatch = base64DataUrl.substring(0, commaIndex).match(/data:([^;]+);base64/);
+    const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    const base64Data = base64DataUrl.substring(commaIndex + 1);
     const buffer = Buffer.from(base64Data, 'base64');
 
-    const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+    let ext = 'bin';
+    if (mimeType.includes('webp')) ext = 'webp';
+    else if (mimeType.includes('png')) ext = 'png';
+    else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
+    else if (mimeType.includes('spreadsheetml') || mimeType.includes('excel') || mimeType.includes('xlsx')) ext = 'xlsx';
+    else if (mimeType.includes('csv')) ext = 'csv';
+    else if (mimeType.includes('pdf')) ext = 'pdf';
+
     const filePath = `tickets/${ticketNumber}-${Date.now()}.${ext}`;
 
     const admin = getAdminClient();
@@ -29,7 +35,7 @@ async function uploadImageToStorage(
       });
 
     if (uploadError) {
-      console.error('Error subiendo imagen a Supabase Storage:', uploadError);
+      console.error('Error subiendo adjunto a Supabase Storage:', uploadError);
       return null;
     }
 
@@ -39,7 +45,7 @@ async function uploadImageToStorage(
 
     return publicUrlData?.publicUrl || null;
   } catch (err) {
-    console.error('Error procesando imagen para storage:', err);
+    console.error('Error procesando adjunto para storage:', err);
     return null;
   }
 }
@@ -90,10 +96,10 @@ export async function POST(request: Request) {
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const ticket_number = `TICK-${new Date().getFullYear()}-${randomSuffix}`;
 
-    // Si viene imagen en base64, subirla directamente a Supabase Storage
+    // Si viene adjunto (imagen, Excel o documento) en base64, subirlo a Supabase Storage
     let storedImageUrl: string | null = null;
-    if (image_data && typeof image_data === 'string' && image_data.startsWith('data:image')) {
-      storedImageUrl = await uploadImageToStorage(image_data, ticket_number);
+    if (image_data && typeof image_data === 'string' && image_data.startsWith('data:')) {
+      storedImageUrl = await uploadAttachmentToStorage(image_data, ticket_number);
     }
 
     const admin = getAdminClient();

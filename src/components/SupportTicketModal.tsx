@@ -12,7 +12,8 @@ import {
   User,
   Edit2,
   Clipboard,
-  Maximize2
+  Maximize2,
+  FileSpreadsheet
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { compressImage } from '@/lib/image-compressor';
@@ -43,6 +44,8 @@ export default function SupportTicketModal({
   const [message, setMessage] = useState('');
   const [category, setCategory] = useState('technical');
   const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [attachedFileName, setAttachedFileName] = useState<string | null>(null);
+  const [isDocumentAttachment, setIsDocumentAttachment] = useState(false);
   const [compressingImage, setCompressingImage] = useState(false);
   const [showEditContact, setShowEditContact] = useState(false);
   const [zoomImage, setZoomImage] = useState(false);
@@ -96,26 +99,46 @@ export default function SupportTicketModal({
     }
   }, [isOpen, defaultName, defaultPhone, defaultEmail, shopName, subject]);
 
-  const processImageFile = async (file: File) => {
-    try {
-      setCompressingImage(true);
-      const compressed = await compressImage(file, {
-        maxWidth: 1600,
-        maxHeight: 1600,
-        quality: 0.82,
-        outputFormat: 'image/webp',
-      });
-      setImageBase64(compressed);
-    } catch (err) {
-      console.error('Error comprimiendo captura:', err);
-    } finally {
-      setCompressingImage(false);
+  const processFile = async (file: File) => {
+    if (file.size > 8 * 1024 * 1024) {
+      alert('El archivo no debe superar los 8 MB.');
+      return;
+    }
+
+    setAttachedFileName(file.name);
+
+    if (file.type.startsWith('image/')) {
+      setIsDocumentAttachment(false);
+      try {
+        setCompressingImage(true);
+        const compressed = await compressImage(file, {
+          maxWidth: 1600,
+          maxHeight: 1600,
+          quality: 0.82,
+          outputFormat: 'image/webp',
+        });
+        setImageBase64(compressed);
+      } catch {
+        const reader = new FileReader();
+        reader.onloadend = () => setImageBase64(reader.result as string);
+        reader.readAsDataURL(file);
+      } finally {
+        setCompressingImage(false);
+      }
+    } else {
+      // Documento o archivo Excel (.xlsx / .csv / .pdf)
+      setIsDocumentAttachment(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImageBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) processImageFile(file);
+    if (file) processFile(file);
   };
 
   // Interceptar pegado de imagen desde el portapapeles (Ctrl + V / Cmd + V) estilo Gemini
@@ -128,7 +151,7 @@ export default function SupportTicketModal({
       if (item.type.startsWith('image/')) {
         const blob = item.getAsFile();
         if (blob) {
-          processImageFile(blob);
+          processFile(blob);
           if (typeof e.preventDefault === 'function') {
             e.preventDefault();
           }
@@ -159,8 +182,8 @@ export default function SupportTicketModal({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer?.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      processImageFile(file);
+    if (file) {
+      processFile(file);
     }
   };
 
@@ -174,7 +197,7 @@ export default function SupportTicketModal({
           if (imageType) {
             const blob = await item.getType(imageType);
             const file = new File([blob], 'captura.png', { type: imageType });
-            processImageFile(file);
+            processFile(file);
             return;
           }
         }
@@ -382,21 +405,21 @@ export default function SupportTicketModal({
               />
             </div>
 
-            {/* Dos opciones claras: Subir Archivo | Pegar Imagen */}
+            {/* Dos opciones claras: Subir Archivo (Imagen / Excel) | Pegar Imagen */}
             <div className="space-y-2">
               <label className="block text-slate-700 font-semibold mb-1">
-                Adjuntar Captura de Pantalla o Foto
+                Adjuntar Captura de Pantalla o Archivo Excel
               </label>
 
               <div className="grid grid-cols-2 gap-2.5">
                 {/* Opción 1: Subir Archivo */}
                 <label className="flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer transition-colors text-xs font-semibold text-center">
                   <Upload className="w-4 h-4 text-slate-500 shrink-0" />
-                  <span>Subir Archivo</span>
+                  <span>{imageBase64 ? 'Cambiar Archivo' : 'Subir Imagen / Excel'}</span>
                   <input
                     type="file"
-                    accept="image/*"
-                    onChange={handleImageChange}
+                    accept="image/*,.xlsx,.xls,.csv,.pdf,.txt"
+                    onChange={handleFileChange}
                     className="hidden"
                   />
                 </label>
@@ -409,15 +432,47 @@ export default function SupportTicketModal({
                   title="Pegar imagen copiada del portapapeles"
                 >
                   <Clipboard className="w-4 h-4 text-sky-600 shrink-0" />
-                  <span>Pegar Imagen</span>
+                  <span>Pegar Imagen (Ctrl+V)</span>
                 </button>
               </div>
 
               <p className="text-[11px] text-slate-400">
-                Puedes subir un archivo o usar el botón <strong>Pegar Imagen</strong> (también funciona con <strong>Ctrl + V</strong>).
+                Puedes subir fotos, capturas o tu archivo <strong>Excel (.xlsx / .csv)</strong> para que lo revisemos.
               </p>
 
-              {imageBase64 && (
+              {/* Vista Previa: Documento Excel */}
+              {imageBase64 && isDocumentAttachment && (
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between mt-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                      <FileSpreadsheet className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-emerald-950 truncate">
+                        {attachedFileName || 'Archivo Excel / Documento'}
+                      </span>
+                      <span className="text-[10px] text-emerald-700 font-semibold">
+                        Listo para enviar a soporte
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageBase64(null);
+                      setAttachedFileName(null);
+                      setIsDocumentAttachment(false);
+                    }}
+                    className="p-1 rounded-lg text-emerald-600 hover:text-rose-600 hover:bg-emerald-100 cursor-pointer"
+                    title="Quitar archivo"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Vista Previa: Imagen con Zoom */}
+              {imageBase64 && !isDocumentAttachment && (
                 <div className="space-y-1 mt-2">
                   <div className="relative w-full max-w-sm h-36 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 p-2 shadow-xs group flex items-center justify-center">
                     <img
@@ -438,7 +493,10 @@ export default function SupportTicketModal({
 
                     <button
                       type="button"
-                      onClick={() => setImageBase64(null)}
+                      onClick={() => {
+                        setImageBase64(null);
+                        setAttachedFileName(null);
+                      }}
                       className="absolute top-2 right-2 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-1 shadow-md transition-colors cursor-pointer z-10"
                       title="Eliminar captura"
                     >
