@@ -44,5 +44,6 @@ next-env.d.ts
 # Local Pi runtime state
 .atl/
 .pi/
+.codegraph/
 .mcp.json
 supabase/.temp/

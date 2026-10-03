@@ -166,6 +166,8 @@ export default function BulkImportModal({
 
             if (productsList.length === 0) {
               setErrorMsg('No se detectaron filas válidas con datos de productos en el archivo.');
+            } else if (productsList.length > 3000) {
+              setErrorMsg(`El archivo contiene ${productsList.length} productos. El límite por carga es de 3,000.`);
             } else {
               setParsedProducts(productsList);
             }
@@ -231,6 +233,8 @@ export default function BulkImportModal({
 
         if (productsList.length === 0) {
           setErrorMsg('No se detectaron filas válidas con datos de productos en el Excel.');
+        } else if (productsList.length > 3000) {
+          setErrorMsg(`El archivo contiene ${productsList.length} productos. El límite por carga es de 3,000.`);
         } else {
           setParsedProducts(productsList);
         }
@@ -311,7 +315,7 @@ export default function BulkImportModal({
                   Importación Masiva de Productos (Excel / CSV)
                 </h3>
                 <p className="text-[11px] text-slate-500">
-                  Carga decenas de referencias con código, colores, tallas y ficha técnica en un solo clic.
+                  Carga hasta 3,000 referencias con código, colores, tallas y ficha técnica en un solo clic.
                 </p>
               </div>
             </div>
@@ -468,7 +472,7 @@ export default function BulkImportModal({
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Importando a Supabase...</span>
+                  <span>Importando {parsedProducts.length} productos en lotes...</span>
                 </>
               ) : (
                 <>

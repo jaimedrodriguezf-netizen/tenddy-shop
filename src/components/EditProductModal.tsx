@@ -38,7 +38,20 @@ function EditProductModalContent({
   const [minOrderQty, setMinOrderQty] = useState(product.min_order_qty || 1);
   const [unitsPerPackage, setUnitsPerPackage] = useState(product.units_per_package || 1);
   const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
-  const [currentImageUrl] = useState<string | null>(product.images?.[0] || null);
+  const [imageUrlInput, setImageUrlInput] = useState<string>('');
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(product.images?.[0] || null);
+
+  const normalizeImageUrl = (url: string): string => {
+    if (!url) return '';
+    const clean = url.trim();
+    if (clean.includes('drive.google.com')) {
+      const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+    }
+    return clean;
+  };
 
   const specs = product.attributes?.specs || {};
   const [attrColor, setAttrColor] = useState(specs.color || specs.variante || '');
@@ -129,6 +142,8 @@ function EditProductModalContent({
       costuras_patronaje: attrSpecs.trim(),
     };
 
+    const activeImageUrl = imageUrlInput.trim() ? normalizeImageUrl(imageUrlInput) : (currentImageUrl || null);
+
     try {
       const res = await fetch('/api/admin/products', {
         method: 'PATCH',
@@ -146,6 +161,7 @@ function EditProductModalContent({
             specs: updatedSpecs,
           },
           imageData: productImageBase64,
+          image_url: !productImageBase64 ? activeImageUrl : undefined,
         }),
       });
 
@@ -164,7 +180,8 @@ function EditProductModalContent({
     }
   };
 
-  const previewSrc = productImageBase64 || currentImageUrl;
+  const activeUrl = imageUrlInput.trim() ? normalizeImageUrl(imageUrlInput) : currentImageUrl;
+  const previewSrc = productImageBase64 || activeUrl;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -225,6 +242,40 @@ function EditProductModalContent({
                   <Clipboard className="w-3.5 h-3.5 text-sky-600" />
                   <span>Pegar Foto (Ctrl + V)</span>
                 </button>
+              </div>
+
+              {/* Opción de Enlace URL Directo / Google Drive */}
+              <div className="pt-2 border-t border-slate-200/60">
+                <label className="block text-[11px] text-slate-600 mb-1 font-medium">
+                  O pegar enlace web / Google Drive de la foto:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={imageUrlInput}
+                    onChange={(e) => {
+                      const clean = normalizeImageUrl(e.target.value);
+                      setImageUrlInput(clean);
+                      if (productImageBase64) setProductImageBase64(null);
+                    }}
+                    placeholder="https://images... o enlace de Google Drive"
+                    className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:border-slate-900 focus:outline-none"
+                  />
+                  {previewSrc && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProductImageBase64(null);
+                        setImageUrlInput('');
+                        setCurrentImageUrl(null);
+                      }}
+                      className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-[11px] font-semibold transition-colors cursor-pointer"
+                      title="Retirar foto actual"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
               </div>
 
               {previewSrc && (

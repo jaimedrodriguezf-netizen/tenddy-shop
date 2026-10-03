@@ -39,7 +39,20 @@ export default function CreateProductModal({
   const [minOrderQty, setMinOrderQty] = useState(100);
   const [unitsPerPackage, setUnitsPerPackage] = useState(50);
   const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState<string>('');
   const [compressingImage, setCompressingImage] = useState(false);
+
+  const normalizeImageUrl = (url: string): string => {
+    if (!url) return '';
+    const clean = url.trim();
+    if (clean.includes('drive.google.com')) {
+      const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+    }
+    return clean;
+  };
 
   // Atributos dinámicos adaptados según industria o generales
   const [attr1, setAttr1] = useState(isPlastics ? '500 ml' : 'Caja x 24 unidades');
@@ -168,6 +181,7 @@ export default function CreateProductModal({
           units_per_package: Number(unitsPerPackage) || 1,
           attributes: { specs, badge: 'Nuevo' },
           imageData: productImageBase64,
+          image_url: !productImageBase64 && imageUrlInput.trim() ? normalizeImageUrl(imageUrlInput) : undefined,
         }),
       });
 
@@ -253,16 +267,56 @@ export default function CreateProductModal({
                 </button>
               </div>
 
+              {/* Opción de Enlace URL Directo / Google Drive */}
+              <div className="pt-2 border-t border-slate-200/60">
+                <label className="block text-[11px] text-slate-600 mb-1 font-medium">
+                  O pegar enlace web / Google Drive de la foto:
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    value={imageUrlInput}
+                    onChange={(e) => {
+                      const clean = normalizeImageUrl(e.target.value);
+                      setImageUrlInput(clean);
+                      if (productImageBase64) setProductImageBase64(null);
+                    }}
+                    placeholder="https://images... o enlace de Google Drive"
+                    className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:border-slate-900 focus:outline-none"
+                  />
+                  {(productImageBase64 || imageUrlInput) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProductImageBase64(null);
+                        setImageUrlInput('');
+                      }}
+                      className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-[11px] font-semibold transition-colors cursor-pointer"
+                      title="Retirar foto actual"
+                    >
+                      Quitar
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <p className="text-[11px] text-slate-400">
                 Sube la foto del producto o presiona <strong>Ctrl + V</strong>. La imagen se optimiza y comprime automáticamente para carga ultra-rápida.
               </p>
 
-              {productImageBase64 && (
+              {(productImageBase64 || imageUrlInput) && (
                 <div className="relative mt-2 w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-white p-1.5 shadow-sm group flex items-center justify-center">
-                  <img src={productImageBase64} alt="Producto preview" className="w-full h-full object-contain" />
+                  <img
+                    src={productImageBase64 || normalizeImageUrl(imageUrlInput)}
+                    alt="Producto preview"
+                    className="w-full h-full object-contain"
+                  />
                   <button
                     type="button"
-                    onClick={() => setProductImageBase64(null)}
+                    onClick={() => {
+                      setProductImageBase64(null);
+                      setImageUrlInput('');
+                    }}
                     className="absolute top-1.5 right-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-1 shadow-md transition-colors cursor-pointer"
                     title="Quitar foto"
                   >

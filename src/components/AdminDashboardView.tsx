@@ -28,7 +28,10 @@ import {
   MessageCircle,
   Clock,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  ChevronDown,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
@@ -109,6 +112,9 @@ export default function AdminDashboardView({
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(true);
+  const [isQuotesOpen, setIsQuotesOpen] = useState(true);
+  const [catalogViewMode, setCatalogViewMode] = useState<'vertical' | 'horizontal'>('vertical');
 
   // Métricas
   const totalQuotes = quotes.length;
@@ -212,7 +218,7 @@ export default function AdminDashboardView({
   const renderNavItems = () => (
     <div className="space-y-1">
       <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
-        Gestión B2B
+        Gestión Principal
       </span>
 
       {/* 1. DASHBOARD */}
@@ -233,73 +239,207 @@ export default function AdminDashboardView({
         </div>
       </button>
 
-      {/* 2. COTIZACIONES */}
-      <button
-        onClick={() => {
-          setActiveTab('quotes');
-          setIsMobileSidebarOpen(false);
-        }}
-        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-          activeTab === 'quotes'
-            ? 'bg-slate-900 text-white shadow-sm'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <MessageCircle className="w-4 h-4" />
-          <span>Cotizaciones & Pedidos</span>
-        </div>
-        <span
-          className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-            activeTab === 'quotes' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600'
+      {/* 2. INVENTARIO (ACORDEÓN DESPLEGABLE TIPO CONTIFICO / ERP) */}
+      <div className="space-y-0.5">
+        <button
+          type="button"
+          onClick={() => setIsInventoryOpen(!isInventoryOpen)}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === 'products'
+              ? 'text-slate-900 bg-slate-100/90 font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          {quotes.length}
-        </span>
-      </button>
+          <div className="flex items-center gap-2.5">
+            <Boxes className="w-4 h-4 text-slate-500" />
+            <span>Inventario</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold bg-slate-200/80 text-slate-600">
+              {products.length}
+            </span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                isInventoryOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </div>
+        </button>
 
-      {/* 3. PRODUCTOS */}
-      <button
-        onClick={() => {
-          setActiveTab('products');
-          setIsMobileSidebarOpen(false);
-        }}
-        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-          activeTab === 'products'
-            ? 'bg-slate-900 text-white shadow-sm'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-        }`}
-      >
-        <div className="flex items-center gap-2.5">
-          <Boxes className="w-4 h-4" />
-          <span>Catálogo de Productos</span>
-        </div>
-        <span
-          className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
-            activeTab === 'products' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600'
+        {/* Submenú desplegable de Inventario */}
+        {isInventoryOpen && (
+          <div className="ml-4 pl-3 border-l-2 border-slate-100 space-y-1 py-1">
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'products'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <span>Catálogo de Productos</span>
+              <span
+                className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                  activeTab === 'products' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200/70 text-slate-600'
+                }`}
+              >
+                {products.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsBulkModalOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              title="Cargar catálogo masivo con plantilla Excel o CSV"
+            >
+              <div className="flex items-center gap-1.5">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Carga Masiva (Excel)</span>
+              </div>
+            </button>
+
+            <button
+              onClick={() => {
+                setIsCategoryModalOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              title="Crear nueva categoría para el catálogo"
+            >
+              <div className="flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-sky-600" />
+                <span>Nueva Categoría</span>
+              </div>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 3. COTIZACIONES & PEDIDOS (ACORDEÓN DESPLEGABLE HACIA ABAJO - TICKET #2849) */}
+      <div className="space-y-0.5">
+        <button
+          type="button"
+          onClick={() => setIsQuotesOpen(!isQuotesOpen)}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === 'quotes'
+              ? 'text-slate-900 bg-slate-100/90 font-bold'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
-          {products.length}
-        </span>
-      </button>
+          <div className="flex items-center gap-2.5">
+            <MessageCircle className="w-4 h-4 text-slate-500" />
+            <span>Cotizaciones & Pedidos</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {pendingQuotes > 0 && (
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+            )}
+            <span
+              className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
+                pendingQuotes > 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-200/80 text-slate-600'
+              }`}
+            >
+              {quotes.length}
+            </span>
+            <ChevronDown
+              className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                isQuotesOpen ? 'rotate-180' : ''
+              }`}
+            />
+          </div>
+        </button>
 
-      {/* 4. EQUIPO */}
-      <button
-        onClick={() => {
-          setActiveTab('team');
-          setIsMobileSidebarOpen(false);
-        }}
-        className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-          activeTab === 'team'
-            ? 'bg-slate-900 text-white shadow-sm'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-        }`}
-      >
-        <Users className="w-4 h-4" />
-        <span>Equipo & Asesores</span>
-      </button>
+        {/* Submenú desplegable de Cotizaciones & Pedidos */}
+        {isQuotesOpen && (
+          <div className="ml-4 pl-3 border-l-2 border-slate-100 space-y-1 py-1">
+            <button
+              onClick={() => {
+                setActiveTab('quotes');
+                setFilterStatus('all');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'quotes' && filterStatus === 'all'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <span>Todas las Solicitudes</span>
+              <span
+                className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                  activeTab === 'quotes' && filterStatus === 'all'
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-200/70 text-slate-600'
+                }`}
+              >
+                {quotes.length}
+              </span>
+            </button>
 
-      {/* 5. APARIENCIA */}
+            <button
+              onClick={() => {
+                setActiveTab('quotes');
+                setFilterStatus('pending');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'quotes' && filterStatus === 'pending'
+                  ? 'bg-amber-500 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                <span>Por Atender</span>
+              </div>
+              <span
+                className={`text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full ${
+                  activeTab === 'quotes' && filterStatus === 'pending'
+                    ? 'bg-amber-600 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}
+              >
+                {pendingQuotes}
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                setActiveTab('quotes');
+                setFilterStatus('approved');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'quotes' && filterStatus === 'approved'
+                  ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span>Aprobadas / Cerradas</span>
+              </div>
+              <span
+                className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                  activeTab === 'quotes' && filterStatus === 'approved'
+                    ? 'bg-emerald-700 text-emerald-100'
+                    : 'bg-slate-200/70 text-slate-600'
+                }`}
+              >
+                {approvedQuotes}
+              </span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* 4. DISEÑO & APARIENCIA */}
       <button
         onClick={() => {
           setActiveTab('appearance');
@@ -311,13 +451,45 @@ export default function AdminDashboardView({
             : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
         }`}
       >
-        <Paintbrush className="w-4 h-4" />
+        <Paintbrush className="w-4 h-4 text-purple-500" />
         <span>Diseño & Apariencia</span>
       </button>
 
-      <div className="pt-4 border-t border-slate-100 space-y-1">
+      {/* 5. CONFIGURACIÓN & PERFIL (REUBICACIÓN DE EQUIPO Y ROLES - TICKET #3737) */}
+      <div className="pt-3 border-t border-slate-100 space-y-1">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
-          Asistencia & Soporte
+          Perfil & Configuración
+        </span>
+
+        <button
+          onClick={() => {
+            setActiveTab('team');
+            setIsMobileSidebarOpen(false);
+          }}
+          className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+            activeTab === 'team'
+              ? 'bg-slate-900 text-white shadow-sm'
+              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+          }`}
+        >
+          <div className="flex items-center gap-2.5">
+            <Users className="w-4 h-4 text-sky-600" />
+            <span>Perfil & Roles de Equipo</span>
+          </div>
+          <span
+            className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
+              activeTab === 'team' ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-600'
+            }`}
+          >
+            {initialMembers.length || 1}
+          </span>
+        </button>
+      </div>
+
+      {/* 6. ASISTENCIA & SOPORTE */}
+      <div className="pt-3 border-t border-slate-100 space-y-1">
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 block mb-2">
+          Asistencia & Tienda
         </span>
 
         <button
@@ -927,6 +1099,36 @@ export default function AdminDashboardView({
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
+                  {/* Selector de Vista Dual: Vertical / Horizontal */}
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setCatalogViewMode('vertical')}
+                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        catalogViewMode === 'vertical'
+                          ? 'bg-white text-slate-900 shadow-xs font-bold'
+                          : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                      title="Vista Cuadrícula Vertical (Prendas y Fichas)"
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">Vertical</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCatalogViewMode('horizontal')}
+                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                        catalogViewMode === 'horizontal'
+                          ? 'bg-white text-slate-900 shadow-xs font-bold'
+                          : 'text-slate-500 hover:text-slate-900'
+                      }`}
+                      title="Vista Fila Horizontal (Compacta)"
+                    >
+                      <List className="w-3.5 h-3.5" />
+                      <span className="hidden md:inline">Horizontal</span>
+                    </button>
+                  </div>
+
                   <button
                     onClick={() => setIsBulkModalOpen(true)}
                     className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
@@ -990,30 +1192,44 @@ export default function AdminDashboardView({
                     <span>Agregar Primer Producto</span>
                   </button>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+              ) : catalogViewMode === 'vertical' ? (
+                /* Vista 1: Cuadrícula Vertical (aspect 3/4) */
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
                   {products.map((p) => (
                     <div
                       key={p.id}
-                      className="bg-slate-50/60 border border-slate-200 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between text-xs hover:border-slate-300 transition-all group"
+                      className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between text-xs hover:border-slate-300 hover:shadow-xs transition-all group"
                     >
                       <div>
-                        {/* Foto del Producto en la tarjeta */}
-                        <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-white border border-slate-200/80 mb-2.5 flex items-center justify-center p-1">
+                        {/* Foto del Producto en la tarjeta Vertical con Logo y SKU */}
+                        <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 mb-2.5 flex items-center justify-center p-2">
                           <img
                             src={p.images?.[0] || '/assets/products/ayme-001.svg'}
                             alt={p.name}
-                            className="w-full h-full object-contain"
+                            className="w-full h-full object-contain filter drop-shadow-xs group-hover:scale-105 transition-transform duration-300"
                           />
+                          {/* Logo de la empresa en la foto */}
+                          {tenant.logo_url && (
+                            <div
+                              className="absolute top-2 right-2 w-6 h-6 rounded-md overflow-hidden bg-white/95 p-0.5 border border-slate-200/80 shadow-xs backdrop-blur-xs flex items-center justify-center z-10"
+                              title={tenant.name}
+                            >
+                              <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+                            </div>
+                          )}
+                          {/* SKU destacado */}
                           {p.sku && (
-                            <span className="absolute top-1.5 left-1.5 font-mono text-slate-700 text-[10px] font-bold bg-white/90 px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-xs">
-                              {p.sku}
+                            <span className="absolute bottom-2 left-2 font-mono text-white text-[9px] sm:text-[10px] font-bold bg-slate-900/90 px-2 py-0.5 rounded shadow-xs backdrop-blur-xs z-10">
+                              CÓD: {p.sku}
                             </span>
                           )}
+                          <span className="absolute top-2 left-2 font-mono text-slate-700 text-[9px] font-bold bg-white/90 px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-xs z-10">
+                            Mín: {p.min_order_qty}
+                          </span>
                         </div>
 
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
                             {p.name}
                           </h4>
                           <div className="flex items-center gap-1 shrink-0 ml-1">
@@ -1034,17 +1250,17 @@ export default function AdminDashboardView({
                           </div>
                         </div>
 
-                        {/* Tallas y Color si existen */}
+                        {/* Tallas y Color destacados con badges */}
                         {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
-                          <div className="flex flex-wrap gap-1 text-[10px] my-1">
+                          <div className="flex flex-wrap gap-1 text-[10px] my-1.5">
                             {p.attributes.specs.color && (
-                              <span className="bg-slate-200/70 text-slate-700 px-1.5 py-0.2 rounded font-medium">
-                                {p.attributes.specs.color}
+                              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium border border-slate-200/60">
+                                🎨 {p.attributes.specs.color}
                               </span>
                             )}
                             {p.attributes.specs.tallas && (
-                              <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.2 rounded font-mono font-bold">
-                                {p.attributes.specs.tallas}
+                              <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
+                                📏 {p.attributes.specs.tallas}
                               </span>
                             )}
                           </div>
@@ -1055,9 +1271,101 @@ export default function AdminDashboardView({
                         </p>
                       </div>
 
-                      <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex justify-between text-[11px] font-mono text-slate-600">
+                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex justify-between text-[11px] font-mono text-slate-600">
                         <span>Mín: {p.min_order_qty} uds</span>
                         <span>{p.units_per_package} / fardo</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                /* Vista 2: Filas Horizontales */
+                <div className="flex flex-col gap-2.5">
+                  {products.map((p) => (
+                    <div
+                      key={p.id}
+                      className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Foto Horizontal */}
+                        <div className="relative w-16 h-20 sm:w-20 sm:h-24 aspect-[3/4] rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shrink-0 flex items-center justify-center p-1">
+                          <img
+                            src={p.images?.[0] || '/assets/products/ayme-001.svg'}
+                            alt={p.name}
+                            className="w-full h-full object-contain filter drop-shadow-xs"
+                          />
+                          {tenant.logo_url && (
+                            <div className="absolute top-1 right-1 w-4 h-4 rounded bg-white/95 p-0.5 border border-slate-200 flex items-center justify-center">
+                              <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+                            </div>
+                          )}
+                          {p.sku && (
+                            <span className="absolute bottom-1 left-1 font-mono text-white text-[8px] font-bold bg-slate-900/90 px-1 rounded">
+                              {p.sku}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Datos del Producto */}
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {p.sku && (
+                              <span className="font-mono text-slate-800 text-[10px] font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                                CÓD: {p.sku}
+                              </span>
+                            )}
+                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                              {p.name}
+                            </h4>
+                          </div>
+
+                          {/* Tallas y Color */}
+                          {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
+                            <div className="flex flex-wrap gap-1 text-[10px]">
+                              {p.attributes.specs.color && (
+                                <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium border border-slate-200/60">
+                                  🎨 {p.attributes.specs.color}
+                                </span>
+                              )}
+                              {p.attributes.specs.tallas && (
+                                <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
+                                  📏 {p.attributes.specs.tallas}
+                                </span>
+                              )}
+                            </div>
+                          )}
+
+                          <p className="text-slate-500 text-[11px] truncate max-w-xl">
+                            {p.description || 'Sin descripción comercial.'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Detalles comerciales y botones */}
+                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                        <div className="text-right text-[11px] font-mono text-slate-600 sm:pr-3 sm:border-r sm:border-slate-100">
+                          <div>
+                            Mín: <strong className="text-slate-800">{p.min_order_qty}</strong> uds
+                          </div>
+                          <div className="text-[10px] text-slate-400">{p.units_per_package} / fardo</div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setEditingProduct(p)}
+                            className="text-slate-600 hover:text-sky-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                            title="Editar producto, foto o tallas"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="text-slate-600 hover:text-rose-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                            title="Eliminar producto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

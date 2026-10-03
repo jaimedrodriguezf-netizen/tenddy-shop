@@ -27,9 +27,9 @@ export async function POST(request: Request) {
       );
     }
 
-    if (products.length > 500) {
+    if (products.length > 3000) {
       return NextResponse.json(
-        { error: 'Límite de 500 productos por carga masiva excedido' },
+        { error: 'Límite de 3000 productos por carga masiva excedido' },
         { status: 400 }
       );
     }
@@ -132,22 +132,38 @@ export async function POST(request: Request) {
       };
     });
 
-    // 5. Inserción masiva en Supabase
-    const { data: inserted, error: insertError } = await admin
-      .from('products')
-      .insert(productsToInsert)
-      .select('*');
+    // 5. Inserción masiva en Supabase por lotes (chunks de 100) para soportar 2000+ productos sin timeouts
+    const CHUNK_SIZE = 100;
+    const insertedProducts: unknown[] = [];
 
-    if (insertError) {
-      console.error('Error en carga masiva de productos:', insertError);
-      return NextResponse.json({ error: insertError.message }, { status: 500 });
+    for (let i = 0; i < productsToInsert.length; i += CHUNK_SIZE) {
+      const chunk = productsToInsert.slice(i, i + CHUNK_SIZE);
+      const { data: insertedChunk, error: insertError } = await admin
+        .from('products')
+        .insert(chunk)
+        .select('*');
+
+      if (insertError) {
+        console.error(`Error en carga masiva lote ${Math.floor(i / CHUNK_SIZE) + 1}:`, insertError);
+        return NextResponse.json(
+          {
+            error: `Error en lote ${Math.floor(i / CHUNK_SIZE) + 1} (${insertError.message})`,
+            insertedBeforeError: insertedProducts.length,
+          },
+          { status: 500 }
+        );
+      }
+
+      if (insertedChunk) {
+        insertedProducts.push(...insertedChunk);
+      }
     }
 
     return NextResponse.json({
       success: true,
-      count: inserted?.length || 0,
+      count: insertedProducts.length,
       newCategoriesCount: uniqueCategoryNames.size,
-      products: inserted || [],
+      products: insertedProducts,
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
