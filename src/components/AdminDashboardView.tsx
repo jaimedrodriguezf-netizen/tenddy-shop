@@ -23,7 +23,12 @@ import {
   LifeBuoy,
   Tag,
   FileSpreadsheet,
-  Edit2
+  Edit2,
+  TrendingUp,
+  MessageCircle,
+  Clock,
+  CheckCircle,
+  ArrowRight
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
@@ -83,15 +88,15 @@ export default function AdminDashboardView({
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'quotes' | 'products' | 'team' | 'appearance'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'products' || tabParam === 'quotes' || tabParam === 'team' || tabParam === 'appearance') {
-        return tabParam;
+      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'team' || tabParam === 'appearance') {
+        return tabParam as any;
       }
     }
-    return 'products';
+    return 'dashboard';
   });
   const [quotes, setQuotes] = useState<QuoteRecord[]>(initialQuotes);
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -210,6 +215,25 @@ export default function AdminDashboardView({
         Gestión B2B
       </span>
 
+      {/* 1. DASHBOARD */}
+      <button
+        onClick={() => {
+          setActiveTab('dashboard');
+          setIsMobileSidebarOpen(false);
+        }}
+        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          activeTab === 'dashboard'
+            ? 'bg-slate-900 text-white shadow-sm'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <TrendingUp className="w-4 h-4 text-sky-500" />
+          <span>Dashboard</span>
+        </div>
+      </button>
+
+      {/* 2. COTIZACIONES */}
       <button
         onClick={() => {
           setActiveTab('quotes');
@@ -222,8 +246,8 @@ export default function AdminDashboardView({
         }`}
       >
         <div className="flex items-center gap-2.5">
-          <LayoutDashboard className="w-4 h-4" />
-          <span>Cotizaciones</span>
+          <MessageCircle className="w-4 h-4" />
+          <span>Cotizaciones & Pedidos</span>
         </div>
         <span
           className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold ${
@@ -234,6 +258,7 @@ export default function AdminDashboardView({
         </span>
       </button>
 
+      {/* 3. PRODUCTOS */}
       <button
         onClick={() => {
           setActiveTab('products');
@@ -258,6 +283,7 @@ export default function AdminDashboardView({
         </span>
       </button>
 
+      {/* 4. EQUIPO */}
       <button
         onClick={() => {
           setActiveTab('team');
@@ -273,6 +299,7 @@ export default function AdminDashboardView({
         <span>Equipo & Asesores</span>
       </button>
 
+      {/* 5. APARIENCIA */}
       <button
         onClick={() => {
           setActiveTab('appearance');
@@ -479,6 +506,7 @@ export default function AdminDashboardView({
             </button>
 
             <h1 className="text-xs sm:text-base font-bold text-slate-900 tracking-tight truncate">
+              {activeTab === 'dashboard' && 'Dashboard • Resumen de Negocio'}
               {activeTab === 'quotes' && 'Cotizaciones & Pedidos'}
               {activeTab === 'products' && 'Catálogo de Productos B2B'}
               {activeTab === 'team' && 'Equipo & Asesores'}
@@ -521,10 +549,12 @@ export default function AdminDashboardView({
         </header>
 
         <main className="p-3.5 sm:p-6 md:p-8 space-y-5 sm:space-y-8 flex-1 max-w-7xl mx-auto w-full pb-24 md:pb-8">
-          {/* PESTAÑA 1: COTIZACIONES */}
-          {activeTab === 'quotes' && (
-            <div className="space-y-5 sm:space-y-6">
-              {/* Tarjetas de Métricas Responsivas (2 cols en móvil) */}
+          {/* =========================================================================
+              PESTAÑA 0: DASHBOARD (MÉTRICAS & RESUMEN)
+              ========================================================================= */}
+          {activeTab === 'dashboard' && (
+            <div className="space-y-6">
+              {/* Tarjetas de Métricas Generales */}
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 sm:p-5 shadow-xs">
                   <div className="flex items-center justify-between text-xs font-medium text-slate-500">
@@ -534,13 +564,13 @@ export default function AdminDashboardView({
                   <div className="text-xl sm:text-3xl font-extrabold text-sky-600 mt-1 sm:mt-2 font-mono">
                     {viewsCount.toLocaleString()}
                   </div>
-                  <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Tráfico total</div>
+                  <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Tráfico a tienda</div>
                 </div>
 
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 sm:p-5 shadow-xs">
                   <div className="text-[11px] sm:text-xs font-medium text-slate-500">Cotizaciones</div>
                   <div className="text-xl sm:text-3xl font-extrabold text-slate-900 mt-1 sm:mt-2 font-mono">{totalQuotes}</div>
-                  <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">En base de datos</div>
+                  <div className="text-[10px] sm:text-[11px] text-slate-400 mt-0.5">Total recibidas</div>
                 </div>
 
                 <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 sm:p-5 shadow-xs">
@@ -564,6 +594,117 @@ export default function AdminDashboardView({
                 </div>
               </div>
 
+              {/* Acciones Rápidas & Resumen de Negocio */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div
+                  onClick={() => setActiveTab('products')}
+                  className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
+                >
+                  <div className="space-y-1">
+                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Catálogo</span>
+                    <h3 className="font-bold text-slate-900 text-sm group-hover:text-sky-600 transition-colors">
+                      {products.length} Productos Publicados
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Gestionar artículos y categorías</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-sky-600 transition-all" />
+                </div>
+
+                <div
+                  onClick={() => setActiveTab('quotes')}
+                  className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all cursor-pointer flex items-center justify-between group"
+                >
+                  <div className="space-y-1">
+                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Requerimientos</span>
+                    <h3 className="font-bold text-slate-900 text-sm group-hover:text-sky-600 transition-colors">
+                      {pendingQuotes} Cotizaciones Pendientes
+                    </h3>
+                    <p className="text-[11px] text-slate-500">Atender pedidos y abrir WhatsApp</p>
+                  </div>
+                  <ArrowRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-sky-600 transition-all" />
+                </div>
+
+                <Link
+                  href={`/store/${tenant.slug}`}
+                  target="_blank"
+                  className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs hover:border-slate-300 transition-all flex items-center justify-between group"
+                >
+                  <div className="space-y-1">
+                    <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Tienda Pública</span>
+                    <h3 className="font-bold text-slate-900 text-sm group-hover:text-sky-600 transition-colors">
+                      Ver Catálogo en Vivo
+                    </h3>
+                    <p className="text-[11px] text-slate-500">{tenant.slug}.tenddy</p>
+                  </div>
+                  <ArrowUpRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-sky-600 transition-all" />
+                </Link>
+              </div>
+
+              {/* Últimas Cotizaciones Recibidas */}
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-xs space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-bold text-sm text-slate-900">Actividad Comercial Reciente</h3>
+                    <p className="text-[11px] text-slate-500">Últimas solicitudes de cotización mayorista recibidas en tu tienda.</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('quotes')}
+                    className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>Ir al Módulo de Cotizaciones</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {quotes.length === 0 ? (
+                  <div className="text-center py-10 text-slate-400 text-xs bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
+                    Aún no has recibido solicitudes de cotización. Comparte el enlace de tu tienda con tus clientes mayoristas.
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100 text-xs">
+                    {quotes.slice(0, 5).map((q) => {
+                      const quoteTotalUnits = q.items?.reduce((sum, i) => sum + (i.total_units || 0), 0) || 0;
+                      return (
+                        <div
+                          key={q.id}
+                          onClick={() => {
+                            setSelectedQuote(q);
+                            setActiveTab('quotes');
+                          }}
+                          className="py-3 flex items-center justify-between hover:bg-slate-50/60 px-2 rounded-xl transition-colors cursor-pointer"
+                        >
+                          <div className="min-w-0 pr-2">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-slate-900">{q.quote_number}</span>
+                              {getStatusBadge(q.status)}
+                            </div>
+                            <span className="font-medium text-slate-700 truncate block mt-0.5">
+                              {q.company_name ? `${q.company_name} • ${q.customer_name}` : q.customer_name}
+                            </span>
+                          </div>
+
+                          <div className="text-right shrink-0">
+                            <span className="font-mono font-bold text-slate-900 block">
+                              {quoteTotalUnits.toLocaleString()} uds
+                            </span>
+                            <span className="text-[10px] text-slate-400">
+                              {new Date(q.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* =========================================================================
+              PESTAÑA 1: COTIZACIONES & PEDIDOS (MÓDULO DEDICADO)
+              ========================================================================= */}
+          {activeTab === 'quotes' && (
+            <div className="space-y-5 sm:space-y-6">
               {/* Bandeja de Requerimientos + Detalle Lateral */}
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
                 <div className="lg:col-span-7 bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-4 shadow-xs">
@@ -953,18 +1094,28 @@ export default function AdminDashboardView({
           ========================================================================= */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-30 flex items-center justify-around py-2 px-1 shadow-lg">
         <button
+          onClick={() => setActiveTab('dashboard')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+            activeTab === 'dashboard' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <TrendingUp className="w-4 h-4" />
+          <span>Dashboard</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab('quotes')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
             activeTab === 'quotes' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
-          <LayoutDashboard className="w-4 h-4" />
+          <MessageCircle className="w-4 h-4" />
           <span>Cotizaciones</span>
         </button>
 
         <button
           onClick={() => setActiveTab('products')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
             activeTab === 'products' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -973,18 +1124,8 @@ export default function AdminDashboardView({
         </button>
 
         <button
-          onClick={() => setActiveTab('team')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-            activeTab === 'team' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          <span>Equipo</span>
-        </button>
-
-        <button
           onClick={() => setActiveTab('appearance')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-3 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
             activeTab === 'appearance' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
