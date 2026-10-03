@@ -22,11 +22,13 @@ import {
   MapPin,
   LifeBuoy,
   Tag,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Edit2
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
 import CreateCategoryModal from './CreateCategoryModal';
+import EditProductModal from './EditProductModal';
 import BulkImportModal from './BulkImportModal';
 import AppearanceTab from './AppearanceTab';
 import TeamTab, { TenantMember } from './TeamTab';
@@ -89,7 +91,7 @@ export default function AdminDashboardView({
         return tabParam;
       }
     }
-    return 'quotes';
+    return 'products';
   });
   const [quotes, setQuotes] = useState<QuoteRecord[]>(initialQuotes);
   const [products, setProducts] = useState<Product[]>(initialProducts);
@@ -98,6 +100,7 @@ export default function AdminDashboardView({
   const [selectedQuote, setSelectedQuote] = useState<QuoteRecord | null>(quotes[0] || null);
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
@@ -335,6 +338,17 @@ export default function AdminDashboardView({
         onClose={() => setIsCategoryModalOpen(false)}
         tenantId={tenant.id}
         onCategoryCreated={(newCat) => setCategories((prev) => [...prev, newCat])}
+      />
+
+      {/* Modal para Editar Producto */}
+      <EditProductModal
+        isOpen={!!editingProduct}
+        onClose={() => setEditingProduct(null)}
+        product={editingProduct}
+        categories={categories}
+        onProductUpdated={(updatedProd) => {
+          setProducts((prev) => prev.map((p) => (p.id === updatedProd.id ? updatedProd : p)));
+        }}
       />
 
       {/* Modal para Carga Masiva de Productos (Excel / CSV) */}
@@ -840,32 +854,68 @@ export default function AdminDashboardView({
                   {products.map((p) => (
                     <div
                       key={p.id}
-                      className="bg-slate-50/60 border border-slate-200 rounded-2xl p-4 flex flex-col justify-between text-xs hover:border-slate-300 transition-all group"
+                      className="bg-slate-50/60 border border-slate-200 rounded-2xl p-3.5 sm:p-4 flex flex-col justify-between text-xs hover:border-slate-300 transition-all group"
                     >
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="font-mono text-slate-500 text-[10px] font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                            {p.sku}
-                          </span>
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="text-slate-400 hover:text-rose-600 p-1 cursor-pointer transition-colors"
-                            title="Eliminar producto"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                        {/* Foto del Producto en la tarjeta */}
+                        <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden bg-white border border-slate-200/80 mb-2.5 flex items-center justify-center p-1">
+                          <img
+                            src={p.images?.[0] || '/assets/products/ayme-001.svg'}
+                            alt={p.name}
+                            className="w-full h-full object-contain"
+                          />
+                          {p.sku && (
+                            <span className="absolute top-1.5 left-1.5 font-mono text-slate-700 text-[10px] font-bold bg-white/90 px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-xs">
+                              {p.sku}
+                            </span>
+                          )}
                         </div>
 
-                        <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
-                          {p.name}
-                        </h4>
+                        <div className="flex items-center justify-between mb-1">
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">
+                            {p.name}
+                          </h4>
+                          <div className="flex items-center gap-1 shrink-0 ml-1">
+                            <button
+                              onClick={() => setEditingProduct(p)}
+                              className="text-slate-400 hover:text-sky-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Editar producto, foto o tallas"
+                            >
+                              <Edit2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(p.id)}
+                              className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Eliminar producto"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Tallas y Color si existen */}
+                        {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
+                          <div className="flex flex-wrap gap-1 text-[10px] my-1">
+                            {p.attributes.specs.color && (
+                              <span className="bg-slate-200/70 text-slate-700 px-1.5 py-0.2 rounded font-medium">
+                                {p.attributes.specs.color}
+                              </span>
+                            )}
+                            {p.attributes.specs.tallas && (
+                              <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.2 rounded font-mono font-bold">
+                                {p.attributes.specs.tallas}
+                              </span>
+                            )}
+                          </div>
+                        )}
+
                         <p className="text-slate-500 text-[11px] mt-1 line-clamp-2 leading-relaxed">
-                          {p.description}
+                          {p.description || 'Sin descripción comercial.'}
                         </p>
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-200/80 flex justify-between text-[11px] font-mono text-slate-600">
-                        <span>MOQ: {p.min_order_qty} uds</span>
+                      <div className="mt-3 pt-2.5 border-t border-slate-200/80 flex justify-between text-[11px] font-mono text-slate-600">
+                        <span>Mín: {p.min_order_qty} uds</span>
                         <span>{p.units_per_package} / fardo</span>
                       </div>
                     </div>

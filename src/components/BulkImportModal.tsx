@@ -100,13 +100,29 @@ export default function BulkImportModal({
       .replace(/[\u0300-\u036f]/g, '')
       .trim();
 
-    if (clean.includes('cod') || clean.includes('sku')) return 'sku';
-    if (clean.includes('color')) return 'color';
-    if (clean.includes('talla') || clean.includes('size')) return 'tallas';
-    if (clean.includes('costur') || clean.includes('molde') || clean.includes('patron') || clean.includes('descrip')) return 'description_and_seams';
-    if (clean.includes('nombre') || clean.includes('prenda') || clean.includes('producto')) return 'name';
-    if (clean.includes('categ')) return 'category';
-    if (clean.includes('foto') || clean.includes('enlace') || clean.includes('imagen') || clean.includes('image')) return 'image_url';
+    if (clean.includes('cod') || clean.includes('sku') || clean.includes('ref')) return 'sku';
+    if (clean.includes('color') || clean.includes('tono')) return 'color';
+    if (clean.includes('talla') || clean.includes('size') || clean.includes('medida')) return 'tallas';
+    if (clean.includes('costur') || clean.includes('molde') || clean.includes('patron') || clean.includes('detalle')) return 'description_and_seams';
+    if (clean.includes('prenda') || clean.includes('producto') || clean.includes('nombre') || clean.includes('articulo') || clean.includes('item')) return 'name';
+    if (clean.includes('descrip')) return 'description_and_seams';
+    if (clean.includes('categ') || clean.includes('tipo') || clean.includes('familia') || clean.includes('linea') || clean.includes('seccion')) return 'category';
+    if (clean.includes('foto') || clean.includes('enlace') || clean.includes('imagen') || clean.includes('image') || clean.includes('url') || clean.includes('link')) return 'image_url';
+    return clean;
+  };
+
+  // Convertir enlaces compartidos de Google Drive a URLs directas de imagen
+  const normalizeImageUrl = (url: string): string => {
+    if (!url) return '';
+    const clean = url.trim();
+
+    if (clean.includes('drive.google.com')) {
+      const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+    }
+
     return clean;
   };
 
@@ -144,7 +160,7 @@ export default function BulkImportModal({
                 description_and_seams: mapped.description_and_seams || '',
                 name: mapped.name || '',
                 category: mapped.category || 'General',
-                image_url: mapped.image_url || '',
+                image_url: normalizeImageUrl(mapped.image_url || ''),
               };
             }).filter((p) => p.name || p.sku);
 
@@ -161,17 +177,39 @@ export default function BulkImportModal({
           },
         });
       } else {
-        // Archivo Excel (.xlsx / .xls)
-        const rows = (await readXlsxFile(file)) as unknown as any[][];
+        // Archivo Excel (.xlsx / .xls) con soporte multi-hoja
+        const rawResult = (await readXlsxFile(file)) as unknown;
+        let rows: any[][];
+
+        if (Array.isArray(rawResult) && rawResult.length > 0 && typeof rawResult[0] === 'object' && rawResult[0] !== null && 'data' in rawResult[0]) {
+          // Archivo con múltiples hojas: seleccionar la que contenga datos
+          const sheets = rawResult as Array<{ sheet: string; data: any[][] }>;
+          const sheetWithData = sheets.find((s) => Array.isArray(s.data) && s.data.length > 1) || sheets[0];
+          rows = sheetWithData?.data || [];
+        } else {
+          rows = rawResult as any[][];
+        }
+
         if (!rows || rows.length < 2) {
-          setErrorMsg('El archivo Excel debe tener al menos una fila de encabezados y una de datos.');
+          setErrorMsg('El archivo Excel debe tener al menos una fila de encabezados y una fila con datos de productos.');
           setParsing(false);
           return;
         }
 
-        const headerRow = rows[0];
+        // Buscar automáticamente la fila que contiene los encabezados reales
+        let headerRowIndex = 0;
+        for (let r = 0; r < Math.min(rows.length, 10); r++) {
+          const rowCells = (rows[r] as any[]).map((cell: any) => normalizeKey(String(cell ?? '')));
+          const matchesKnownHeader = rowCells.some((k) => k === 'sku' || k === 'name' || k === 'category' || k === 'color' || k === 'tallas');
+          if (matchesKnownHeader) {
+            headerRowIndex = r;
+            break;
+          }
+        }
+
+        const headerRow = rows[headerRowIndex] as any[];
         const headers = headerRow.map((h: any) => normalizeKey(String(h ?? '')));
-        const dataRows = rows.slice(1);
+        const dataRows = rows.slice(headerRowIndex + 1);
 
         const productsList: ParsedProduct[] = dataRows.map((row: any[]) => {
           const mapped: Record<string, string> = {};
@@ -187,7 +225,7 @@ export default function BulkImportModal({
             description_and_seams: mapped.description_and_seams || '',
             name: mapped.name || '',
             category: mapped.category || 'General',
-            image_url: mapped.image_url || '',
+            image_url: normalizeImageUrl(mapped.image_url || ''),
           };
         }).filter((p) => p.name || p.sku);
 

@@ -246,10 +246,10 @@ export default function TenantTemuView({
                   key={p.id}
                   className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all group"
                 >
-                  {/* Foto con Badges */}
+                  {/* Foto con Badges y Logo de Tienda */}
                   <div
                     onClick={() => setModalProduct(p)}
-                    className="relative aspect-square bg-slate-50 flex items-center justify-center p-3 cursor-pointer overflow-hidden"
+                    className="relative aspect-[3/4] bg-slate-50 flex items-center justify-center p-2 cursor-pointer overflow-hidden"
                   >
                     <img
                       src={imageSrc}
@@ -257,14 +257,21 @@ export default function TenantTemuView({
                       className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
                     />
 
+                    {/* Logo de la Empresa en la esquina de la foto */}
+                    {tenant.logo_url && (
+                      <div className="absolute top-2 right-2 w-7 h-7 rounded-lg overflow-hidden bg-white/95 p-0.5 border border-slate-200/80 shadow-xs backdrop-blur-xs flex items-center justify-center z-10">
+                        <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+                      </div>
+                    )}
+
                     {/* Badge MOQ / Volumen */}
-                    <div className="absolute top-2 left-2 bg-slate-900/85 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs">
+                    <div className="absolute top-2 left-2 bg-slate-900/85 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10">
                       Mín: {minQty.toLocaleString()} uds
                     </div>
 
                     {p.sku && (
-                      <div className="absolute bottom-2 left-2 bg-white/90 text-slate-600 font-mono text-[9px] font-semibold px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-xs">
-                        {p.sku}
+                      <div className="absolute bottom-2 left-2 bg-slate-900/90 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs z-10">
+                        CÓD: {p.sku}
                       </div>
                     )}
                   </div>
@@ -279,7 +286,23 @@ export default function TenantTemuView({
                         {p.name}
                       </h3>
 
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1">
+                      {/* Tallas y Colores en la Tarjeta */}
+                      {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
+                        <div className="flex flex-wrap gap-1 text-[10px] mt-1.5">
+                          {p.attributes?.specs?.color && (
+                            <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium">
+                              🎨 {p.attributes.specs.color}
+                            </span>
+                          )}
+                          {p.attributes?.specs?.tallas && (
+                            <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
+                              📏 {p.attributes.specs.tallas}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1.5">
                         <Package className="w-3 h-3 text-slate-400 shrink-0" />
                         <span>Fardo / Bulto x {packSize} uds</span>
                       </div>

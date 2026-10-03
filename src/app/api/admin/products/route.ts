@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 
-// Obtener o crear productos desde el panel administrativo
+// 1. CREAR PRODUCTO (POST)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -26,14 +26,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Validar autorización estricta para este tenant específico
+    // Validar autorización estricta para este tenant específico
     const auth = await verifyTenantAdmin({ tenantId: tenant_id });
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
-    // Generar slug URL-friendly
-    const slug = name
+    // Generar slug base URL-friendly
+    const baseSlug = name
       .toLowerCase()
       .trim()
       .normalize('NFD')
@@ -41,18 +41,32 @@ export async function POST(request: Request) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
+    const cleanSku = sku.toLowerCase().replace(/[^a-z0-9]/g, '');
+    let targetSlug = `${baseSlug}-${cleanSku}`;
+
     const admin = getAdminClient();
 
-    // 2. Procesar y subir imagen a Supabase Storage si se envió base64
+    // Comprobar y evitar colisión de slug (previene error duplicate key value violates unique constraint)
+    const { data: existingProd } = await admin
+      .from('products')
+      .select('id')
+      .eq('tenant_id', tenant_id)
+      .eq('slug', targetSlug)
+      .single();
+
+    if (existingProd) {
+      targetSlug = `${targetSlug}-${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    // Procesar y subir imagen a Supabase Storage (NUNCA base64 crudo en base de datos)
     let finalImages: string[] = Array.isArray(images) && images.length > 0 ? images : [];
     if (body.imageData && typeof body.imageData === 'string' && body.imageData.startsWith('data:image')) {
       try {
         const matches = body.imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
           const mimeType = matches[1];
-          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'jpg';
+          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
           const buffer = Buffer.from(matches[2], 'base64');
-          const cleanSku = sku.toLowerCase().replace(/[^a-z0-9]/g, '');
           const filePath = `products/${tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
 
           const { error: uploadErr } = await admin.storage
@@ -85,7 +99,7 @@ export async function POST(request: Request) {
       .insert({
         tenant_id,
         category_id: category_id || null,
-        slug: `${slug}-${sku.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        slug: targetSlug,
         name: name.trim(),
         sku: sku.trim().toUpperCase(),
         description: description ? description.trim() : null,
@@ -111,7 +125,109 @@ export async function POST(request: Request) {
   }
 }
 
-// Eliminar producto
+// 2. ACTUALIZAR / EDITAR PRODUCTO (PATCH)
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const {
+      id,
+      name,
+      sku,
+      category_id,
+      description,
+      min_order_qty,
+      units_per_package,
+      attributes,
+      imageData,
+      images,
+    } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Falta id del producto' }, { status: 400 });
+    }
+
+    const admin = getAdminClient();
+
+    // 1. Obtener producto actual para validar tenant
+    const { data: currentProduct, error: fetchErr } = await admin
+      .from('products')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (fetchErr || !currentProduct) {
+      return NextResponse.json({ error: 'Producto no encontrado' }, { status: 404 });
+    }
+
+    const auth = await verifyTenantAdmin({ tenantId: currentProduct.tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
+    // 2. Si viene nueva imagen en base64, subir a Supabase Storage
+    let finalImages = Array.isArray(images) && images.length > 0 ? images : currentProduct.images || [];
+    if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
+      try {
+        const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mimeType = matches[1];
+          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
+          const buffer = Buffer.from(matches[2], 'base64');
+          const cleanSku = (sku || currentProduct.sku).toLowerCase().replace(/[^a-z0-9]/g, '');
+          const filePath = `products/${currentProduct.tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
+
+          const { error: uploadErr } = await admin.storage
+            .from('support-attachments')
+            .upload(filePath, buffer, { contentType: mimeType, upsert: true });
+
+          if (!uploadErr) {
+            const { data: pubData } = admin.storage
+              .from('support-attachments')
+              .getPublicUrl(filePath);
+            if (pubData?.publicUrl) {
+              finalImages = [pubData.publicUrl];
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error subiendo imagen al editar producto:', err);
+      }
+    }
+
+    // 3. Preparar campos a actualizar
+    const updatePayload: Record<string, unknown> = {
+      updated_at: new Date().toISOString(),
+      images: finalImages,
+    };
+
+    if (name) updatePayload.name = name.trim();
+    if (sku) updatePayload.sku = sku.trim().toUpperCase();
+    if (category_id !== undefined) updatePayload.category_id = category_id || null;
+    if (description !== undefined) updatePayload.description = description ? description.trim() : null;
+    if (min_order_qty !== undefined) updatePayload.min_order_qty = Number(min_order_qty) || 1;
+    if (units_per_package !== undefined) updatePayload.units_per_package = Number(units_per_package) || 1;
+    if (attributes !== undefined) updatePayload.attributes = attributes;
+
+    const { data: updatedProduct, error: updateErr } = await admin
+      .from('products')
+      .update(updatePayload)
+      .eq('id', id)
+      .select('*')
+      .single();
+
+    if (updateErr) {
+      console.error('Error actualizando producto:', updateErr);
+      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, product: updatedProduct });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  }
+}
+
+// 3. ELIMINAR PRODUCTO (DELETE)
 export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
