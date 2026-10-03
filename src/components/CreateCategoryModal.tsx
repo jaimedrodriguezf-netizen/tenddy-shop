@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Tag, Loader2, AlertCircle, Check } from 'lucide-react';
+import { X, Tag, Loader2, AlertCircle, Check, Upload, Clipboard } from 'lucide-react';
 import { Category } from '@/lib/types';
+import { compressImage } from '@/lib/image-compressor';
 
 interface CreateCategoryModalProps {
   isOpen: boolean;
@@ -19,8 +20,23 @@ export default function CreateCategoryModal({
 }: CreateCategoryModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [compressingImage, setCompressingImage] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const normalizeImageUrl = (url: string): string => {
+    if (!url) return '';
+    const clean = url.trim();
+    if (clean.includes('drive.google.com')) {
+      const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+    }
+    return clean;
+  };
 
   if (!isOpen) return null;
 
@@ -35,6 +51,8 @@ export default function CreateCategoryModal({
     setErrorMsg(null);
 
     try {
+      const activeImageUrl = imageUrlInput.trim() ? normalizeImageUrl(imageUrlInput) : undefined;
+
       const res = await fetch('/api/admin/categories', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,6 +60,8 @@ export default function CreateCategoryModal({
           tenant_id: tenantId,
           name: name.trim(),
           description: description.trim() || null,
+          imageData: imageBase64,
+          image_url: !imageBase64 ? activeImageUrl : undefined,
         }),
       });
 
@@ -53,6 +73,8 @@ export default function CreateCategoryModal({
       onCategoryCreated(data.category);
       setName('');
       setDescription('');
+      setImageBase64(null);
+      setImageUrlInput('');
       onClose();
     } catch (err: unknown) {
       const errorText = err instanceof Error ? err.message : 'Error del servidor';
@@ -88,6 +110,113 @@ export default function CreateCategoryModal({
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            {/* Foto Circular de la Categoría */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+              <label className="block text-slate-800 font-bold text-xs">
+                Foto Representativa (Opcional)
+              </label>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer text-xs font-semibold shadow-xs">
+                  {compressingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
+                  <span>{compressingImage ? 'Optimizando...' : 'Subir Foto'}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          setCompressingImage(true);
+                          const compressed = await compressImage(file, {
+                            maxWidth: 600,
+                            maxHeight: 600,
+                            quality: 0.85,
+                            outputFormat: 'image/webp',
+                          });
+                          setImageBase64(compressed);
+                        } catch (err) {
+                          console.error(err);
+                        } finally {
+                          setCompressingImage(false);
+                        }
+                      }
+                    }}
+                    className="hidden"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (typeof navigator !== 'undefined' && navigator.clipboard?.read) {
+                        const items = await navigator.clipboard.read();
+                        for (const item of items) {
+                          const imgType = item.types.find((t) => t.startsWith('image/'));
+                          if (imgType) {
+                            const blob = await item.getType(imgType);
+                            const file = new File([blob], 'cat.png', { type: imgType });
+                            const compressed = await compressImage(file, {
+                              maxWidth: 600,
+                              maxHeight: 600,
+                              quality: 0.85,
+                              outputFormat: 'image/webp',
+                            });
+                            setImageBase64(compressed);
+                            return;
+                          }
+                        }
+                      }
+                      alert('Presiona Ctrl + V para pegar la foto directamente.');
+                    } catch {
+                      alert('Presiona Ctrl + V para pegar la foto directamente.');
+                    }
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold"
+                >
+                  <Clipboard className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Pegar (Ctrl + V)</span>
+                </button>
+              </div>
+
+              <div className="pt-1">
+                <input
+                  type="url"
+                  value={imageUrlInput}
+                  onChange={(e) => {
+                    const clean = normalizeImageUrl(e.target.value);
+                    setImageUrlInput(clean);
+                    if (imageBase64) setImageBase64(null);
+                  }}
+                  placeholder="O pegar enlace web o Google Drive de la foto..."
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
+                />
+              </div>
+
+              {(imageBase64 || imageUrlInput) && (
+                <div className="flex items-center gap-3 pt-1">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-slate-300 bg-white p-0.5 shadow-sm shrink-0">
+                    <img
+                      src={imageBase64 || normalizeImageUrl(imageUrlInput)}
+                      alt="Preview categoría"
+                      className="w-full h-full object-cover rounded-full"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImageBase64(null);
+                      setImageUrlInput('');
+                    }}
+                    className="text-rose-600 hover:text-rose-700 text-xs font-semibold cursor-pointer"
+                  >
+                    Quitar Foto
+                  </button>
+                </div>
+              )}
+            </div>
+
             <div>
               <label className="block text-slate-700 font-semibold mb-1">Nombre de la Categoría *</label>
               <input

@@ -32,10 +32,48 @@ export async function GET(request: Request) {
   }
 }
 
+async function processCategoryImage(
+  admin: any,
+  tenantId: string,
+  slug: string,
+  imageUrl?: string | null,
+  imageData?: string | null
+): Promise<string | null> {
+  if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim().startsWith('http')) {
+    return imageUrl.trim();
+  }
+  if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
+    try {
+      const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches && matches.length === 3) {
+        const mimeType = matches[1];
+        const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
+        const buffer = Buffer.from(matches[2], 'base64');
+        const cleanSlugPart = slug.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
+        const filePath = `categories/${tenantId}/${cleanSlugPart}-${Date.now()}.${ext}`;
+
+        const { error: uploadErr } = await admin.storage
+          .from('support-attachments')
+          .upload(filePath, buffer, { contentType: mimeType, upsert: true });
+
+        if (!uploadErr) {
+          const { data: pubData } = admin.storage
+            .from('support-attachments')
+            .getPublicUrl(filePath);
+          return pubData?.publicUrl || null;
+        }
+      }
+    } catch (err) {
+      console.error('Error subiendo imagen de categoría a Storage:', err);
+    }
+  }
+  return null;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenant_id, name, description, icon_name } = body;
+    const { tenant_id, name, description, icon_name, image_url, imageData } = body;
 
     if (!tenant_id || !name) {
       return NextResponse.json({ error: 'Nombre de la categoría y tenant son requeridos' }, { status: 400 });
@@ -72,6 +110,9 @@ export async function POST(request: Request) {
       slug = `${slug}-${Math.floor(10 + Math.random() * 90)}`;
     }
 
+    // Procesar foto de la categoría
+    const finalImageUrl = await processCategoryImage(admin, tenant_id, slug, image_url, imageData);
+
     const { data: category, error } = await admin
       .from('categories')
       .insert({
@@ -80,6 +121,7 @@ export async function POST(request: Request) {
         slug,
         description: description ? description.trim() : null,
         icon_name: icon_name || 'tag',
+        image_url: finalImageUrl,
         is_active: true,
       })
       .select('*')
@@ -96,7 +138,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, description, is_active, sort_order } = body;
+    const { id, name, description, is_active, sort_order, image_url, imageData } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Falta id de la categoría' }, { status: 400 });
@@ -107,7 +149,7 @@ export async function PATCH(request: Request) {
     // 1. Obtener categoría actual para validar tenant
     const { data: currentCat, error: fetchErr } = await admin
       .from('categories')
-      .select('id, tenant_id, name, slug')
+      .select('id, tenant_id, name, slug, image_url')
       .eq('id', id)
       .single();
 
@@ -122,6 +164,7 @@ export async function PATCH(request: Request) {
 
     const updatePayload: Record<string, unknown> = {};
 
+    let targetSlug = currentCat.slug;
     if (name !== undefined && name.trim()) {
       updatePayload.name = name.trim();
       // Si el nombre cambió, actualizar el slug
@@ -134,7 +177,8 @@ export async function PATCH(request: Request) {
           .replace(/[^a-z0-9]+/g, '-')
           .replace(/^-+|-+$/g, '');
         if (!baseSlug) baseSlug = `cat-${Date.now()}`;
-        updatePayload.slug = `${baseSlug}-${Math.floor(10 + Math.random() * 90)}`;
+        targetSlug = `${baseSlug}-${Math.floor(10 + Math.random() * 90)}`;
+        updatePayload.slug = targetSlug;
       }
     }
 
@@ -148,6 +192,18 @@ export async function PATCH(request: Request) {
 
     if (sort_order !== undefined) {
       updatePayload.sort_order = Number(sort_order) || 0;
+    }
+
+    // Procesar foto si se actualizó
+    if (image_url !== undefined || imageData !== undefined) {
+      if (image_url === null || image_url === '') {
+        updatePayload.image_url = null;
+      } else {
+        const processedUrl = await processCategoryImage(admin, currentCat.tenant_id, targetSlug, image_url, imageData);
+        if (processedUrl) {
+          updatePayload.image_url = processedUrl;
+        }
+      }
     }
 
     const { data: updatedCategory, error: updateErr } = await admin

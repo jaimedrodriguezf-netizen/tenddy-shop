@@ -14,7 +14,10 @@ import {
   LayoutDashboard,
   CheckCircle2,
   Store,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  Layers,
+  X
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
@@ -37,6 +40,7 @@ export default function TenantTemuView({
   isAdmin = false,
 }: TenantTemuViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [isMegaMenuOpen, setIsMegaMenuOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
@@ -181,12 +185,34 @@ export default function TenantTemuView({
         </div>
 
         {/* =========================================================================
-            2. BARRA DESLIZABLE DE CATEGORÍAS (PILLS ESTILO TEMU)
+            2. BARRA DE CATEGORÍAS CON BOTÓN DESPLEGABLE DE MEGA-MENÚ
             ========================================================================= */}
-        <div className="bg-white border-t border-slate-100 px-3 sm:px-6 py-2 overflow-x-auto scrollbar-none">
+        <div className="bg-white border-t border-slate-100 px-3 sm:px-6 py-2 overflow-x-auto scrollbar-none relative">
           <div className="max-w-7xl mx-auto flex items-center gap-2 shrink-0">
+            {/* Botón Desplegable de Categorías */}
             <button
-              onClick={() => setSelectedCategory('all')}
+              type="button"
+              onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                isMegaMenuOpen
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200/80'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-sky-600" />
+              <span>Categorías</span>
+              <ChevronDown
+                className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                  isMegaMenuOpen ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+
+            <button
+              onClick={() => {
+                setSelectedCategory('all');
+                setIsMegaMenuOpen(false);
+              }}
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === 'all'
                   ? 'bg-slate-900 text-white shadow-xs'
@@ -199,7 +225,10 @@ export default function TenantTemuView({
             {categories.map((c) => (
               <button
                 key={c.id}
-                onClick={() => setSelectedCategory(c.id)}
+                onClick={() => {
+                  setSelectedCategory(c.id);
+                  setIsMegaMenuOpen(false);
+                }}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   selectedCategory === c.id
                     ? 'bg-slate-900 text-white shadow-xs'
@@ -210,6 +239,84 @@ export default function TenantTemuView({
               </button>
             ))}
           </div>
+
+          {/* =========================================================================
+              MEGA-MENÚ DESPLEGABLE CON FOTOS CIRCULARES
+              ========================================================================= */}
+          {isMegaMenuOpen && (
+            <div className="absolute left-0 right-0 top-full bg-white border-b border-slate-200 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                      <Layers className="w-4 h-4" />
+                    </span>
+                    <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
+                      Explorar Categorías & Colecciones
+                    </h3>
+                  </div>
+
+                  <button
+                    onClick={() => setIsMegaMenuOpen(false)}
+                    className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {categories.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-6 text-center italic">
+                    No hay categorías activas en este momento.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto py-1">
+                    {categories.map((c) => {
+                      const count = products.filter((p) => p.category_id === c.id).length;
+
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(c.id);
+                            setIsMegaMenuOpen(false);
+                          }}
+                          className={`flex flex-col items-center gap-2 p-2.5 rounded-2xl transition-all text-center group cursor-pointer ${
+                            selectedCategory === c.id
+                              ? 'bg-sky-50/80 border border-sky-200'
+                              : 'hover:bg-slate-50 border border-transparent'
+                          }`}
+                        >
+                          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 group-hover:border-slate-900 group-hover:scale-105 transition-all p-0.5 flex items-center justify-center shadow-xs">
+                            {c.image_url ? (
+                              <img
+                                src={c.image_url}
+                                alt={c.name}
+                                className="w-full h-full object-cover rounded-full"
+                              />
+                            ) : (
+                              <span className="font-extrabold text-lg text-slate-700">
+                                {c.name.charAt(0).toUpperCase()}
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 w-full">
+                            <span className="font-bold text-[11px] sm:text-xs text-slate-800 line-clamp-1 group-hover:text-sky-600 transition-colors block">
+                              {c.name}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                              {count} {count === 1 ? 'artículo' : 'artículos'}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </header>
 

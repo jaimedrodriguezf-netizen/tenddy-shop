@@ -15,9 +15,12 @@ import {
   X,
   Check,
   RefreshCw,
-  Layers
+  Layers,
+  Upload,
+  Clipboard
 } from 'lucide-react';
 import { Category } from '@/lib/types';
+import { compressImage } from '@/lib/image-compressor';
 
 interface ExtendedCategory extends Category {
   products?: { count: number }[];
@@ -47,7 +50,23 @@ export default function CategoriesManagerView({
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editIsActive, setEditIsActive] = useState(true);
+  const [editImageBase64, setEditImageBase64] = useState<string | null>(null);
+  const [editImageUrlInput, setEditImageUrlInput] = useState('');
+  const [editCurrentImageUrl, setEditCurrentImageUrl] = useState<string | null>(null);
+  const [compressingImage, setCompressingImage] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  const normalizeImageUrl = (url: string): string => {
+    if (!url) return '';
+    const clean = url.trim();
+    if (clean.includes('drive.google.com')) {
+      const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      }
+    }
+    return clean;
+  };
 
   // Estado para confirmación de eliminación
   const [deletingCat, setDeletingCat] = useState<ExtendedCategory | null>(null);
@@ -98,6 +117,9 @@ export default function CategoriesManagerView({
     setEditName(cat.name || '');
     setEditDescription(cat.description || '');
     setEditIsActive(cat.is_active ?? true);
+    setEditImageBase64(null);
+    setEditImageUrlInput('');
+    setEditCurrentImageUrl(cat.image_url || null);
     setErrorMsg(null);
   };
 
@@ -110,6 +132,10 @@ export default function CategoriesManagerView({
       setSavingEdit(true);
       setErrorMsg(null);
 
+      const activeImageUrl = editImageUrlInput.trim()
+        ? normalizeImageUrl(editImageUrlInput)
+        : editCurrentImageUrl;
+
       const res = await fetch('/api/admin/categories', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -118,6 +144,8 @@ export default function CategoriesManagerView({
           name: editName.trim(),
           description: editDescription.trim() || null,
           is_active: editIsActive,
+          imageData: editImageBase64,
+          image_url: !editImageBase64 ? activeImageUrl : undefined,
         }),
       });
 
@@ -370,12 +398,18 @@ export default function CategoriesManagerView({
 
                   return (
                     <tr key={cat.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Nombre */}
+                      {/* Nombre y Foto Circular */}
                       <td className="py-3.5 px-4 font-bold text-slate-900">
-                        <div className="flex items-center gap-2">
-                          <span className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
-                            <Tag className="w-3.5 h-3.5 text-slate-500" />
-                          </span>
+                        <div className="flex items-center gap-2.5">
+                          {cat.image_url ? (
+                            <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center p-0.5 shadow-xs">
+                              <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover rounded-full" />
+                            </div>
+                          ) : (
+                            <span className="w-8 h-8 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 font-bold text-xs shrink-0">
+                              {cat.name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
                           <span className="truncate max-w-[200px]" title={cat.name}>
                             {cat.name}
                           </span>
@@ -494,6 +528,115 @@ export default function CategoriesManagerView({
               </div>
 
               <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+                {/* Foto Circular de la Categoría */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                  <label className="block text-slate-800 font-bold text-xs">
+                    Foto Representativa de la Categoría
+                  </label>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer text-xs font-semibold shadow-xs">
+                      {compressingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
+                      <span>{compressingImage ? 'Optimizando...' : 'Subir Foto'}</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              setCompressingImage(true);
+                              const compressed = await compressImage(file, {
+                                maxWidth: 600,
+                                maxHeight: 600,
+                                quality: 0.85,
+                                outputFormat: 'image/webp',
+                              });
+                              setEditImageBase64(compressed);
+                            } catch (err) {
+                              console.error(err);
+                            } finally {
+                              setCompressingImage(false);
+                            }
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          if (typeof navigator !== 'undefined' && navigator.clipboard?.read) {
+                            const items = await navigator.clipboard.read();
+                            for (const item of items) {
+                              const imgType = item.types.find((t) => t.startsWith('image/'));
+                              if (imgType) {
+                                const blob = await item.getType(imgType);
+                                const file = new File([blob], 'cat.png', { type: imgType });
+                                const compressed = await compressImage(file, {
+                                  maxWidth: 600,
+                                  maxHeight: 600,
+                                  quality: 0.85,
+                                  outputFormat: 'image/webp',
+                                });
+                                setEditImageBase64(compressed);
+                                return;
+                              }
+                            }
+                          }
+                          alert('Presiona Ctrl + V para pegar la foto directamente.');
+                        } catch {
+                          alert('Presiona Ctrl + V para pegar la foto directamente.');
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold"
+                    >
+                      <Clipboard className="w-3.5 h-3.5 text-sky-600" />
+                      <span>Pegar (Ctrl + V)</span>
+                    </button>
+                  </div>
+
+                  <div className="pt-1.5">
+                    <input
+                      type="url"
+                      value={editImageUrlInput}
+                      onChange={(e) => {
+                        const clean = normalizeImageUrl(e.target.value);
+                        setEditImageUrlInput(clean);
+                        if (editImageBase64) setEditImageBase64(null);
+                      }}
+                      placeholder="O pegar enlace web o Google Drive de la foto..."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
+                    />
+                  </div>
+
+                  {/* Vista Previa Circular */}
+                  {(editImageBase64 || editImageUrlInput || editCurrentImageUrl) && (
+                    <div className="flex items-center gap-3 pt-1">
+                      <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-slate-300 bg-white p-0.5 shadow-sm shrink-0">
+                        <img
+                          src={editImageBase64 || (editImageUrlInput ? normalizeImageUrl(editImageUrlInput) : editCurrentImageUrl!)}
+                          alt="Preview categoría"
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditImageBase64(null);
+                          setEditImageUrlInput('');
+                          setEditCurrentImageUrl(null);
+                        }}
+                        className="text-rose-600 hover:text-rose-700 text-xs font-semibold cursor-pointer"
+                      >
+                        Quitar Foto
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div>
                   <label className="block text-slate-700 font-semibold mb-1">
                     Nombre de la Categoría *
