@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Package,
@@ -31,7 +31,8 @@ import {
   ArrowRight,
   ChevronDown,
   LayoutGrid,
-  List
+  List,
+  Bell
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
@@ -40,7 +41,7 @@ import EditProductModal from './EditProductModal';
 import BulkImportModal from './BulkImportModal';
 import AppearanceTab from './AppearanceTab';
 import TeamTab, { TenantMember } from './TeamTab';
-import SupportTicketModal from './SupportTicketModal';
+import TenantSupportCenterModal from './TenantSupportCenterModal';
 import CategoriesManagerView from './CategoriesManagerView';
 import VersionBadge from './VersionBadge';
 
@@ -113,10 +114,29 @@ export default function AdminDashboardView({
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
+  const [supportModalInitialTab, setSupportModalInitialTab] = useState<'tickets' | 'new' | 'fixes'>('tickets');
+  const [unreadSupportCount, setUnreadSupportCount] = useState<number>(0);
   const [isInventoryOpen, setIsInventoryOpen] = useState(true);
   const [isQuotesOpen, setIsQuotesOpen] = useState(true);
   const [catalogViewMode, setCatalogViewMode] = useState<'vertical' | 'horizontal'>('vertical');
 
+  // Consultar notificaciones de soporte no leídas
+  useEffect(() => {
+    async function checkSupportNotifications() {
+      try {
+        const res = await fetch(`/api/admin/support?tenantId=${tenant.id}`);
+        const data = await res.json();
+        if (res.ok && data.totalUnread !== undefined) {
+          setUnreadSupportCount(data.totalUnread);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    if (tenant.id) {
+      checkSupportNotifications();
+    }
+  }, [tenant.id]);
   // Métricas
   const totalQuotes = quotes.length;
   const pendingQuotes = quotes.filter((q) => q.status === 'pending').length;
@@ -506,6 +526,7 @@ export default function AdminDashboardView({
 
         <button
           onClick={() => {
+            setSupportModalInitialTab('tickets');
             setIsSupportModalOpen(true);
             setIsMobileSidebarOpen(false);
           }}
@@ -515,6 +536,11 @@ export default function AdminDashboardView({
             <LifeBuoy className="w-4 h-4 text-amber-500" />
             <span>Mesa de Ayuda & Soporte</span>
           </div>
+          {unreadSupportCount > 0 && (
+            <span className="bg-rose-500 text-white text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full animate-pulse">
+              {unreadSupportCount}
+            </span>
+          )}
         </button>
 
         <Link
@@ -572,8 +598,8 @@ export default function AdminDashboardView({
         }}
       />
 
-      {/* Modal de Soporte Técnico y Mesa de Ayuda */}
-      <SupportTicketModal
+      {/* Modal de Centro de Soporte, Hilos y Fixes */}
+      <TenantSupportCenterModal
         isOpen={isSupportModalOpen}
         onClose={() => setIsSupportModalOpen(false)}
         tenantId={tenant.id}
@@ -581,6 +607,8 @@ export default function AdminDashboardView({
         defaultName={initialMembers[0]?.full_name || tenant.name}
         defaultPhone={tenant.landing_config?.whatsapp_default || branches[0]?.phone_whatsapp || initialMembers[0]?.phone || ''}
         defaultEmail={initialMembers[0]?.email || tenant.landing_config?.email || ''}
+        initialTab={supportModalInitialTab}
+        onNotificationRead={() => setUnreadSupportCount((prev) => Math.max(0, prev - 1))}
       />
 
       {/* =========================================================================
@@ -711,14 +739,34 @@ export default function AdminDashboardView({
               </button>
             )}
 
+            {/* Campanita de Notificaciones / Soporte */}
+            <button
+              onClick={() => {
+                setSupportModalInitialTab('tickets');
+                setIsSupportModalOpen(true);
+              }}
+              className="relative p-2 rounded-xl text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+              title="Notificaciones y Respuestas de Soporte"
+            >
+              <Bell className="w-4 h-4 text-slate-600" />
+              {unreadSupportCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[9px] font-mono font-bold w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+                  {unreadSupportCount}
+                </span>
+              )}
+            </button>
+
             {/* Botón Soporte Técnico Directo */}
             <button
-              onClick={() => setIsSupportModalOpen(true)}
+              onClick={() => {
+                setSupportModalInitialTab('new');
+                setIsSupportModalOpen(true);
+              }}
               className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-              title="Abrir mesa de ayuda y soporte técnico con captura de pantalla"
+              title="Abrir mesa de ayuda y requerimientos"
             >
               <LifeBuoy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="hidden sm:inline">Soporte</span>
+              <span className="hidden sm:inline">Mesa de Ayuda</span>
             </button>
 
             <Link
