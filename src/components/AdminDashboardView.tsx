@@ -41,6 +41,7 @@ import BulkImportModal from './BulkImportModal';
 import AppearanceTab from './AppearanceTab';
 import TeamTab, { TenantMember } from './TeamTab';
 import SupportTicketModal from './SupportTicketModal';
+import CategoriesManagerView from './CategoriesManagerView';
 import VersionBadge from './VersionBadge';
 
 interface QuoteItem {
@@ -91,11 +92,11 @@ export default function AdminDashboardView({
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'team' | 'appearance'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'team' || tabParam === 'appearance') {
+      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'team' || tabParam === 'appearance') {
         return tabParam as any;
       }
     }
@@ -290,6 +291,31 @@ export default function AdminDashboardView({
               </span>
             </button>
 
+            {/* Sub-item: Gestión de Categorías (CRUD) */}
+            <button
+              onClick={() => {
+                setActiveTab('categories');
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'categories'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <div className="flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-sky-600" />
+                <span>Gestión de Categorías</span>
+              </div>
+              <span
+                className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                  activeTab === 'categories' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200/70 text-slate-600'
+                }`}
+              >
+                {categories.length}
+              </span>
+            </button>
+
             <button
               onClick={() => {
                 setIsBulkModalOpen(true);
@@ -301,20 +327,6 @@ export default function AdminDashboardView({
               <div className="flex items-center gap-1.5">
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Carga Masiva (Excel)</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => {
-                setIsCategoryModalOpen(true);
-                setIsMobileSidebarOpen(false);
-              }}
-              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
-              title="Crear nueva categoría para el catálogo"
-            >
-              <div className="flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-sky-600" />
-                <span>Nueva Categoría</span>
               </div>
             </button>
           </div>
@@ -681,6 +693,7 @@ export default function AdminDashboardView({
               {activeTab === 'dashboard' && 'Dashboard • Resumen de Negocio'}
               {activeTab === 'quotes' && 'Cotizaciones & Pedidos'}
               {activeTab === 'products' && 'Catálogo de Productos B2B'}
+              {activeTab === 'categories' && 'Gestión de Categorías B2B'}
               {activeTab === 'team' && 'Equipo & Asesores'}
               {activeTab === 'appearance' && 'Diseño & Apariencia'}
             </h1>
@@ -1372,6 +1385,16 @@ export default function AdminDashboardView({
                 </div>
               )}
             </div>
+          )}
+
+          {/* PESTAÑA: GESTIÓN DE CATEGORÍAS (CRUD COMPLETO) */}
+          {activeTab === 'categories' && (
+            <CategoriesManagerView
+              tenantId={tenant.id}
+              initialCategories={categories}
+              onCategoriesChanged={(updatedCats) => setCategories(updatedCats)}
+              onOpenCreateModal={() => setIsCategoryModalOpen(true)}
+            />
           )}
 
           {/* PESTAÑA 3: EQUIPO & ROLES */}

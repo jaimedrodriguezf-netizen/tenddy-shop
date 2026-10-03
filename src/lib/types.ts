@@ -54,6 +54,9 @@ export interface Category {
   slug: string;
   name: string;
   description?: string;
+  is_active?: boolean;
+  sort_order?: number;
+  image_url?: string;
 }
 
 export interface Product {
