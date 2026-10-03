@@ -283,13 +283,16 @@ export default function BulkImportModal({
         throw new Error(data.error || 'Error al importar productos');
       }
 
-      setSuccessMsg(`¡${data.count} productos importados exitosamente! Se crearon ${data.newCategoriesCount || 0} nuevas categorías.`);
-      if (data.products && Array.isArray(data.products)) {
+      setSuccessMsg(
+        data.message ||
+          `¡${data.count} productos importados exitosamente! Se crearon ${data.newCategoriesCount || 0} nuevas categorías.`
+      );
+      if (data.products && Array.isArray(data.products) && data.products.length > 0) {
         onProductsImported(data.products);
       }
       setTimeout(() => {
         onClose();
-      }, 1800);
+      }, 2500);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error de conexión';
       setErrorMsg(msg);

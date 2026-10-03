@@ -42,7 +42,17 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
-    // 2. Cargar categorías existentes para este tenant
+    // 2. Cargar SKUs existentes para detectar y omitir productos duplicados (Ticket #4603)
+    const { data: existingProducts } = await admin
+      .from('products')
+      .select('sku')
+      .eq('tenant_id', tenant_id);
+
+    const existingSkuSet = new Set(
+      (existingProducts || []).map((p) => p.sku?.toUpperCase().trim()).filter(Boolean)
+    );
+
+    // 3. Cargar categorías existentes para este tenant
     const { data: existingCategories } = await admin
       .from('categories')
       .select('id, name, slug')
@@ -53,7 +63,7 @@ export async function POST(request: Request) {
       categoryMap.set(c.name.toLowerCase().trim(), c.id);
     });
 
-    // 3. Identificar categorías nuevas necesarias y crearlas automáticamente
+    // 4. Identificar categorías nuevas necesarias y crearlas automáticamente
     const uniqueCategoryNames = new Set<string>();
     products.forEach((p: BulkProductRow) => {
       const catName = p.category_name?.trim();
@@ -86,10 +96,27 @@ export async function POST(request: Request) {
       }
     }
 
-    // 4. Preparar payload masivo de productos
-    const productsToInsert = products.map((p: BulkProductRow, idx: number) => {
+    // 5. Preparar payload masivo de productos omitiendo duplicados
+    const seenBatchSkus = new Set<string>();
+    let duplicateRowsCount = 0;
+    const productsToInsert = [];
+
+    for (let idx = 0; idx < products.length; idx++) {
+      const p = products[idx];
+      const rawSku = p.sku ? p.sku.trim().toUpperCase() : '';
+
+      // Si el SKU ya existe en la base de datos o en este mismo archivo, omitir para no duplicar
+      if (rawSku && (existingSkuSet.has(rawSku) || seenBatchSkus.has(rawSku))) {
+        duplicateRowsCount++;
+        continue;
+      }
+
+      if (rawSku) {
+        seenBatchSkus.add(rawSku);
+      }
+
+      const effectiveSku = rawSku || `SKU-${Date.now()}-${idx + 1}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
       const rawName = p.name ? p.name.trim() : `Prenda ${idx + 1}`;
-      const rawSku = p.sku ? p.sku.trim().toUpperCase() : `SKU-${Date.now()}-${idx + 1}`;
 
       const baseSlug = rawName
         .toLowerCase()
@@ -99,8 +126,9 @@ export async function POST(request: Request) {
         .replace(/^-+|-+$/g, '')
         .slice(0, 30);
 
-      const cleanSkuPart = rawSku.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const slug = `${baseSlug}-${cleanSkuPart}-${Math.floor(10 + Math.random() * 90)}`;
+      const cleanSkuPart = effectiveSku.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
+      const uniqueSuffix = `${Date.now()}-${idx + 1}-${Math.random().toString(36).substring(2, 7)}`;
+      const slug = `${baseSlug}-${cleanSkuPart}-${uniqueSuffix}`;
 
       const catId = p.category_name ? categoryMap.get(p.category_name.toLowerCase().trim()) : null;
 
@@ -113,12 +141,12 @@ export async function POST(request: Request) {
         ? [p.image_url.trim()]
         : ['/assets/products/ayme-001.svg'];
 
-      return {
+      productsToInsert.push({
         tenant_id,
         category_id: catId || null,
         slug,
         name: rawName,
-        sku: rawSku,
+        sku: effectiveSku,
         description: p.description ? p.description.trim() : null,
         min_order_qty: Number(p.min_order_qty) || 12,
         units_per_package: Number(p.units_per_package) || 12,
@@ -129,8 +157,19 @@ export async function POST(request: Request) {
         images: imageArray,
         price_tiers: [],
         is_active: true,
-      };
-    });
+      });
+    }
+
+    if (productsToInsert.length === 0) {
+      return NextResponse.json({
+        success: true,
+        count: 0,
+        skippedDuplicates: duplicateRowsCount,
+        newCategoriesCount: uniqueCategoryNames.size,
+        message: `Todos los ${duplicateRowsCount} productos del archivo ya estaban subidos en tu catálogo. No se duplicó ningún diseño repetido.`,
+        products: [],
+      });
+    }
 
     // 5. Inserción masiva en Supabase por lotes (chunks de 100) para soportar 2000+ productos sin timeouts
     const CHUNK_SIZE = 100;
@@ -159,11 +198,17 @@ export async function POST(request: Request) {
       }
     }
 
+    const message = duplicateRowsCount > 0
+      ? `Se importaron ${insertedProducts.length} productos nuevos. Se omitieron ${duplicateRowsCount} productos repetidos para no duplicar tu catálogo.`
+      : `¡${insertedProducts.length} productos importados exitosamente! Se crearon ${uniqueCategoryNames.size} nuevas categorías.`;
+
     return NextResponse.json({
       success: true,
       count: insertedProducts.length,
+      skippedDuplicates: duplicateRowsCount,
       newCategoriesCount: uniqueCategoryNames.size,
       products: insertedProducts,
+      message,
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
