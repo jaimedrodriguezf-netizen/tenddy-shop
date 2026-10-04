@@ -19,7 +19,9 @@ import {
   ExternalLink,
   ChevronRight,
   ShieldCheck,
-  Tag
+  Tag,
+  Camera,
+  Paperclip
 } from 'lucide-react';
 import { compressImage } from '@/lib/image-compressor';
 
@@ -29,6 +31,7 @@ export interface TicketComment {
   sender_type: 'tenant' | 'support' | 'system';
   sender_name: string;
   message: string;
+  attachments?: Array<{ url: string; type: string }>;
   created_at: string;
 }
 
@@ -97,6 +100,8 @@ export default function TenantSupportCenterModal({
 
   // Estados para comentarios en el hilo
   const [replyText, setReplyText] = useState('');
+  const [replyImageBase64, setReplyImageBase64] = useState<string | null>(null);
+  const [replyCompressing, setReplyCompressing] = useState(false);
   const [sendingReply, setSendingReply] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -164,10 +169,10 @@ export default function TenantSupportCenterModal({
     }
   };
 
-  // Enviar respuesta en el hilo
+  // Enviar respuesta en el hilo con foto opcional
   const handleSendReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedTicket || !replyText.trim() || sendingReply) return;
+    if (!selectedTicket || (!replyText.trim() && !replyImageBase64) || sendingReply) return;
 
     try {
       setSendingReply(true);
@@ -179,9 +184,10 @@ export default function TenantSupportCenterModal({
         body: JSON.stringify({
           ticket_id: selectedTicket.id,
           tenant_id: tenantId,
-          message: replyText.trim(),
+          message: replyText.trim() || 'Adjunto imagen de réplica.',
           sender_name: senderName || shopName || 'Administrador',
           sender_type: 'tenant',
+          image_data: replyImageBase64,
         }),
       });
 
@@ -190,11 +196,20 @@ export default function TenantSupportCenterModal({
 
       const newComment = data.comment;
       const updatedComments = [...(selectedTicket.ticket_comments || []), newComment];
-      const updatedTicket = { ...selectedTicket, ticket_comments: updatedComments };
+      const newStatus =
+        selectedTicket.status === 'resolved' || selectedTicket.status === 'closed'
+          ? 'in_progress'
+          : selectedTicket.status;
+      const updatedTicket: SupportTicketItem = {
+        ...selectedTicket,
+        status: newStatus,
+        ticket_comments: updatedComments,
+      };
 
       setSelectedTicket(updatedTicket);
       setTickets((prev) => prev.map((t) => (t.id === selectedTicket.id ? updatedTicket : t)));
       setReplyText('');
+      setReplyImageBase64(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al enviar mensaje';
       setErrorMsg(msg);
@@ -521,29 +536,96 @@ export default function TenantSupportCenterModal({
                                 </span>
                               </div>
                               <p className="whitespace-pre-wrap leading-relaxed">{c.message}</p>
+
+                              {/* Fotos adjuntas en la réplica */}
+                              {c.attachments && Array.isArray(c.attachments) && c.attachments.length > 0 && (
+                                <div className="flex flex-wrap gap-2 pt-1.5">
+                                  {c.attachments.map((att, attIdx) => (
+                                    <button
+                                      key={attIdx}
+                                      type="button"
+                                      onClick={() => setZoomImage(att.url)}
+                                      className="relative border border-slate-200/80 rounded-xl overflow-hidden group cursor-pointer"
+                                    >
+                                      <img src={att.url} alt="Adjunto réplica" className="w-24 h-16 object-cover" />
+                                      <span className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[9px] font-bold transition-opacity">
+                                        Ver
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
                       </div>
                     )}
 
-                    {/* Caja para responder en el hilo */}
-                    <form onSubmit={handleSendReply} className="pt-2 flex gap-2">
-                      <input
-                        type="text"
-                        value={replyText}
-                        onChange={(e) => setReplyText(e.target.value)}
-                        placeholder="Escribe una respuesta o consulta en este ticket..."
-                        className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
-                      />
-                      <button
-                        type="submit"
-                        disabled={sendingReply || !replyText.trim()}
-                        className="bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
-                      >
-                        {sendingReply ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
-                        <span>Responder</span>
-                      </button>
+                    {/* Caja para responder en el hilo con foto opcional */}
+                    <form onSubmit={handleSendReply} className="pt-2 space-y-2">
+                      {replyImageBase64 && (
+                        <div className="relative inline-block border border-slate-200 rounded-xl overflow-hidden p-1 bg-white shadow-xs">
+                          <img src={replyImageBase64} alt="Preview réplica" className="w-20 h-14 object-cover rounded-lg" />
+                          <button
+                            type="button"
+                            onClick={() => setReplyImageBase64(null)}
+                            className="absolute top-1 right-1 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-0.5 shadow cursor-pointer"
+                            title="Quitar foto"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <label
+                          className="p-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-600 transition-colors cursor-pointer shrink-0"
+                          title="Adjuntar captura o foto a tu réplica"
+                        >
+                          {replyCompressing ? <Loader2 className="w-4 h-4 animate-spin text-sky-500" /> : <Camera className="w-4 h-4" />}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                try {
+                                  setReplyCompressing(true);
+                                  const compressed = await compressImage(file, {
+                                    maxWidth: 1600,
+                                    maxHeight: 1600,
+                                    quality: 0.82,
+                                    outputFormat: 'image/webp',
+                                  });
+                                  setReplyImageBase64(compressed);
+                                } catch (err) {
+                                  console.error(err);
+                                } finally {
+                                  setReplyCompressing(false);
+                                }
+                              }
+                            }}
+                            className="hidden"
+                          />
+                        </label>
+
+                        <input
+                          type="text"
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          placeholder="Escribe tu réplica... (puedes adjuntar foto si el problema persiste)"
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
+                        />
+
+                        <button
+                          type="submit"
+                          disabled={sendingReply || (!replyText.trim() && !replyImageBase64)}
+                          className="bg-slate-900 hover:bg-slate-800 disabled:opacity-40 text-white font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer shrink-0"
+                        >
+                          {sendingReply ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                          <span>Enviar</span>
+                        </button>
+                      </div>
                     </form>
                   </div>
                 </div>
