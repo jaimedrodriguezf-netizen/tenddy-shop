@@ -40,6 +40,7 @@ export default function CreateProductModal({
   const [unitsPerPackage, setUnitsPerPackage] = useState(50);
   const [productImageBase64, setProductImageBase64] = useState<string | null>(null);
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
+  const [aspectRatio, setAspectRatio] = useState<'vertical' | 'square'>('vertical');
   const [compressingImage, setCompressingImage] = useState(false);
 
   const normalizeImageUrl = (url: string): string => {
@@ -179,7 +180,7 @@ export default function CreateProductModal({
           description: description ? description.trim() : null,
           min_order_qty: Number(minOrderQty) || 1,
           units_per_package: Number(unitsPerPackage) || 1,
-          attributes: { specs, badge: 'Nuevo' },
+          attributes: { specs, badge: 'Nuevo', aspect_ratio: aspectRatio },
           imageData: productImageBase64,
           image_url: !productImageBase64 && imageUrlInput.trim() ? normalizeImageUrl(imageUrlInput) : undefined,
         }),
@@ -305,6 +306,40 @@ export default function CreateProductModal({
               <p className="text-[11px] text-slate-400">
                 Sube la foto del producto o presiona <strong>Ctrl + V</strong>. La imagen se optimiza y comprime automáticamente para carga ultra-rápida.
               </p>
+
+              {/* Formato de Foto (Vertical o Cuadrado) */}
+              <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                <label className="block text-slate-800 font-bold text-xs">
+                  Formato de Visualización en Catálogo
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAspectRatio('vertical')}
+                    className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                      aspectRatio === 'vertical'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>📏 Vertical (3:4)</span>
+                    <span className="text-[10px] opacity-75">Prendas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAspectRatio('square')}
+                    className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                      aspectRatio === 'square'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>⏹️ Cuadrado (1:1)</span>
+                    <span className="text-[10px] opacity-75">Accesorios</span>
+                  </button>
+                </div>
+              </div>
 
               {(productImageBase64 || imageUrlInput) && (
                 <div className="relative mt-2 w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-white p-1.5 shadow-sm group flex items-center justify-center">

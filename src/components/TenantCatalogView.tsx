@@ -848,7 +848,9 @@ export default function TenantCatalogView({
                   {/* Foto con Badges y Logo de Tienda */}
                   <div
                     onClick={() => setModalProduct(p)}
-                    className="relative aspect-[3/4] bg-slate-50 flex items-center justify-center p-2 cursor-pointer overflow-hidden"
+                    className={`relative bg-slate-50 flex items-center justify-center p-2 cursor-pointer overflow-hidden ${
+                      p.attributes?.aspect_ratio === 'square' ? 'aspect-square' : 'aspect-[3/4]'
+                    }`}
                   >
                     <img
                       src={imageSrc}
@@ -885,19 +887,20 @@ export default function TenantCatalogView({
 
                   {/* Datos del Producto */}
                   <div className="p-2.5 sm:p-3 space-y-2 flex-1 flex flex-col justify-between">
-                    <div>
+                    <div className="space-y-1.5">
                       <h3
                         onClick={() => setModalProduct(p)}
                         className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2 hover:text-sky-600 cursor-pointer"
+                        title={p.name}
                       >
                         {p.name}
                       </h3>
 
                       {/* Tallas y Colores en la Tarjeta */}
                       {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
-                        <div className="flex flex-wrap gap-1 text-[10px] mt-1.5">
+                        <div className="flex flex-wrap gap-1 text-[10px]">
                           {p.attributes?.specs?.color && (
-                            <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium">
+                            <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium truncate max-w-[130px]">
                               🎨 {p.attributes.specs.color}
                             </span>
                           )}
@@ -909,9 +912,9 @@ export default function TenantCatalogView({
                         </div>
                       )}
 
-                      {/* Calificación 5 Estrellas si está habilitado */}
-                      {showFeaturedRatings && (
-                        <div className="flex items-center gap-1 mt-1.5">
+                      {/* Calificación y Prueba Social de Demanda */}
+                      <div className="flex items-center flex-wrap gap-x-2 gap-y-1">
+                        <div className="flex items-center gap-1">
                           <div className="flex items-center text-amber-400">
                             <Star className="w-3 h-3 fill-amber-400" />
                             <Star className="w-3 h-3 fill-amber-400" />
@@ -920,17 +923,34 @@ export default function TenantCatalogView({
                             <Star className="w-3 h-3 fill-amber-400" />
                           </div>
                           <span className="text-[10px] font-bold text-slate-700 font-mono">5.0</span>
-                          <span className="text-[9px] text-slate-400">({(p.name.length * 7) % 40 + 15})</span>
                         </div>
-                      )}
+                        <span className="text-[10px] text-slate-500 flex items-center gap-0.5">
+                          <span>🔥</span>
+                          <span className="font-semibold text-slate-700 font-mono">+{(p.name.length * 9) % 150 + 20}</span>
+                          <span className="text-slate-400">pedidos</span>
+                        </span>
+                      </div>
 
-                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 mt-1.5">
-                        <Package className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span>Fardo / Bulto x {packSize} uds</span>
+                      {/* Badge Vendedor Estrella */}
+                      <div className="pt-0.5">
+                        <span className="bg-slate-900 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-2xs">
+                          <Star className="w-2.5 h-2.5 fill-amber-300 text-amber-300" />
+                          <span>Vendedor Estrella</span>
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100/80">
+                        <span className="flex items-center gap-1">
+                          <Package className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>Fardo x {packSize} uds</span>
+                        </span>
+                        <span className="font-mono font-semibold text-slate-700">
+                          Mín: {minQty.toLocaleString()}
+                        </span>
                       </div>
                     </div>
 
-                    {/* Botones de Acción */}
+                    {/* Botones de Acción: Ficha Técnica y Carrito Cotizador */}
                     <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5">
                       <button
                         onClick={() => setModalProduct(p)}
@@ -940,10 +960,10 @@ export default function TenantCatalogView({
                       </button>
                       <button
                         onClick={() => handleQuickAdd(p)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] py-1.5 px-2.5 rounded-xl flex items-center justify-center gap-1 shadow-xs transition-colors cursor-pointer"
+                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
                         title="Agregar fardo al cotizador"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <ShoppingCart className="w-3.5 h-3.5" />
                         <span>Cotizar</span>
                       </button>
                     </div>

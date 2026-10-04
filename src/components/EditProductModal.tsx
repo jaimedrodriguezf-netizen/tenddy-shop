@@ -57,6 +57,9 @@ function EditProductModalContent({
   const [attrColor, setAttrColor] = useState(specs.color || specs.variante || '');
   const [attrTallas, setAttrTallas] = useState(specs.tallas || specs.capacidad || '');
   const [attrSpecs, setAttrSpecs] = useState(specs.costuras_patronaje || specs.material || '');
+  const [aspectRatio, setAspectRatio] = useState<'vertical' | 'square'>(
+    product.attributes?.aspect_ratio === 'square' ? 'square' : 'vertical'
+  );
 
   const [loading, setLoading] = useState(false);
   const [compressingImage, setCompressingImage] = useState(false);
@@ -159,6 +162,7 @@ function EditProductModalContent({
           attributes: {
             ...(product.attributes || {}),
             specs: updatedSpecs,
+            aspect_ratio: aspectRatio,
           },
           imageData: productImageBase64,
           image_url: !productImageBase64 ? activeImageUrl : undefined,
@@ -290,6 +294,40 @@ function EditProductModalContent({
                   )}
                 </div>
               )}
+
+              {/* Formato de Foto (Vertical o Cuadrado) */}
+              <div className="pt-2 border-t border-slate-200/60 space-y-1.5">
+                <label className="block text-slate-800 font-bold text-xs">
+                  Formato de Visualización en Catálogo
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setAspectRatio('vertical')}
+                    className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                      aspectRatio === 'vertical'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>📏 Vertical (3:4)</span>
+                    <span className="text-[10px] opacity-75">Prendas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setAspectRatio('square')}
+                    className={`flex items-center justify-center gap-1.5 p-2 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                      aspectRatio === 'square'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                    }`}
+                  >
+                    <span>⏹️ Cuadrado (1:1)</span>
+                    <span className="text-[10px] opacity-75">Accesorios</span>
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
