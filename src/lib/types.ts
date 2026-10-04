@@ -13,6 +13,7 @@ export interface Tenant {
     font_family?: string;
     border_radius?: string;
     show_best_sellers?: boolean;
+    show_featured_ratings?: boolean;
     store_template?: string;
   };
   landing_config: {
@@ -31,6 +32,7 @@ export interface Tenant {
     show_branches?: boolean;
     show_services?: boolean;
     show_best_sellers?: boolean;
+    show_featured_ratings?: boolean;
   };
   settings: {
     currency: string;

@@ -31,6 +31,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [showServices, setShowServices] = useState(tenant.landing_config?.show_services ?? true);
   const [showBranches, setShowBranches] = useState(tenant.landing_config?.show_branches ?? true);
   const [showBestSellers, setShowBestSellers] = useState(tenant.landing_config?.show_best_sellers ?? (tenant.theme_config as any)?.show_best_sellers ?? true);
+  const [showFeaturedRatings, setShowFeaturedRatings] = useState(tenant.landing_config?.show_featured_ratings ?? (tenant.theme_config as any)?.show_featured_ratings ?? true);
   const [storeTemplate, setStoreTemplate] = useState<'temu' | 'landing'>(
     (tenant.theme_config as any)?.store_template || 'temu'
   );
@@ -72,6 +73,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           show_services: showServices,
           show_branches: showBranches,
           show_best_sellers: showBestSellers,
+          show_featured_ratings: showFeaturedRatings,
         }),
       });
 
@@ -331,6 +333,26 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
               </div>
               <div className="text-[11px] text-slate-500 mt-0.5">
                 Muestra la pestaña y distintivos de &quot;Más Vendidos&quot; en la tienda para que tus clientes identifiquen al instante las prendas estrella y más cotizadas.
+              </div>
+            </div>
+          </label>
+
+          <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={showFeaturedRatings}
+              onChange={(e) => setShowFeaturedRatings(e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer"
+            />
+            <div>
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                <span>⭐ Sección de Prendas 5 Estrellas (Mejor Calificados)</span>
+                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.2 rounded-full">
+                  Confianza & Ventas
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                Muestra la pestaña &quot;5 Estrellas&quot; y las estrellas doradas de calificación máxima en tus prendas para generar confianza inmediata en tus clientes.
               </div>
             </div>
           </label>

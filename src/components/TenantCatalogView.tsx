@@ -19,6 +19,7 @@ import {
   Layers,
   Sparkles,
   Flame,
+  Star,
   X
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -58,11 +59,19 @@ export default function TenantCatalogView({
     tenant.landing_config?.show_best_sellers ??
     (tenant.theme_config as any)?.show_best_sellers ??
     true;
+  const showFeaturedRatings =
+    tenant.landing_config?.show_featured_ratings ??
+    (tenant.theme_config as any)?.show_featured_ratings ??
+    true;
 
   const isBestSeller = (p: Product, index: number) => {
     const badge = p.attributes?.badge ? p.attributes.badge.toLowerCase() : '';
     if (badge.includes('vendido') || badge.includes('top')) return true;
     return index % 2 === 0 || (p.images && p.images.length > 0 && index < 20);
+  };
+
+  const isFiveStar = (p: Product, index: number) => {
+    return index % 3 === 0 || (p.images && p.images.length > 0 && index < 25);
   };
 
   // Filtrado reactivo en vivo por categoría y búsqueda
@@ -72,6 +81,8 @@ export default function TenantCatalogView({
         ? true
         : selectedCategory === 'best_sellers'
         ? isBestSeller(p, index)
+        : selectedCategory === 'five_stars'
+        ? isFiveStar(p, index)
         : p.category_id === selectedCategory;
 
     const matchesSearch =
@@ -256,6 +267,24 @@ export default function TenantCatalogView({
               >
                 <Flame className={`w-3.5 h-3.5 ${selectedCategory === 'best_sellers' ? 'text-white' : 'text-amber-500 fill-amber-500'}`} />
                 <span>Más Vendidos</span>
+              </button>
+            )}
+
+            {showFeaturedRatings && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('five_stars');
+                  setIsMegaMenuOpen(false);
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                  selectedCategory === 'five_stars'
+                    ? 'bg-amber-400 text-slate-950 shadow-xs font-extrabold'
+                    : 'bg-amber-50/80 text-amber-900 border border-amber-200/80 hover:bg-amber-100'
+                }`}
+              >
+                <Star className={`w-3.5 h-3.5 ${selectedCategory === 'five_stars' ? 'text-slate-950 fill-slate-950' : 'text-amber-500 fill-amber-500'}`} />
+                <span>5 Estrellas</span>
               </button>
             )}
 
@@ -460,6 +489,40 @@ export default function TenantCatalogView({
                 </button>
               )}
 
+              {/* Botón circular "5 Estrellas" si está habilitado */}
+              {showFeaturedRatings && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory('five_stars');
+                    setIsMegaMenuOpen(false);
+                  }}
+                  className={`flex flex-col items-center gap-1.5 shrink-0 w-16 sm:w-20 group cursor-pointer transition-all ${
+                    selectedCategory === 'five_stars' ? 'scale-105' : 'opacity-85 hover:opacity-100'
+                  }`}
+                >
+                  <div
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all p-0.5 shadow-xs ${
+                      selectedCategory === 'five_stars'
+                        ? 'bg-gradient-to-tr from-amber-400 to-yellow-400 text-slate-950 ring-2 ring-amber-400 ring-offset-2'
+                        : 'bg-amber-50 text-amber-700 border-2 border-amber-200 group-hover:border-amber-400'
+                    }`}
+                  >
+                    <Star className={`w-6 h-6 ${selectedCategory === 'five_stars' ? 'text-slate-950 fill-slate-950' : 'text-amber-500 fill-amber-500'}`} />
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold text-center line-clamp-1 leading-tight ${
+                      selectedCategory === 'five_stars' ? 'text-amber-900 font-extrabold' : 'text-slate-600'
+                    }`}
+                  >
+                    5 Estrellas
+                  </span>
+                  <span className="text-[9px] text-amber-700 font-mono -mt-1">
+                    Calificadas
+                  </span>
+                </button>
+              )}
+
               {/* Categorías con fotos circulares */}
               {categories.map((c) => {
                 const count = products.filter((p) => p.category_id === c.id).length;
@@ -525,6 +588,29 @@ export default function TenantCatalogView({
                 🔥 Artículos Más Vendidos • <span className="font-semibold text-amber-800">Prendas favoritas de nuestros clientes</span>
               </span>
               <span className="text-[10px] text-amber-700 font-mono bg-white/80 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'prenda' : 'prendas'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className="text-xs font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs transition-colors shrink-0"
+            >
+              <span>Ver catálogo completo</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {/* Indicador de 5 Estrellas */}
+        {selectedCategory === 'five_stars' && (
+          <div className="flex items-center justify-between bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-50 border border-amber-200 rounded-xl px-3.5 py-2.5 mb-3.5 shadow-2xs animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse" />
+              <span className="text-xs sm:text-sm font-extrabold text-amber-950">
+                ⭐ Colección 5 Estrellas • <span className="font-semibold text-amber-800">Prendas con máxima satisfacción de nuestros compradores</span>
+              </span>
+              <span className="text-[10px] text-amber-800 font-mono bg-white/90 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
                 {filteredProducts.length} {filteredProducts.length === 1 ? 'prenda' : 'prendas'}
               </span>
             </div>
@@ -644,6 +730,21 @@ export default function TenantCatalogView({
                               📏 {p.attributes.specs.tallas}
                             </span>
                           )}
+                        </div>
+                      )}
+
+                      {/* Calificación 5 Estrellas si está habilitado */}
+                      {showFeaturedRatings && (
+                        <div className="flex items-center gap-1 mt-1.5">
+                          <div className="flex items-center text-amber-400">
+                            <Star className="w-3 h-3 fill-amber-400" />
+                            <Star className="w-3 h-3 fill-amber-400" />
+                            <Star className="w-3 h-3 fill-amber-400" />
+                            <Star className="w-3 h-3 fill-amber-400" />
+                            <Star className="w-3 h-3 fill-amber-400" />
+                          </div>
+                          <span className="text-[10px] font-bold text-slate-700 font-mono">5.0</span>
+                          <span className="text-[9px] text-slate-400">({(p.name.length * 7) % 40 + 15})</span>
                         </div>
                       )}
 

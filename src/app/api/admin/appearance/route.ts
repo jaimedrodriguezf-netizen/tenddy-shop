@@ -48,6 +48,7 @@ export async function PATCH(request: Request) {
       primary_color: primary_color || currentTenant.theme_config?.primary_color || '#0284c7',
       store_template: body.store_template || currentTenant.theme_config?.store_template || 'temu',
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.theme_config?.show_best_sellers ?? true),
+      show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.theme_config?.show_featured_ratings ?? true),
     };
 
     const updatedLanding = {
@@ -59,6 +60,7 @@ export async function PATCH(request: Request) {
       show_services: show_services !== undefined ? show_services : currentTenant.landing_config?.show_services,
       show_branches: show_branches !== undefined ? show_branches : currentTenant.landing_config?.show_branches,
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.landing_config?.show_best_sellers ?? true),
+      show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.landing_config?.show_featured_ratings ?? true),
     };
 
     const updatePayload: Record<string, unknown> = {
