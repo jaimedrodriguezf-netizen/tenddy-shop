@@ -201,30 +201,32 @@ export default function CreateProductModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div onClick={onClose} className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs" />
-
-      <div className="min-h-full flex items-center justify-center p-3 sm:p-4">
-        <div
-          onPaste={handlePaste}
-          className="relative w-full max-w-xl max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-3xl p-5 sm:p-7 text-slate-900 shadow-2xl z-10 space-y-5"
-        >
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900">Agregar Nueva Referencia</h3>
-              <p className="text-xs text-slate-500 mt-0.5">Ingresa la foto, datos técnicos y empaque para tus clientes mayoristas.</p>
-            </div>
-            <button onClick={onClose} className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer">
-              <X className="w-5 h-5" />
-            </button>
+    <div
+      onPaste={handlePaste}
+      className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-7 text-slate-900 shadow-xs space-y-5"
+    >
+      <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+          >
+            ← Volver a Productos
+          </button>
+          <div>
+            <h3 className="font-extrabold text-base text-slate-900">Agregar Nueva Prenda</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Ingresa la foto, datos técnicos y empaque para tus clientes mayoristas.</p>
           </div>
+        </div>
+      </div>
 
-          {errorMsg && (
-            <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-              <span>{errorMsg}</span>
-            </div>
-          )}
+      {errorMsg && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
           <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             {/* Foto del Producto (Subir o Pegar) */}
@@ -454,7 +456,7 @@ export default function CreateProductModal({
                 onClick={onClose}
                 className="px-4 py-2 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
               >
-                Cancelar
+                Cancelar y Volver
               </button>
               <button
                 type="submit"
@@ -475,8 +477,6 @@ export default function CreateProductModal({
               </button>
             </div>
           </form>
-        </div>
-      </div>
     </div>
   );
 }

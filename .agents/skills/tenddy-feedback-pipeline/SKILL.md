@@ -1,10 +1,10 @@
 ---
 name: tenddy-feedback-pipeline
-description: "Trigger: vamos a revisar los feedback, revisar feedback, revisar los tickets, siguiente ticket, resolver feedback uno por uno. Resuelve tickets de soporte de forma atómica: uno por uno, con análisis estricto de viabilidad técnica/negocio, 2 compuertas de aprobación humana y tono comercial sin tecnicismos."
+description: "Trigger: vamos a revisar los feedback, revisar feedback, revisar los tickets, siguiente ticket, resolver feedback uno por uno. Resuelve tickets de soporte de forma atómica: uno por uno, con análisis estricto de viabilidad técnica/negocio, 2 compuertas de aprobación humana, regla de cero formularios en modal y tono comercial sin tecnicismos."
 license: Apache-2.0
 metadata:
   author: gentleman-programming
-  version: "1.3"
+  version: "1.4"
 ---
 
 ## Activation Contract
@@ -14,10 +14,12 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 ## Hard Rules
 
 - **Cero acumulación:** NUNCA agrupar múltiples tickets. Siempre tomar exactamente **UNO** a la vez.
+- **Regla de Arquitectura de Vistas (Cero Formularios en Modal):**
+  - **TODO formulario de creación, edición, configuración o carga masiva DEBE ser una página o vista completa integrada en el panel.**
+  - **PROHIBIDO usar modales flotantes con backdrop para formularios de datos.**
+  - **Única excepción para modales:** Letreros de advertencia estrictos (confirmaciones de eliminación destructiva de productos/categorías, alertas de seguridad o visor ampliado de imagen).
 - **Análisis Obligatorio de Viabilidad (Técnica y de Negocio):**
-  - **Sin importar si el cambio pedido es pequeño o grande**, ANTES de proponer un plan o escribir código, se DEBE analizar explícitamente si es viable.
-  - **Viabilidad Técnica:** ¿Es coherente con la arquitectura, rendimiento, base de datos y seguridad? ¿Introduce deuda técnica o rompe componentes existentes?
-  - **Viabilidad de Negocio:** ¿Aporta valor real a las ventas del comerciante o entorpece la conversión de su tienda? ¿Es viable en este momento o añade fricción innecesaria?
+  - Sin importar si el cambio es pequeño o grande, ANTES de proponer un plan o escribir código, se DEBE analizar explícitamente su viabilidad técnica y de negocio.
   - Si un cambio NO es viable o resulta contraproducente: fundamentar claramente las razones y proponer una alternativa viable y profesional antes de tocar código.
 - **Tono Comercial y Cero Jerga Técnica (Regla de Oro):**
   - Los usuarios son comerciantes, vendedores y dueños de tiendas de ecommerce, NO ingenieros de software.
@@ -36,7 +38,7 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 
 | Fase | Acción | Gate |
 | --- | --- | --- |
-| 1. Diagnóstico & Viabilidad | Seleccionar 1 ticket abierto, inspeccionar captura webp y realizar el análisis estricto de viabilidad técnica y de negocio. | **STOP: Esperar aprobación del usuario.** |
+| 1. Diagnóstico & Viabilidad | Seleccionar 1 ticket abierto, inspeccionar captura webp y realizar el análisis estricto de viabilidad técnica y de negocio. Validar que la solución use vistas/páginas completas (sin modales para formularios). | **STOP: Esperar aprobación del usuario.** |
 | 2. Implementación | Tras aprobación, modificar código/responder hilo con lenguaje comercial y verificar con `tsc --noEmit` y `npm run build`. | Continuar a reporte de solución. |
 | 3. Revisión de Solución | Explicar detalladamente cómo se solucionó y mostrar que compila en verde. | **STOP: Esperar aprobación del usuario.** |
 | 4. Cierre y Entrega | Tras aprobación: marcar `resolved` o `in_progress` en Supabase con resumen amigable, `npm run bump`, `git commit` y `git push`. | Confirmar y consultar si se avanza al siguiente ticket. |
@@ -48,7 +50,7 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 2. Seleccionar el ticket más prioritario o antiguo.
 3. Descargar la captura webp a `/tmp/` e inspeccionarla con `read`.
 4. **Análisis Obligatorio de Viabilidad:**
-   - **Viabilidad Técnica:** Arquitectura, base de datos, performance, riesgos.
+   - **Viabilidad Técnica:** Arquitectura, base de datos, performance, cumplimiento de regla de páginas completas (cero modales para formularios).
    - **Viabilidad de Negocio:** Impacto en ventas del comerciante y experiencia de compra.
    - **Veredicto:** ¿Es viable ejecutarlo tal como se pide, conviene ajustar el enfoque, o se debe responder en el hilo con una alternativa?
 5. Presentar al usuario:
@@ -60,9 +62,10 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 ### Paso 2: Implementación & Verificación
 *(Solo tras recibir la aprobación del Paso 1)*
 1. Realizar las modificaciones en frontend, backend o base de datos.
-2. Asegurar que cualquier texto nuevo visible al cliente use lenguaje de ventas y comercio.
-3. Ejecutar `./node_modules/.bin/tsc --noEmit`.
-4. Ejecutar `npm run build`.
+2. Garantizar que todos los formularios sean páginas/vistas completas integradas.
+3. Asegurar que cualquier texto nuevo visible al cliente use lenguaje de ventas y comercio.
+4. Ejecutar `./node_modules/.bin/tsc --noEmit`.
+5. Ejecutar `npm run build`.
 
 ### Paso 3: Presentación de la Solución
 1. Explicar claramente al usuario:
@@ -83,5 +86,6 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 ## Output Contract
 
 - Respeto estricto del orden: Diagnóstico y Viabilidad -> Aprobación -> Solución -> Aprobación -> Commit/Push.
+- Cero formularios en modales (solo páginas completas integradas).
 - Redacción siempre orientada a vendedores de ecommerce, sin tecnicismos.
 - Nunca adelantar pasos ni commitear antes de la aprobación final.

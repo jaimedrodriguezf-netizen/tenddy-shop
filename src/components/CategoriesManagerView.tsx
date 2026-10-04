@@ -72,6 +72,62 @@ export default function CategoriesManagerView({
   const [deletingCat, setDeletingCat] = useState<ExtendedCategory | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
+  // Estados para crear categoría en página integrada
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createImageBase64, setCreateImageBase64] = useState<string | null>(null);
+  const [createImageUrlInput, setCreateImageUrlInput] = useState('');
+  const [savingCreate, setSavingCreate] = useState(false);
+
+  // Guardar nueva categoría vía POST
+  const handleSaveCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!createName.trim()) return;
+
+    try {
+      setSavingCreate(true);
+      setErrorMsg(null);
+
+      const activeImageUrl = createImageUrlInput.trim()
+        ? normalizeImageUrl(createImageUrlInput)
+        : undefined;
+
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          name: createName.trim(),
+          description: createDescription.trim() || null,
+          imageData: createImageBase64,
+          image_url: !createImageBase64 ? activeImageUrl : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error creando categoría');
+
+      setSuccessMsg(`Categoría "${createName.trim()}" creada exitosamente`);
+      setTimeout(() => setSuccessMsg(null), 3000);
+
+      const updated = [...categories, data.category];
+      setCategories(updated);
+      onCategoriesChanged(updated);
+
+      setCreateName('');
+      setCreateDescription('');
+      setCreateImageBase64(null);
+      setCreateImageUrlInput('');
+      setIsCreatingCategory(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error creando categoría';
+      setErrorMsg(msg);
+    } finally {
+      setSavingCreate(false);
+    }
+  };
+
   // Cargar categorías con conteo de productos
   const fetchCategories = async () => {
     try {
@@ -246,6 +302,410 @@ export default function CategoriesManagerView({
     const count = c.products?.[0]?.count || 0;
     return sum + count;
   }, 0);
+
+  // VISTA PÁGINA: CREAR CATEGORÍA (CERO MODAL)
+  if (isCreatingCategory) {
+    return (
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-7 text-slate-900 shadow-xs space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setIsCreatingCategory(false)}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              ← Volver a Categorías
+            </button>
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900">Nueva Categoría de Catálogo</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Ingresa el nombre, descripción y foto para organizar tus prendas.</p>
+            </div>
+          </div>
+        </div>
+
+        {errorMsg && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveCreate} className="space-y-4 text-xs">
+          {/* Foto Circular */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+            <label className="block text-slate-800 font-bold text-xs">
+              Foto Representativa de la Categoría
+            </label>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer text-xs font-semibold shadow-xs">
+                {compressingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
+                <span>{compressingImage ? 'Optimizando...' : 'Subir Foto'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        setCompressingImage(true);
+                        const compressed = await compressImage(file, {
+                          maxWidth: 600,
+                          maxHeight: 600,
+                          quality: 0.85,
+                          outputFormat: 'image/webp',
+                        });
+                        setCreateImageBase64(compressed);
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setCompressingImage(false);
+                      }
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard?.read) {
+                      const items = await navigator.clipboard.read();
+                      for (const item of items) {
+                        const imgType = item.types.find((t) => t.startsWith('image/'));
+                        if (imgType) {
+                          const blob = await item.getType(imgType);
+                          const file = new File([blob], 'cat.png', { type: imgType });
+                          const compressed = await compressImage(file, {
+                            maxWidth: 600,
+                            maxHeight: 600,
+                            quality: 0.85,
+                            outputFormat: 'image/webp',
+                          });
+                          setCreateImageBase64(compressed);
+                          return;
+                        }
+                      }
+                    }
+                    alert('Presiona Ctrl + V para pegar la foto directamente.');
+                  } catch {
+                    alert('Presiona Ctrl + V para pegar la foto directamente.');
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold"
+              >
+                <Clipboard className="w-3.5 h-3.5 text-sky-600" />
+                <span>Pegar (Ctrl + V)</span>
+              </button>
+            </div>
+
+            <div className="pt-1.5">
+              <input
+                type="url"
+                value={createImageUrlInput}
+                onChange={(e) => {
+                  const clean = normalizeImageUrl(e.target.value);
+                  setCreateImageUrlInput(clean);
+                  if (createImageBase64) setCreateImageBase64(null);
+                }}
+                placeholder="O pegar enlace web o Google Drive de la foto..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
+              />
+            </div>
+
+            {(createImageBase64 || createImageUrlInput) && (
+              <div className="flex items-center gap-3 pt-1">
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-slate-300 bg-white p-0.5 shadow-sm shrink-0">
+                  <img
+                    src={createImageBase64 || normalizeImageUrl(createImageUrlInput)}
+                    alt="Preview categoría"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCreateImageBase64(null);
+                    setCreateImageUrlInput('');
+                  }}
+                  className="text-rose-600 hover:text-rose-700 text-xs font-semibold cursor-pointer"
+                >
+                  Quitar Foto
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1">
+              Nombre de la Categoría *
+            </label>
+            <input
+              type="text"
+              required
+              autoFocus
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder="Ej. Vestidos, Calzado, Camisas..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1">
+              Descripción (Opcional)
+            </label>
+            <textarea
+              rows={3}
+              value={createDescription}
+              onChange={(e) => setCreateDescription(e.target.value)}
+              placeholder="Descripción breve para guiar a tus clientes..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none resize-none"
+            />
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+            <button
+              type="button"
+              onClick={() => setIsCreatingCategory(false)}
+              className="px-4 py-2 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
+            >
+              Cancelar y Volver
+            </button>
+            <button
+              type="submit"
+              disabled={savingCreate || !createName.trim()}
+              className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            >
+              {savingCreate ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              <span>Guardar Categoría</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
+
+  // VISTA PÁGINA: EDITAR CATEGORÍA (CERO MODAL)
+  if (editingCategory) {
+    return (
+      <div className="bg-white border border-slate-200/80 rounded-2xl p-5 sm:p-7 text-slate-900 shadow-xs space-y-5">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setEditingCategory(null)}
+              className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              ← Volver a Categorías
+            </button>
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900">Editar Categoría: {editingCategory.name}</h3>
+              <p className="text-xs text-slate-500 mt-0.5 font-mono">{editingCategory.slug}</p>
+            </div>
+          </div>
+        </div>
+
+        {errorMsg && (
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
+          {/* Foto Circular */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+            <label className="block text-slate-800 font-bold text-xs">
+              Foto Representativa de la Categoría
+            </label>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer text-xs font-semibold shadow-xs">
+                {compressingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
+                <span>{compressingImage ? 'Optimizando...' : 'Subir Foto'}</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      try {
+                        setCompressingImage(true);
+                        const compressed = await compressImage(file, {
+                          maxWidth: 600,
+                          maxHeight: 600,
+                          quality: 0.85,
+                          outputFormat: 'image/webp',
+                        });
+                        setEditImageBase64(compressed);
+                      } catch (err) {
+                        console.error(err);
+                      } finally {
+                        setCompressingImage(false);
+                      }
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    if (typeof navigator !== 'undefined' && navigator.clipboard?.read) {
+                      const items = await navigator.clipboard.read();
+                      for (const item of items) {
+                        const imgType = item.types.find((t) => t.startsWith('image/'));
+                        if (imgType) {
+                          const blob = await item.getType(imgType);
+                          const file = new File([blob], 'cat.png', { type: imgType });
+                          const compressed = await compressImage(file, {
+                            maxWidth: 600,
+                            maxHeight: 600,
+                            quality: 0.85,
+                            outputFormat: 'image/webp',
+                          });
+                          setEditImageBase64(compressed);
+                          return;
+                        }
+                      }
+                    }
+                    alert('Presiona Ctrl + V para pegar la foto directamente.');
+                  } catch {
+                    alert('Presiona Ctrl + V para pegar la foto directamente.');
+                  }
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold"
+              >
+                <Clipboard className="w-3.5 h-3.5 text-sky-600" />
+                <span>Pegar (Ctrl + V)</span>
+              </button>
+            </div>
+
+            <div className="pt-1.5">
+              <input
+                type="url"
+                value={editImageUrlInput}
+                onChange={(e) => {
+                  const clean = normalizeImageUrl(e.target.value);
+                  setEditImageUrlInput(clean);
+                  if (editImageBase64) setEditImageBase64(null);
+                }}
+                placeholder="O pegar enlace web o Google Drive de la foto..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
+              />
+            </div>
+
+            {(editImageBase64 || editImageUrlInput || editCurrentImageUrl) && (
+              <div className="flex items-center gap-3 pt-1">
+                <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-slate-300 bg-white p-0.5 shadow-sm shrink-0">
+                  <img
+                    src={editImageBase64 || (editImageUrlInput ? normalizeImageUrl(editImageUrlInput) : editCurrentImageUrl!)}
+                    alt="Preview categoría"
+                    className="w-full h-full object-cover rounded-full"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditImageBase64(null);
+                    setEditImageUrlInput('');
+                    setEditCurrentImageUrl(null);
+                  }}
+                  className="text-rose-600 hover:text-rose-700 text-xs font-semibold cursor-pointer"
+                >
+                  Quitar Foto
+                </button>
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1">
+              Nombre de la Categoría *
+            </label>
+            <input
+              type="text"
+              required
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              placeholder="Nombre de categoría..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
+            />
+          </div>
+
+          <div>
+            <label className="block text-slate-700 font-semibold mb-1">
+              Descripción (Opcional)
+            </label>
+            <textarea
+              rows={3}
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Descripción para clientes y catálogo..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none resize-none transition-all"
+            />
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
+            <div>
+              <span className="block font-semibold text-slate-800 text-xs">
+                Visibilidad en Catálogo
+              </span>
+              <span className="text-[10px] text-slate-400 block">
+                Las categorías inactivas no se muestran a los clientes.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditIsActive(!editIsActive)}
+              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                editIsActive ? 'bg-slate-900' : 'bg-slate-300'
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                  editIsActive ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </button>
+          </div>
+
+          <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+            <button
+              type="button"
+              disabled={savingEdit}
+              onClick={() => setEditingCategory(null)}
+              className="px-4 py-2 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
+            >
+              Cancelar y Volver
+            </button>
+            <button
+              type="submit"
+              disabled={savingEdit || !editName.trim()}
+              className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs px-5 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+            >
+              {savingEdit ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Guardando...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Guardar Cambios</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -498,231 +958,7 @@ export default function CategoriesManagerView({
       </div>
 
       {/* =========================================================================
-          MODAL: EDITAR CATEGORÍA
-          ========================================================================= */}
-      {editingCategory && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div
-            onClick={() => !savingEdit && setEditingCategory(null)}
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs"
-          />
-
-          <div className="min-h-full flex items-center justify-center p-4">
-            <div className="relative w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 text-slate-900 shadow-2xl z-10 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-slate-900 flex items-center justify-center text-white">
-                    <Edit2 className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="font-extrabold text-sm text-slate-900">Editar Categoría</h3>
-                    <p className="text-[11px] text-slate-500 font-mono">{editingCategory.slug}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => !savingEdit && setEditingCategory(null)}
-                  className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-                {/* Foto Circular de la Categoría */}
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                  <label className="block text-slate-800 font-bold text-xs">
-                    Foto Representativa de la Categoría
-                  </label>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="flex items-center gap-2 px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer text-xs font-semibold shadow-xs">
-                      {compressingImage ? <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
-                      <span>{compressingImage ? 'Optimizando...' : 'Subir Foto'}</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={async (e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            try {
-                              setCompressingImage(true);
-                              const compressed = await compressImage(file, {
-                                maxWidth: 600,
-                                maxHeight: 600,
-                                quality: 0.85,
-                                outputFormat: 'image/webp',
-                              });
-                              setEditImageBase64(compressed);
-                            } catch (err) {
-                              console.error(err);
-                            } finally {
-                              setCompressingImage(false);
-                            }
-                          }
-                        }}
-                        className="hidden"
-                      />
-                    </label>
-
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        try {
-                          if (typeof navigator !== 'undefined' && navigator.clipboard?.read) {
-                            const items = await navigator.clipboard.read();
-                            for (const item of items) {
-                              const imgType = item.types.find((t) => t.startsWith('image/'));
-                              if (imgType) {
-                                const blob = await item.getType(imgType);
-                                const file = new File([blob], 'cat.png', { type: imgType });
-                                const compressed = await compressImage(file, {
-                                  maxWidth: 600,
-                                  maxHeight: 600,
-                                  quality: 0.85,
-                                  outputFormat: 'image/webp',
-                                });
-                                setEditImageBase64(compressed);
-                                return;
-                              }
-                            }
-                          }
-                          alert('Presiona Ctrl + V para pegar la foto directamente.');
-                        } catch {
-                          alert('Presiona Ctrl + V para pegar la foto directamente.');
-                        }
-                      }}
-                      className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold"
-                    >
-                      <Clipboard className="w-3.5 h-3.5 text-sky-600" />
-                      <span>Pegar (Ctrl + V)</span>
-                    </button>
-                  </div>
-
-                  <div className="pt-1.5">
-                    <input
-                      type="url"
-                      value={editImageUrlInput}
-                      onChange={(e) => {
-                        const clean = normalizeImageUrl(e.target.value);
-                        setEditImageUrlInput(clean);
-                        if (editImageBase64) setEditImageBase64(null);
-                      }}
-                      placeholder="O pegar enlace web o Google Drive de la foto..."
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
-                    />
-                  </div>
-
-                  {/* Vista Previa Circular */}
-                  {(editImageBase64 || editImageUrlInput || editCurrentImageUrl) && (
-                    <div className="flex items-center gap-3 pt-1">
-                      <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-slate-300 bg-white p-0.5 shadow-sm shrink-0">
-                        <img
-                          src={editImageBase64 || (editImageUrlInput ? normalizeImageUrl(editImageUrlInput) : editCurrentImageUrl!)}
-                          alt="Preview categoría"
-                          className="w-full h-full object-cover rounded-full"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEditImageBase64(null);
-                          setEditImageUrlInput('');
-                          setEditCurrentImageUrl(null);
-                        }}
-                        className="text-rose-600 hover:text-rose-700 text-xs font-semibold cursor-pointer"
-                      >
-                        Quitar Foto
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Nombre de la Categoría *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Nombre de categoría..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Descripción (Opcional)
-                  </label>
-                  <textarea
-                    rows={3}
-                    value={editDescription}
-                    onChange={(e) => setEditDescription(e.target.value)}
-                    placeholder="Descripción para clientes y catálogo..."
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none resize-none transition-all"
-                  />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                  <div>
-                    <span className="block font-semibold text-slate-800 text-xs">
-                      Visibilidad en Catálogo
-                    </span>
-                    <span className="text-[10px] text-slate-400 block">
-                      Las categorías inactivas no se muestran a los clientes.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setEditIsActive(!editIsActive)}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      editIsActive ? 'bg-slate-900' : 'bg-slate-300'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        editIsActive ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </div>
-
-                <div className="pt-2 flex justify-end gap-2 border-t border-slate-100">
-                  <button
-                    type="button"
-                    disabled={savingEdit}
-                    onClick={() => setEditingCategory(null)}
-                    className="px-4 py-2 text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={savingEdit || !editName.trim()}
-                    className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  >
-                    {savingEdit ? (
-                      <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Guardando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Check className="w-3.5 h-3.5" />
-                        <span>Guardar Cambios</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          MODAL: CONFIRMAR ELIMINACIÓN DE CATEGORÍA
+          MODAL: CONFIRMAR ELIMINACIÓN DE CATEGORÍA (ALERTA DE ADVERTENCIA)
           ========================================================================= */}
       {deletingCat && (
         <div className="fixed inset-0 z-50 overflow-y-auto">

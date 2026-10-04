@@ -30,13 +30,10 @@ import {
   CheckCircle,
   ArrowRight,
   ChevronDown,
-  LayoutGrid,
-  List,
   Bell
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
-import CreateCategoryModal from './CreateCategoryModal';
 import EditProductModal from './EditProductModal';
 import BulkImportModal from './BulkImportModal';
 import AppearanceTab from './AppearanceTab';
@@ -92,7 +89,6 @@ export default function AdminDashboardView({
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -118,7 +114,9 @@ export default function AdminDashboardView({
   const [unreadSupportCount, setUnreadSupportCount] = useState<number>(0);
   const [isInventoryOpen, setIsInventoryOpen] = useState(true);
   const [isQuotesOpen, setIsQuotesOpen] = useState(true);
-  const [catalogViewMode, setCatalogViewMode] = useState<'vertical' | 'horizontal'>('vertical');
+  const [productSearch, setProductSearch] = useState('');
+  const [productCategoryFilter, setProductCategoryFilter] = useState('all');
+  const [showAllProducts, setShowAllProducts] = useState(false);
 
   // Consultar notificaciones de soporte no leídas
   useEffect(() => {
@@ -301,7 +299,7 @@ export default function AdminDashboardView({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <span>Catálogo de Productos</span>
+              <span>Productos</span>
               <span
                 className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
                   activeTab === 'products' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200/70 text-slate-600'
@@ -560,44 +558,6 @@ export default function AdminDashboardView({
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex antialiased">
-      {/* Modal para Crear Producto */}
-      <CreateProductModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        tenant={tenant}
-        categories={categories}
-        onProductCreated={(newProd) => setProducts((prev) => [newProd, ...prev])}
-      />
-
-      {/* Modal para Crear Categoría */}
-      <CreateCategoryModal
-        isOpen={isCategoryModalOpen}
-        onClose={() => setIsCategoryModalOpen(false)}
-        tenantId={tenant.id}
-        onCategoryCreated={(newCat) => setCategories((prev) => [...prev, newCat])}
-      />
-
-      {/* Modal para Editar Producto */}
-      <EditProductModal
-        isOpen={!!editingProduct}
-        onClose={() => setEditingProduct(null)}
-        product={editingProduct}
-        categories={categories}
-        onProductUpdated={(updatedProd) => {
-          setProducts((prev) => prev.map((p) => (p.id === updatedProd.id ? updatedProd : p)));
-        }}
-      />
-
-      {/* Modal para Carga Masiva de Productos (Excel / CSV) */}
-      <BulkImportModal
-        isOpen={isBulkModalOpen}
-        onClose={() => setIsBulkModalOpen(false)}
-        tenantId={tenant.id}
-        onProductsImported={(newProducts) => {
-          setProducts((prev) => [...newProducts, ...prev]);
-        }}
-      />
-
       {/* Modal de Centro de Soporte, Hilos y Fixes */}
       <TenantSupportCenterModal
         isOpen={isSupportModalOpen}
@@ -720,7 +680,7 @@ export default function AdminDashboardView({
             <h1 className="text-xs sm:text-base font-bold text-slate-900 tracking-tight truncate">
               {activeTab === 'dashboard' && 'Dashboard • Resumen de Negocio'}
               {activeTab === 'quotes' && 'Cotizaciones & Pedidos'}
-              {activeTab === 'products' && 'Catálogo de Productos B2B'}
+              {activeTab === 'products' && 'Productos'}
               {activeTab === 'categories' && 'Gestión de Categorías B2B'}
               {activeTab === 'team' && 'Equipo & Asesores'}
               {activeTab === 'appearance' && 'Diseño & Apariencia'}
@@ -1146,294 +1106,303 @@ export default function AdminDashboardView({
             </div>
           )}
 
-          {/* PESTAÑA 2: PRODUCTOS & CATEGORÍAS */}
+          {/* PESTAÑA: PRODUCTOS (VISTAS COMPLETAS INTEGRADAS - CERO MODAL) */}
           {activeTab === 'products' && (
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900">
-                    Catálogo Activo ({products.length} Referencias)
-                  </h3>
-                  <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
-                    Modifica tus artículos y crea categorías para tu catálogo mayorista.
-                  </p>
-                </div>
+            isCreateModalOpen ? (
+              <CreateProductModal
+                isOpen={true}
+                onClose={() => setIsCreateModalOpen(false)}
+                tenant={tenant}
+                categories={categories}
+                onProductCreated={(newProd) => {
+                  setProducts((prev) => [newProd, ...prev]);
+                  setIsCreateModalOpen(false);
+                }}
+              />
+            ) : editingProduct ? (
+              <EditProductModal
+                isOpen={true}
+                onClose={() => setEditingProduct(null)}
+                product={editingProduct}
+                categories={categories}
+                onProductUpdated={(updatedProd) => {
+                  setProducts((prev) => prev.map((p) => (p.id === updatedProd.id ? updatedProd : p)));
+                  setEditingProduct(null);
+                }}
+              />
+            ) : isBulkModalOpen ? (
+              <BulkImportModal
+                isOpen={true}
+                onClose={() => setIsBulkModalOpen(false)}
+                tenantId={tenant.id}
+                onProductsImported={(newProducts) => {
+                  setProducts((prev) => [...newProducts, ...prev]);
+                  setIsBulkModalOpen(false);
+                }}
+              />
+            ) : (() => {
+            const isFiltering =
+              productSearch.trim().length > 0 || productCategoryFilter !== 'all' || showAllProducts;
 
-                <div className="flex flex-wrap items-center gap-2">
-                  {/* Selector de Vista Dual: Vertical / Horizontal */}
-                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setCatalogViewMode('vertical')}
-                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        catalogViewMode === 'vertical'
-                          ? 'bg-white text-slate-900 shadow-xs font-bold'
-                          : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                      title="Vista Cuadrícula Vertical (Prendas y Fichas)"
-                    >
-                      <LayoutGrid className="w-3.5 h-3.5" />
-                      <span className="hidden md:inline">Vertical</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setCatalogViewMode('horizontal')}
-                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                        catalogViewMode === 'horizontal'
-                          ? 'bg-white text-slate-900 shadow-xs font-bold'
-                          : 'text-slate-500 hover:text-slate-900'
-                      }`}
-                      title="Vista Fila Horizontal (Compacta)"
-                    >
-                      <List className="w-3.5 h-3.5" />
-                      <span className="hidden md:inline">Horizontal</span>
-                    </button>
+            const displayedProducts = products
+              .filter((p) => {
+                const q = productSearch.trim().toLowerCase();
+                const matchesSearch =
+                  !q ||
+                  p.name.toLowerCase().includes(q) ||
+                  (p.sku && p.sku.toLowerCase().includes(q));
+
+                const matchesCat =
+                  productCategoryFilter === 'all' || p.category_id === productCategoryFilter;
+
+                return matchesSearch && matchesCat;
+              })
+              .sort((a, b) => {
+                const skuA = (a.sku || '').trim();
+                const skuB = (b.sku || '').trim();
+                if (!skuA && !skuB) return a.name.localeCompare(b.name);
+                if (!skuA) return 1;
+                if (!skuB) return -1;
+                return skuA.localeCompare(skuB, undefined, { numeric: true, sensitivity: 'base' });
+              });
+
+            return (
+              <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-xs">
+                {/* Cabecera de Productos */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+                  <div>
+                    <h3 className="font-bold text-sm sm:text-base text-slate-900">
+                      Productos ({products.length} Referencias)
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-slate-500 mt-0.5">
+                      Busca por código SKU, nombre o filtra por categoría para consultar tus prendas.
+                    </p>
                   </div>
 
-                  <button
-                    onClick={() => setIsBulkModalOpen(true)}
-                    className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                    title="Cargar productos en lote desde Excel o CSV"
-                  >
-                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="hidden sm:inline">Carga Masiva (Excel)</span>
-                    <span className="sm:hidden">Excel</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsCategoryModalOpen(true)}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-                  >
-                    <Tag className="w-3.5 h-3.5 text-slate-500" />
-                    <span>+ Nueva Categoría</span>
-                  </button>
-
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Producto</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Lista de Categorías de la Tienda */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-100 scrollbar-none">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">Categorías:</span>
-                {categories.length === 0 ? (
-                  <span className="text-xs text-slate-400 italic">Sin categorías creadas</span>
-                ) : (
-                  categories.map((cat) => (
-                    <span
-                      key={cat.id}
-                      className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs px-2.5 py-1 rounded-lg font-medium shrink-0"
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setIsBulkModalOpen(true)}
+                      className="bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                      title="Cargar productos en lote desde Excel o CSV"
                     >
-                      <Tag className="w-3 h-3 text-slate-400" />
-                      <span>{cat.name}</span>
-                    </span>
-                  ))
+                      <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+                      <span className="hidden sm:inline">Carga Masiva (Excel)</span>
+                      <span className="sm:hidden">Excel</span>
+                    </button>
+
+                    <button
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-3.5 py-2 rounded-xl flex items-center justify-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar Producto</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Consola de Búsqueda y Filtros */}
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4 space-y-3">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                    {/* Input Búsqueda por Nombre o SKU */}
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Buscar por código SKU (ej. VES-001) o nombre de prenda..."
+                        className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all shadow-xs"
+                      />
+                      {productSearch && (
+                        <button
+                          onClick={() => setProductSearch('')}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Selector de Filtro por Categoría */}
+                    <div className="sm:w-60">
+                      <select
+                        value={productCategoryFilter}
+                        onChange={(e) => setProductCategoryFilter(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium focus:border-slate-900 focus:outline-none transition-all shadow-xs cursor-pointer"
+                      >
+                        <option value="all">Todas las Categorías</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Contenido: Espera inicial de búsqueda vs Resultados */}
+                {products.length === 0 ? (
+                  <div className="text-center py-16 text-slate-400 text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
+                      <Boxes className="w-6 h-6" />
+                    </div>
+                    <h4 className="font-bold text-slate-800 text-sm">Tu catálogo aún está vacío</h4>
+                    <p className="max-w-xs mx-auto text-slate-500">
+                      Agrega tu primer producto mayorista con sus unidades por fardo, pedido mínimo y ficha técnica.
+                    </p>
+                    <button
+                      onClick={() => setIsCreateModalOpen(true)}
+                      className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-xl inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Agregar Primer Producto</span>
+                    </button>
+                  </div>
+                ) : !isFiltering ? (
+                  /* Estado Limpio: Esperando término de búsqueda o filtro */
+                  <div className="py-14 text-center text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 space-y-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-400 shadow-xs">
+                      <Search className="w-5 h-5 text-sky-500" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-bold text-slate-800 text-sm">Búsqueda de Productos</h4>
+                      <p className="max-w-md mx-auto text-slate-500 text-[11px] leading-relaxed">
+                        Ingresa un código SKU, nombre de prenda o selecciona una categoría arriba para ver los productos correspondientes.
+                      </p>
+                    </div>
+                    <div className="pt-1">
+                      <button
+                        type="button"
+                        onClick={() => setShowAllProducts(true)}
+                        className="text-xs text-sky-600 hover:text-sky-800 font-semibold underline cursor-pointer"
+                      >
+                        O explorar todos los {products.length} productos en orden de código
+                      </button>
+                    </div>
+                  </div>
+                ) : displayedProducts.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-slate-400 space-y-2">
+                    <p className="font-semibold text-slate-700">No se encontraron productos coincidentes</p>
+                    <p className="text-[11px]">Prueba con otro término de búsqueda o cambiando la categoría seleccionada.</p>
+                  </div>
+                ) : (
+                  /* Vista Exclusiva Horizontal en Orden de Código */
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
+                      <span>
+                        Mostrando <strong>{displayedProducts.length}</strong> de {products.length} productos (ordenados por código SKU)
+                      </span>
+                      {showAllProducts && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowAllProducts(false);
+                            setProductSearch('');
+                            setProductCategoryFilter('all');
+                          }}
+                          className="text-xs text-slate-400 hover:text-slate-700 underline cursor-pointer"
+                        >
+                          Limpiar y volver a la búsqueda
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex flex-col gap-2.5">
+                      {displayedProducts.map((p) => (
+                        <div
+                          key={p.id}
+                          className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 hover:shadow-xs transition-all group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0 flex-1">
+                            {/* Miniatura Horizontal */}
+                            <div className="relative w-16 h-20 sm:w-20 sm:h-24 aspect-[3/4] rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shrink-0 flex items-center justify-center p-1">
+                              <img
+                                src={p.images?.[0] || '/assets/products/ayme-001.svg'}
+                                alt={p.name}
+                                className="w-full h-full object-contain filter drop-shadow-xs"
+                              />
+                              {tenant.logo_url && (
+                                <div className="absolute top-1 right-1 w-4 h-4 rounded bg-white/95 p-0.5 border border-slate-200 flex items-center justify-center">
+                                  <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+                                </div>
+                              )}
+                              {p.sku && (
+                                <span className="absolute bottom-1 left-1 font-mono text-white text-[8px] font-bold bg-slate-900/90 px-1 rounded">
+                                  {p.sku}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Datos del Producto */}
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {p.sku && (
+                                  <span className="font-mono text-slate-800 text-[10px] font-bold bg-slate-100 px-2 py-0.5 rounded border border-slate-200/80">
+                                    CÓD: {p.sku}
+                                  </span>
+                                )}
+                                <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate">
+                                  {p.name}
+                                </h4>
+                              </div>
+
+                              {/* Tallas y Color */}
+                              {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
+                                <div className="flex flex-wrap gap-1 text-[10px]">
+                                  {p.attributes.specs.color && (
+                                    <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium border border-slate-200/60">
+                                      🎨 {p.attributes.specs.color}
+                                    </span>
+                                  )}
+                                  {p.attributes.specs.tallas && (
+                                    <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
+                                      📏 {p.attributes.specs.tallas}
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+
+                              <p className="text-slate-500 text-[11px] truncate max-w-xl">
+                                {p.description || 'Sin descripción comercial.'}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Detalles comerciales y botones */}
+                          <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
+                            <div className="text-right text-[11px] font-mono text-slate-600 sm:pr-3 sm:border-r sm:border-slate-100">
+                              <div>
+                                Mín: <strong className="text-slate-800">{p.min_order_qty}</strong> uds
+                              </div>
+                              <div className="text-[10px] text-slate-400">{p.units_per_package} / fardo</div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => setEditingProduct(p)}
+                                className="text-slate-600 hover:text-sky-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                                title="Editar producto, foto o tallas"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(p.id)}
+                                className="text-slate-600 hover:text-rose-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
+                                title="Eliminar producto"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-
-              {products.length === 0 ? (
-                <div className="text-center py-16 text-slate-400 text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-400">
-                    <Boxes className="w-6 h-6" />
-                  </div>
-                  <h4 className="font-bold text-slate-800 text-sm">Tu catálogo aún está vacío</h4>
-                  <p className="max-w-xs mx-auto text-slate-500">
-                    Agrega tu primer producto mayorista con sus unidades por fardo, pedido mínimo y ficha técnica.
-                  </p>
-                  <button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-xl inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Agregar Primer Producto</span>
-                  </button>
-                </div>
-              ) : catalogViewMode === 'vertical' ? (
-                /* Vista 1: Cuadrícula Vertical (aspect 3/4) */
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-                  {products.map((p) => (
-                    <div
-                      key={p.id}
-                      className="bg-white border border-slate-200 rounded-2xl p-3 sm:p-3.5 flex flex-col justify-between text-xs hover:border-slate-300 hover:shadow-xs transition-all group"
-                    >
-                      <div>
-                        {/* Foto del Producto en la tarjeta Vertical con Logo y SKU */}
-                        <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 mb-2.5 flex items-center justify-center p-2">
-                          <img
-                            src={p.images?.[0] || '/assets/products/ayme-001.svg'}
-                            alt={p.name}
-                            className="w-full h-full object-contain filter drop-shadow-xs group-hover:scale-105 transition-transform duration-300"
-                          />
-                          {/* Logo de la empresa en la foto */}
-                          {tenant.logo_url && (
-                            <div
-                              className="absolute top-2 right-2 w-6 h-6 rounded-md overflow-hidden bg-white/95 p-0.5 border border-slate-200/80 shadow-xs backdrop-blur-xs flex items-center justify-center z-10"
-                              title={tenant.name}
-                            >
-                              <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
-                            </div>
-                          )}
-                          {/* SKU destacado */}
-                          {p.sku && (
-                            <span className="absolute bottom-2 left-2 font-mono text-white text-[9px] sm:text-[10px] font-bold bg-slate-900/90 px-2 py-0.5 rounded shadow-xs backdrop-blur-xs z-10">
-                              CÓD: {p.sku}
-                            </span>
-                          )}
-                          <span className="absolute top-2 left-2 font-mono text-slate-700 text-[9px] font-bold bg-white/90 px-1.5 py-0.5 rounded border border-slate-200 backdrop-blur-xs z-10">
-                            Mín: {p.min_order_qty}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm line-clamp-2 leading-snug group-hover:text-blue-600 transition-colors">
-                            {p.name}
-                          </h4>
-                          <div className="flex items-center gap-1 shrink-0 ml-1">
-                            <button
-                              onClick={() => setEditingProduct(p)}
-                              className="text-slate-400 hover:text-sky-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                              title="Editar producto, foto o tallas"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteProduct(p.id)}
-                              className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                              title="Eliminar producto"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Tallas y Color destacados con badges */}
-                        {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
-                          <div className="flex flex-wrap gap-1 text-[10px] my-1.5">
-                            {p.attributes.specs.color && (
-                              <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium border border-slate-200/60">
-                                🎨 {p.attributes.specs.color}
-                              </span>
-                            )}
-                            {p.attributes.specs.tallas && (
-                              <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
-                                📏 {p.attributes.specs.tallas}
-                              </span>
-                            )}
-                          </div>
-                        )}
-
-                        <p className="text-slate-500 text-[11px] mt-1 line-clamp-2 leading-relaxed">
-                          {p.description || 'Sin descripción comercial.'}
-                        </p>
-                      </div>
-
-                      <div className="mt-3 pt-2.5 border-t border-slate-100 flex justify-between text-[11px] font-mono text-slate-600">
-                        <span>Mín: {p.min_order_qty} uds</span>
-                        <span>{p.units_per_package} / fardo</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                /* Vista 2: Filas Horizontales */
-                <div className="flex flex-col gap-2.5">
-                  {products.map((p) => (
-                    <div
-                      key={p.id}
-                      className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 transition-all group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {/* Foto Horizontal */}
-                        <div className="relative w-16 h-20 sm:w-20 sm:h-24 aspect-[3/4] rounded-xl overflow-hidden bg-slate-50 border border-slate-200/80 shrink-0 flex items-center justify-center p-1">
-                          <img
-                            src={p.images?.[0] || '/assets/products/ayme-001.svg'}
-                            alt={p.name}
-                            className="w-full h-full object-contain filter drop-shadow-xs"
-                          />
-                          {tenant.logo_url && (
-                            <div className="absolute top-1 right-1 w-4 h-4 rounded bg-white/95 p-0.5 border border-slate-200 flex items-center justify-center">
-                              <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
-                            </div>
-                          )}
-                          {p.sku && (
-                            <span className="absolute bottom-1 left-1 font-mono text-white text-[8px] font-bold bg-slate-900/90 px-1 rounded">
-                              {p.sku}
-                            </span>
-                          )}
-                        </div>
-
-                        {/* Datos del Producto */}
-                        <div className="min-w-0 flex-1 space-y-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {p.sku && (
-                              <span className="font-mono text-slate-800 text-[10px] font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
-                                CÓD: {p.sku}
-                              </span>
-                            )}
-                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm truncate">
-                              {p.name}
-                            </h4>
-                          </div>
-
-                          {/* Tallas y Color */}
-                          {(p.attributes?.specs?.tallas || p.attributes?.specs?.color) && (
-                            <div className="flex flex-wrap gap-1 text-[10px]">
-                              {p.attributes.specs.color && (
-                                <span className="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded font-medium border border-slate-200/60">
-                                  🎨 {p.attributes.specs.color}
-                                </span>
-                              )}
-                              {p.attributes.specs.tallas && (
-                                <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
-                                  📏 {p.attributes.specs.tallas}
-                                </span>
-                              )}
-                            </div>
-                          )}
-
-                          <p className="text-slate-500 text-[11px] truncate max-w-xl">
-                            {p.description || 'Sin descripción comercial.'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Detalles comerciales y botones */}
-                      <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 shrink-0">
-                        <div className="text-right text-[11px] font-mono text-slate-600 sm:pr-3 sm:border-r sm:border-slate-100">
-                          <div>
-                            Mín: <strong className="text-slate-800">{p.min_order_qty}</strong> uds
-                          </div>
-                          <div className="text-[10px] text-slate-400">{p.units_per_package} / fardo</div>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                          <button
-                            onClick={() => setEditingProduct(p)}
-                            className="text-slate-600 hover:text-sky-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-                            title="Editar producto, foto o tallas"
-                          >
-                            <Edit2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProduct(p.id)}
-                            className="text-slate-600 hover:text-rose-600 p-2 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-colors cursor-pointer"
-                            title="Eliminar producto"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            );
+          })())}
 
           {/* PESTAÑA: GESTIÓN DE CATEGORÍAS (CRUD COMPLETO) */}
           {activeTab === 'categories' && (
@@ -1441,7 +1410,7 @@ export default function AdminDashboardView({
               tenantId={tenant.id}
               initialCategories={categories}
               onCategoriesChanged={(updatedCats) => setCategories(updatedCats)}
-              onOpenCreateModal={() => setIsCategoryModalOpen(true)}
+              onOpenCreateModal={() => {}}
             />
           )}
 
