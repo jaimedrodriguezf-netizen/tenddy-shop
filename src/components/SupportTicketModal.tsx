@@ -237,11 +237,11 @@ export default function SupportTicketModal({
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al enviar ticket');
+      if (!res.ok) throw new Error(data.error || 'No pudimos registrar tu requerimiento en este momento. Por favor intenta nuevamente.');
 
       setCreatedTicket({ ticket_number: data.ticket.ticket_number });
     } catch (err: unknown) {
-      const errorText = err instanceof Error ? err.message : 'Error de conexión';
+      const errorText = err instanceof Error ? err.message : 'No se pudo conectar con el servidor. Por favor verifica tu conexión e intenta de nuevo.';
       setErrorMsg(errorText);
     } finally {
       setLoading(false);

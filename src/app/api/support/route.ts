@@ -53,21 +53,6 @@ async function uploadAttachmentToStorage(
 // 1. Enviar nuevo ticket de soporte con imagen y notificar vía Supabase Edge Function
 export async function POST(request: Request) {
   try {
-    const clientIp = getClientIp(request);
-
-    // Rate limit: máximo 5 tickets cada 10 min por IP
-    const { isAllowed } = checkRateLimit(`ticket_${clientIp}`, {
-      windowMs: 10 * 60 * 1000,
-      maxRequests: 5,
-    });
-
-    if (!isAllowed) {
-      return NextResponse.json(
-        { error: 'Demasiadas solicitudes de soporte. Por favor espera un momento.' },
-        { status: 429 }
-      );
-    }
-
     const body = await request.json();
     const {
       sender_name,
@@ -86,9 +71,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, ticket_number: 'TICK-SPAM' });
     }
 
+    const clientIp = getClientIp(request);
+
+    // Límite de seguridad y gestión operativa de cola:
+    // Para tiendas registradas (tenant_id): permitimos hasta 15 tickets cada 10 min para ingresar requerimientos en orden sin saturar la capacidad operativa del equipo.
+    // Para consultas anónimas de visitantes: 10 tickets cada 10 min.
+    const rateLimitKey = tenant_id ? `ticket_tenant_${tenant_id}` : `ticket_ip_${clientIp}`;
+    const maxRequests = tenant_id ? 15 : 10;
+
+    const { isAllowed } = checkRateLimit(rateLimitKey, {
+      windowMs: 10 * 60 * 1000,
+      maxRequests,
+    });
+
+    if (!isAllowed) {
+      return NextResponse.json(
+        {
+          error:
+            'Por motivos de seguridad y para atender cada requerimiento con la máxima atención, recibimos tus solicitudes en cola organizada. Por favor espera unos minutos antes de enviar un nuevo ticket mientras nuestro equipo atiende los que ya están en proceso.',
+        },
+        { status: 429 }
+      );
+    }
+
     if (!sender_name || !sender_phone || !message) {
       return NextResponse.json(
-        { error: 'Nombre, teléfono y mensaje son obligatorios.' },
+        { error: 'Por favor completa tu nombre, número de WhatsApp y el mensaje de tu requerimiento para que podamos atenderte.' },
         { status: 400 }
       );
     }
@@ -124,7 +132,10 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Error insertando ticket:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Hubo un inconveniente temporal al registrar tu solicitud. Por favor intenta nuevamente en unos momentos.' },
+        { status: 500 }
+      );
     }
 
     // Delegar notificación exclusivamente a la Supabase Edge Function
@@ -149,7 +160,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, ticket });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error procesando ticket:', err);
+    return NextResponse.json(
+      { error: 'No pudimos procesar tu solicitud en este momento. Por favor verifica tu conexión e intenta nuevamente.' },
+      { status: 500 }
+    );
   }
 }
