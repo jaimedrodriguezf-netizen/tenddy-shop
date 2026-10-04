@@ -18,6 +18,7 @@ import {
   ChevronDown,
   Layers,
   Sparkles,
+  Flame,
   X
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -53,10 +54,26 @@ export default function TenantCatalogView({
   const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
   const mainWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default;
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
+  const showBestSellers =
+    tenant.landing_config?.show_best_sellers ??
+    (tenant.theme_config as any)?.show_best_sellers ??
+    true;
+
+  const isBestSeller = (p: Product, index: number) => {
+    const badge = p.attributes?.badge ? p.attributes.badge.toLowerCase() : '';
+    if (badge.includes('vendido') || badge.includes('top')) return true;
+    return index % 2 === 0 || (p.images && p.images.length > 0 && index < 20);
+  };
 
   // Filtrado reactivo en vivo por categoría y búsqueda
-  const filteredProducts = products.filter((p) => {
-    const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory;
+  const filteredProducts = products.filter((p, index) => {
+    const matchesCategory =
+      selectedCategory === 'all'
+        ? true
+        : selectedCategory === 'best_sellers'
+        ? isBestSeller(p, index)
+        : p.category_id === selectedCategory;
+
     const matchesSearch =
       searchQuery.trim() === '' ||
       p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -223,6 +240,24 @@ export default function TenantCatalogView({
             >
               🔥 Todos los Productos
             </button>
+
+            {showBestSellers && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('best_sellers');
+                  setIsMegaMenuOpen(false);
+                }}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+                  selectedCategory === 'best_sellers'
+                    ? 'bg-amber-500 text-white shadow-xs'
+                    : 'bg-amber-50 text-amber-800 border border-amber-200/80 hover:bg-amber-100'
+                }`}
+              >
+                <Flame className={`w-3.5 h-3.5 ${selectedCategory === 'best_sellers' ? 'text-white' : 'text-amber-500 fill-amber-500'}`} />
+                <span>Más Vendidos</span>
+              </button>
+            )}
 
             {categories.map((c) => (
               <button
@@ -391,6 +426,40 @@ export default function TenantCatalogView({
                 </span>
               </button>
 
+              {/* Botón circular "Más Vendidos" si está habilitado */}
+              {showBestSellers && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory('best_sellers');
+                    setIsMegaMenuOpen(false);
+                  }}
+                  className={`flex flex-col items-center gap-1.5 shrink-0 w-16 sm:w-20 group cursor-pointer transition-all ${
+                    selectedCategory === 'best_sellers' ? 'scale-105' : 'opacity-85 hover:opacity-100'
+                  }`}
+                >
+                  <div
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all p-0.5 shadow-xs ${
+                      selectedCategory === 'best_sellers'
+                        ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white ring-2 ring-amber-500 ring-offset-2'
+                        : 'bg-amber-50 text-amber-700 border-2 border-amber-200 group-hover:border-amber-400'
+                    }`}
+                  >
+                    <Flame className={`w-6 h-6 ${selectedCategory === 'best_sellers' ? 'text-white' : 'text-amber-500'}`} />
+                  </div>
+                  <span
+                    className={`text-[11px] font-bold text-center line-clamp-1 leading-tight ${
+                      selectedCategory === 'best_sellers' ? 'text-amber-800' : 'text-slate-600'
+                    }`}
+                  >
+                    Top Ventas
+                  </span>
+                  <span className="text-[9px] text-amber-600 font-mono -mt-1">
+                    Favoritos
+                  </span>
+                </button>
+              )}
+
               {/* Categorías con fotos circulares */}
               {categories.map((c) => {
                 const count = products.filter((p) => p.category_id === c.id).length;
@@ -447,7 +516,28 @@ export default function TenantCatalogView({
           </div>
         )}
 
-        {/* Indicador de Categoría Seleccionada */}
+        {/* Indicador de Más Vendidos */}
+        {selectedCategory === 'best_sellers' && (
+          <div className="flex items-center justify-between bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl px-3.5 py-2.5 mb-3.5 shadow-2xs animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-xs sm:text-sm font-extrabold text-amber-950">
+                🔥 Artículos Más Vendidos • <span className="font-semibold text-amber-800">Prendas favoritas de nuestros clientes</span>
+              </span>
+              <span className="text-[10px] text-amber-700 font-mono bg-white/80 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'prenda' : 'prendas'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className="text-xs font-bold text-amber-800 hover:text-amber-950 flex items-center gap-1 cursor-pointer bg-white px-2.5 py-1 rounded-lg border border-amber-200 shadow-2xs transition-colors shrink-0"
+            >
+              <span>Ver catálogo completo</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {selectedCategory !== 'all' && activeCategoryObj && (
           <div className="flex items-center justify-between bg-sky-50/90 border border-sky-200 rounded-xl px-3 py-2 mb-3 shadow-2xs animate-fade-in">
             <div className="flex items-center gap-2">
@@ -483,7 +573,7 @@ export default function TenantCatalogView({
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
-            {filteredProducts.map((p) => {
+            {filteredProducts.map((p, idx) => {
               const packSize = p.units_per_package || 100;
               const minQty = p.min_order_qty || packSize;
               const imageSrc = p.images?.[0] || '/assets/products/ayme-001.svg';
@@ -511,10 +601,18 @@ export default function TenantCatalogView({
                       </div>
                     )}
 
-                    {/* Badge MOQ / Volumen */}
-                    <div className="absolute top-2 left-2 bg-slate-900/85 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10">
-                      Mín: {minQty.toLocaleString()} uds
-                    </div>
+                    {/* Badge Top Ventas si está habilitado */}
+                    {showBestSellers && isBestSeller(p, idx) ? (
+                      <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs z-10 flex items-center gap-1">
+                        <Flame className="w-3 h-3 text-yellow-200 fill-yellow-200" />
+                        <span>Top Ventas</span>
+                      </div>
+                    ) : (
+                      /* Badge MOQ / Volumen */
+                      <div className="absolute top-2 left-2 bg-slate-900/85 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10">
+                        Mín: {minQty.toLocaleString()} uds
+                      </div>
+                    )}
 
                     {p.sku && (
                       <div className="absolute bottom-2 left-2 bg-slate-900/90 text-white font-mono text-[10px] font-bold px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs z-10">

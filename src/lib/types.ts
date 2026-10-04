@@ -12,6 +12,8 @@ export interface Tenant {
     accent_color: string;
     font_family?: string;
     border_radius?: string;
+    show_best_sellers?: boolean;
+    store_template?: string;
   };
   landing_config: {
     hero_title: string;
@@ -28,6 +30,7 @@ export interface Tenant {
     show_catalog?: boolean;
     show_branches?: boolean;
     show_services?: boolean;
+    show_best_sellers?: boolean;
   };
   settings: {
     currency: string;
