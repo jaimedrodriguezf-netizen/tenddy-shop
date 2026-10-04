@@ -41,6 +41,9 @@ export default function CategoriesManagerView({
 }: CategoriesManagerViewProps) {
   const [categories, setCategories] = useState<ExtendedCategory[]>(initialCategories);
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [productsFilter, setProductsFilter] = useState<'all' | 'with_products' | 'empty'>('all');
+  const [showAllCategories, setShowAllCategories] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -286,16 +289,36 @@ export default function CategoriesManagerView({
     }
   };
 
-  // Filtrado reactivo por buscador
-  const filteredCategories = categories.filter((cat) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      cat.name?.toLowerCase().includes(q) ||
-      cat.slug?.toLowerCase().includes(q) ||
-      cat.description?.toLowerCase().includes(q)
-    );
-  });
+  // Filtrado reactivo inteligente por buscador y selectores
+  const isFiltering =
+    searchQuery.trim().length > 0 ||
+    statusFilter !== 'all' ||
+    productsFilter !== 'all' ||
+    showAllCategories;
+
+  const displayedCategories = categories
+    .filter((cat) => {
+      const q = searchQuery.toLowerCase().trim();
+      const matchesSearch =
+        !q ||
+        cat.name?.toLowerCase().includes(q) ||
+        cat.slug?.toLowerCase().includes(q) ||
+        cat.description?.toLowerCase().includes(q);
+
+      const matchesStatus =
+        statusFilter === 'all' ||
+        (statusFilter === 'active' && cat.is_active) ||
+        (statusFilter === 'inactive' && !cat.is_active);
+
+      const prodCount = cat.products?.[0]?.count ?? 0;
+      const matchesProducts =
+        productsFilter === 'all' ||
+        (productsFilter === 'with_products' && prodCount > 0) ||
+        (productsFilter === 'empty' && prodCount === 0);
+
+      return matchesSearch && matchesStatus && matchesProducts;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
 
   const totalActive = categories.filter((c) => c.is_active).length;
   const totalProductsCount = categories.reduce((sum, c) => {
@@ -795,65 +818,147 @@ export default function CategoriesManagerView({
         </div>
       )}
 
-      {/* 2. Barra de Búsqueda y Filtro */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre de categoría, slug o descripción..."
-            className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-4 py-2 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
-          />
-        </div>
-
-        <span className="text-xs text-slate-500 font-medium shrink-0 self-center">
-          {filteredCategories.length} de {categories.length} categorías
-        </span>
-      </div>
-
-      {/* 3. Tabla / Lista de Categorías */}
-      <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
-        {loading && categories.length === 0 ? (
-          <div className="py-16 flex flex-col items-center justify-center space-y-2 text-slate-400">
-            <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
-            <span className="text-xs">Cargando categorías...</span>
-          </div>
-        ) : filteredCategories.length === 0 ? (
-          <div className="py-16 text-center text-xs text-slate-400 space-y-3">
-            <Tag className="w-8 h-8 mx-auto text-slate-300" />
-            <p className="font-semibold text-slate-700">No se encontraron categorías</p>
-            <p className="text-[11px] text-slate-400">
-              {searchQuery
-                ? `No hay resultados para "${searchQuery}".`
-                : 'Crea tu primera categoría para organizar los productos de tu catálogo.'}
-            </p>
-            {!searchQuery && (
+      {/* 2. Consola de Búsqueda y Filtros */}
+      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+          {/* Input Búsqueda por Nombre, Slug o Descripción */}
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre de categoría, slug o descripción..."
+              className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-9 py-2 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all shadow-xs"
+            />
+            {searchQuery && (
               <button
-                onClick={onOpenCreateModal}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-xl inline-flex items-center gap-1.5 transition-all cursor-pointer"
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
+                title="Limpiar búsqueda"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Crear Primera Categoría</span>
+                ✕
               </button>
             )}
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200/80">
-                <tr>
-                  <th className="py-3 px-4">Categoría</th>
-                  <th className="py-3 px-4">Slug URL</th>
-                  <th className="py-3 px-4">Descripción</th>
-                  <th className="py-3 px-4 text-center">Productos</th>
-                  <th className="py-3 px-4 text-center">Estado</th>
-                  <th className="py-3 px-4 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredCategories.map((cat) => {
+
+          {/* Selector de Filtro por Estado */}
+          <div className="sm:w-48">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as any)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium focus:border-slate-900 focus:outline-none transition-all shadow-xs cursor-pointer"
+            >
+              <option value="all">Todos los Estados</option>
+              <option value="active">Solo Activas</option>
+              <option value="inactive">Solo Inactivas</option>
+            </select>
+          </div>
+
+          {/* Selector de Filtro por Artículos Vinculados */}
+          <div className="sm:w-56">
+            <select
+              value={productsFilter}
+              onChange={(e) => setProductsFilter(e.target.value as any)}
+              className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium focus:border-slate-900 focus:outline-none transition-all shadow-xs cursor-pointer"
+            >
+              <option value="all">Todas las Categorías</option>
+              <option value="with_products">Con productos vinculados</option>
+              <option value="empty">Sin productos (vacías)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Contenido: Espera inicial de búsqueda vs Resultados */}
+      {loading && categories.length === 0 ? (
+        <div className="bg-white border border-slate-200/80 rounded-2xl py-16 flex flex-col items-center justify-center space-y-2 text-slate-400 shadow-xs">
+          <Loader2 className="w-6 h-6 animate-spin text-sky-500" />
+          <span className="text-xs">Cargando categorías...</span>
+        </div>
+      ) : categories.length === 0 ? (
+        <div className="text-center py-16 text-slate-400 text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-400 shadow-xs">
+            <Tag className="w-6 h-6" />
+          </div>
+          <h4 className="font-bold text-slate-800 text-sm">Tu catálogo aún no tiene categorías</h4>
+          <p className="max-w-xs mx-auto text-slate-500">
+            Crea tu primera categoría para organizar las prendas y colecciones de tu tienda.
+          </p>
+          <button
+            type="button"
+            onClick={() => setIsCreatingCategory(true)}
+            className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2 rounded-xl inline-flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Crear Primera Categoría</span>
+          </button>
+        </div>
+      ) : !isFiltering ? (
+        /* Estado Limpio: Esperando término de búsqueda o filtro */
+        <div className="py-14 text-center text-xs bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-8 space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mx-auto text-slate-400 shadow-xs">
+            <Search className="w-5 h-5 text-sky-500" />
+          </div>
+          <div className="space-y-1">
+            <h4 className="font-bold text-slate-800 text-sm">Búsqueda y Gestión de Categorías</h4>
+            <p className="max-w-md mx-auto text-slate-500 text-[11px] leading-relaxed">
+              Ingresa el nombre de una categoría o selecciona un filtro arriba para consultar y gestionar tus colecciones.
+            </p>
+          </div>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowAllCategories(true)}
+              className="text-xs text-sky-600 hover:text-sky-800 font-semibold underline cursor-pointer"
+            >
+              O explorar todas las {categories.length} categorías
+            </button>
+          </div>
+        </div>
+      ) : displayedCategories.length === 0 ? (
+        <div className="py-12 text-center text-xs text-slate-400 space-y-2 bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs">
+          <p className="font-semibold text-slate-700">No se encontraron categorías coincidentes</p>
+          <p className="text-[11px]">Prueba con otro término de búsqueda o cambiando los filtros seleccionados.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
+            <span>
+              Mostrando <strong>{displayedCategories.length}</strong> de {categories.length} categorías
+            </span>
+            {showAllCategories && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAllCategories(false);
+                  setSearchQuery('');
+                  setStatusFilter('all');
+                  setProductsFilter('all');
+                }}
+                className="text-xs text-slate-400 hover:text-slate-700 underline cursor-pointer"
+              >
+                Limpiar y volver a la búsqueda
+              </button>
+            )}
+          </div>
+
+          <div className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead className="bg-slate-50 text-slate-500 font-bold uppercase text-[10px] tracking-wider border-b border-slate-200/80">
+                  <tr>
+                    <th className="py-3 px-4">Categoría</th>
+                    <th className="py-3 px-4">Slug URL</th>
+                    <th className="py-3 px-4">Descripción</th>
+                    <th className="py-3 px-4 text-center">Productos</th>
+                    <th className="py-3 px-4 text-center">Estado</th>
+                    <th className="py-3 px-4 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {displayedCategories.map((cat) => {
                   const prodCount = cat.products?.[0]?.count ?? 0;
 
                   return (
@@ -954,8 +1059,9 @@ export default function CategoriesManagerView({
               </tbody>
             </table>
           </div>
-        )}
+        </div>
       </div>
+    )}
 
       {/* =========================================================================
           MODAL: CONFIRMAR ELIMINACIÓN DE CATEGORÍA (ALERTA DE ADVERTENCIA)

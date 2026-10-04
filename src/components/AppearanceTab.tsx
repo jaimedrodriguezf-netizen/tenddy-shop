@@ -128,7 +128,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                🛍️ E-Commerce Directo (Estilo Temu)
+                🛍️ E-Commerce Directo (Catálogo Ágil y Dinámico)
               </span>
               <span className="text-[10px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">
                 Predeterminado

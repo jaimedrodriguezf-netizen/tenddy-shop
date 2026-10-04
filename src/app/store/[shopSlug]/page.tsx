@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { LayoutDashboard } from 'lucide-react';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import TenantLandingView from '@/components/TenantLandingView';
-import TenantTemuView from '@/components/TenantTemuView';
+import TenantCatalogView from '@/components/TenantCatalogView';
 import ViewTracker from '@/components/ViewTracker';
 
 interface ShopPageProps {
@@ -60,9 +60,9 @@ export default async function ShopPage({ params }: ShopPageProps) {
     );
   }
 
-  // Para otros tenants, seleccionamos la plantilla (predeterminado: Temu)
+  // Para otros tenants, seleccionamos la plantilla (predeterminado: Catálogo Directo)
   const { categories, products, branches } = await getTenantCatalog(tenant.id);
-  const storeTemplate = (tenant.theme_config as any)?.store_template || 'temu';
+  const storeTemplate = (tenant.theme_config as any)?.store_template || 'catalog';
 
   if (storeTemplate === 'landing') {
     return (
@@ -79,11 +79,11 @@ export default async function ShopPage({ params }: ShopPageProps) {
     );
   }
 
-  // Plantilla Predeterminada: Estilo Temu (Catálogo ágil enfocado 100% en productos y categorías)
+  // Plantilla Predeterminada: Catálogo ágil enfocado 100% en productos y categorías
   return (
     <>
       <ViewTracker tenantId={tenant.id} />
-      <TenantTemuView
+      <TenantCatalogView
         tenant={tenant}
         categories={categories}
         products={products}

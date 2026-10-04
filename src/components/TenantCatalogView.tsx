@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronDown,
   Layers,
+  Sparkles,
   X
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -24,7 +25,7 @@ import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import ProductDetailModal from '@/components/ProductDetailModal';
 
-interface TenantTemuViewProps {
+interface TenantCatalogViewProps {
   tenant: Tenant;
   categories: Category[];
   products: Product[];
@@ -32,13 +33,13 @@ interface TenantTemuViewProps {
   isAdmin?: boolean;
 }
 
-export default function TenantTemuView({
+export default function TenantCatalogView({
   tenant,
   categories,
   products,
   branches,
   isAdmin = false,
-}: TenantTemuViewProps) {
+}: TenantCatalogViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -51,6 +52,7 @@ export default function TenantTemuView({
   const totalCartPackages = getTotalPackages();
   const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
   const mainWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default;
+  const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
 
   // Filtrado reactivo en vivo por categoría y búsqueda
   const filteredProducts = products.filter((p) => {
@@ -91,7 +93,7 @@ export default function TenantTemuView({
       />
 
       {/* =========================================================================
-          1. HEADER ULTRA-COMPACTO ESTILO TEMU / E-COMMERCE
+          1. HEADER ULTRA-COMPACTO DE COMERCIO DIRECTO
           ========================================================================= */}
       <header className="sticky top-0 z-40 bg-white border-b border-slate-200/80 shadow-xs">
         {/* Barra superior con marca y acciones */}
@@ -162,7 +164,7 @@ export default function TenantTemuView({
           </div>
         </div>
 
-        {/* Buscador Integrado Estilo Temu */}
+        {/* Buscador Integrado */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 pb-2.5">
           <div className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
@@ -326,9 +328,147 @@ export default function TenantTemuView({
       </div>
 
       {/* =========================================================================
-          3. GRILLA DENSA DE PRODUCTOS ESTILO TEMU (2 COLUMNAS EN MÓVIL)
+          3. GRILLA DENSA DE PRODUCTOS (2 COLUMNAS EN MÓVIL)
           ========================================================================= */}
       <main className="max-w-7xl mx-auto px-2.5 sm:px-6 py-4">
+        {/* =========================================================================
+            BARRA DE COLECCIONES CON FOTOS CIRCULARES
+            ========================================================================= */}
+        {categories.length > 0 && (
+          <div className="mb-4 bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
+                  Explorar Colecciones
+                </span>
+                <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded-full">
+                  {categories.length}
+                </span>
+              </div>
+              {selectedCategory !== 'all' && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategory('all')}
+                  className="text-[11px] font-bold text-sky-600 hover:text-sky-700 cursor-pointer flex items-center gap-1 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-lg transition-colors"
+                >
+                  <span>Ver todas</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-start gap-3 sm:gap-5 overflow-x-auto pb-2 pt-1 scrollbar-none">
+              {/* Botón circular "Todas" */}
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setIsMegaMenuOpen(false);
+                }}
+                className={`flex flex-col items-center gap-1.5 shrink-0 w-16 sm:w-20 group cursor-pointer transition-all ${
+                  selectedCategory === 'all' ? 'scale-105' : 'opacity-85 hover:opacity-100'
+                }`}
+              >
+                <div
+                  className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center transition-all p-0.5 shadow-xs ${
+                    selectedCategory === 'all'
+                      ? 'bg-slate-900 text-white ring-2 ring-slate-900 ring-offset-2'
+                      : 'bg-slate-100 text-slate-700 border-2 border-slate-200 group-hover:border-slate-400'
+                  }`}
+                >
+                  <Sparkles className="w-6 h-6 text-amber-400" />
+                </div>
+                <span
+                  className={`text-[11px] font-bold text-center line-clamp-1 leading-tight ${
+                    selectedCategory === 'all' ? 'text-slate-900' : 'text-slate-600'
+                  }`}
+                >
+                  Todas
+                </span>
+                <span className="text-[9px] text-slate-400 font-mono -mt-1">
+                  {products.length} arts.
+                </span>
+              </button>
+
+              {/* Categorías con fotos circulares */}
+              {categories.map((c) => {
+                const count = products.filter((p) => p.category_id === c.id).length;
+                const isSelected = selectedCategory === c.id;
+
+                return (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(c.id);
+                      setIsMegaMenuOpen(false);
+                    }}
+                    className={`flex flex-col items-center gap-1.5 shrink-0 w-16 sm:w-20 group cursor-pointer transition-all ${
+                      isSelected ? 'scale-105' : 'hover:scale-102'
+                    }`}
+                  >
+                    <div
+                      className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden transition-all p-0.5 flex items-center justify-center shadow-xs ${
+                        isSelected
+                          ? 'ring-2 ring-sky-600 ring-offset-2 border-2 border-sky-600 bg-sky-50'
+                          : 'bg-slate-100 border-2 border-slate-200 group-hover:border-slate-800'
+                      }`}
+                    >
+                      {c.image_url ? (
+                        <img
+                          src={c.image_url}
+                          alt={c.name}
+                          className="w-full h-full object-cover rounded-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center">
+                          <span className="font-extrabold text-base sm:text-lg text-slate-700">
+                            {c.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <span
+                      className={`text-[11px] font-semibold text-center line-clamp-2 leading-tight w-full ${
+                        isSelected ? 'font-extrabold text-sky-700' : 'text-slate-700 group-hover:text-sky-600'
+                      }`}
+                    >
+                      {c.name}
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-mono -mt-1">
+                      {count} {count === 1 ? 'art.' : 'arts.'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Indicador de Categoría Seleccionada */}
+        {selectedCategory !== 'all' && activeCategoryObj && (
+          <div className="flex items-center justify-between bg-sky-50/90 border border-sky-200 rounded-xl px-3 py-2 mb-3 shadow-2xs animate-fade-in">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-sky-600" />
+              <span className="text-xs font-bold text-sky-950">
+                Colección: <span className="text-sky-700">{activeCategoryObj.name}</span>
+              </span>
+              <span className="text-[10px] text-sky-600 font-mono bg-sky-100/80 px-1.5 py-0.5 rounded-md font-bold">
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'artículo' : 'artículos'}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className="text-xs font-bold text-sky-700 hover:text-sky-900 flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded-lg border border-sky-200 shadow-2xs transition-colors"
+            >
+              <span>Ver todas</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {filteredProducts.length === 0 ? (
           <div className="bg-white border border-slate-200 rounded-3xl p-12 text-center space-y-3 my-6">
             <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto text-slate-400">
