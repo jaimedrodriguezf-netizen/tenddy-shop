@@ -30,6 +30,8 @@ import {
   CheckCircle,
   ArrowRight,
   ChevronDown,
+  Layers,
+  Check,
   Bell
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
@@ -116,7 +118,11 @@ export default function AdminDashboardView({
   const [isQuotesOpen, setIsQuotesOpen] = useState(true);
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('all');
+  const [productCategorySearch, setProductCategorySearch] = useState('');
+  const [isProductCatOpen, setIsProductCatOpen] = useState(false);
   const [showAllProducts, setShowAllProducts] = useState(false);
+  const [productsPage, setProductsPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(15);
 
   // Consultar notificaciones de soporte no leídas
   useEffect(() => {
@@ -1166,6 +1172,12 @@ export default function AdminDashboardView({
                 return skuA.localeCompare(skuB, undefined, { numeric: true, sensitivity: 'base' });
               });
 
+            const totalPages = Math.max(1, Math.ceil(displayedProducts.length / productsPerPage));
+            const paginatedProducts = displayedProducts.slice(
+              (productsPage - 1) * productsPerPage,
+              productsPage * productsPerPage
+            );
+
             return (
               <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6 shadow-xs">
                 {/* Cabecera de Productos */}
@@ -1209,36 +1221,172 @@ export default function AdminDashboardView({
                       <input
                         type="text"
                         value={productSearch}
-                        onChange={(e) => setProductSearch(e.target.value)}
+                        onChange={(e) => {
+                          setProductSearch(e.target.value);
+                          setProductsPage(1);
+                        }}
                         placeholder="Buscar por código SKU (ej. VES-001) o nombre de prenda..."
                         className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all shadow-xs"
                       />
                       {productSearch && (
                         <button
-                          onClick={() => setProductSearch('')}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold"
+                          type="button"
+                          onClick={() => {
+                            setProductSearch('');
+                            setProductsPage(1);
+                          }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs font-bold cursor-pointer"
                         >
                           ✕
                         </button>
                       )}
                     </div>
 
-                    {/* Selector de Filtro por Categoría */}
-                    <div className="sm:w-60">
-                      <select
-                        value={productCategoryFilter}
-                        onChange={(e) => setProductCategoryFilter(e.target.value)}
-                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium focus:border-slate-900 focus:outline-none transition-all shadow-xs cursor-pointer"
+                    {/* Selector de Filtro por Categoría con Búsqueda Integrada */}
+                    <div className="relative sm:w-64">
+                      <div
+                        onClick={() => setIsProductCatOpen(!isProductCatOpen)}
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium flex items-center justify-between cursor-pointer hover:border-slate-300 transition-all shadow-xs"
                       >
-                        <option value="all">Todas las Categorías</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
+                        <span className="truncate">
+                          {productCategoryFilter === 'all'
+                            ? 'Todas las Categorías'
+                            : categories.find((c) => c.id === productCategoryFilter)?.name || 'Categoría'}
+                        </span>
+                        <div className="flex items-center gap-1 shrink-0">
+                          {productCategoryFilter !== 'all' && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setProductCategoryFilter('all');
+                                setProductsPage(1);
+                              }}
+                              className="text-slate-400 hover:text-slate-600 text-[10px] font-bold p-0.5 cursor-pointer"
+                            >
+                              ✕
+                            </button>
+                          )}
+                          <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isProductCatOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                      </div>
+
+                      {isProductCatOpen && (
+                        <div className="absolute right-0 left-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl p-2 shadow-xl z-30 space-y-1.5 max-h-60 overflow-y-auto">
+                          <div className="relative p-1">
+                            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <input
+                              type="text"
+                              value={productCategorySearch}
+                              onChange={(e) => setProductCategorySearch(e.target.value)}
+                              placeholder="Buscar categoría por nombre..."
+                              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 focus:bg-white focus:outline-none"
+                              autoFocus
+                            />
+                          </div>
+
+                          <div className="space-y-0.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProductCategoryFilter('all');
+                                setIsProductCatOpen(false);
+                                setProductCategorySearch('');
+                                setProductsPage(1);
+                              }}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                                productCategoryFilter === 'all'
+                                  ? 'bg-slate-900 text-white font-bold'
+                                  : 'text-slate-700 hover:bg-slate-100'
+                              }`}
+                            >
+                              <span>Todas las Categorías</span>
+                              <span className="text-[10px] opacity-75 font-mono">{products.length}</span>
+                            </button>
+
+                            {categories
+                              .filter((cat) => !productCategorySearch.trim() || cat.name.toLowerCase().includes(productCategorySearch.toLowerCase()))
+                              .map((cat) => {
+                                const count = products.filter((p) => p.category_id === cat.id).length;
+                                const isSelected = productCategoryFilter === cat.id;
+
+                                return (
+                                  <button
+                                    key={cat.id}
+                                    type="button"
+                                    onClick={() => {
+                                      setProductCategoryFilter(cat.id);
+                                      setIsProductCatOpen(false);
+                                      setProductCategorySearch('');
+                                      setProductsPage(1);
+                                    }}
+                                    className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-sky-50 text-sky-900 font-bold'
+                                        : 'text-slate-700 hover:bg-slate-100'
+                                    }`}
+                                  >
+                                    <span className="truncate max-w-[160px]">{cat.name}</span>
+                                    <span className="text-[10px] text-slate-400 font-mono">{count}</span>
+                                  </button>
+                                );
+                              })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
+
+                  {/* Barra de Categorías y Subcategorías Táctiles */}
+                  {categories.length > 0 && (
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 scrollbar-none border-t border-slate-200/60">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProductCategoryFilter('all');
+                          setProductsPage(1);
+                        }}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                          productCategoryFilter === 'all'
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Todas ({products.length})</span>
+                      </button>
+
+                      {categories.map((cat) => {
+                        const count = products.filter((p) => p.category_id === cat.id).length;
+                        const isSelected = productCategoryFilter === cat.id;
+
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setProductCategoryFilter(cat.id);
+                              setProductsPage(1);
+                            }}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                              isSelected
+                                ? 'bg-sky-600 text-white shadow-xs font-bold'
+                                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className="truncate max-w-[150px]">{cat.name}</span>
+                            <span
+                              className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
+                                isSelected ? 'bg-sky-700 text-white' : 'bg-slate-100 text-slate-600'
+                              }`}
+                            >
+                              {count}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 {/* Contenido: Espera inicial de búsqueda vs Resultados */}
@@ -1309,7 +1457,7 @@ export default function AdminDashboardView({
                     </div>
 
                     <div className="flex flex-col gap-2.5">
-                      {displayedProducts.map((p) => (
+                      {paginatedProducts.map((p) => (
                         <div
                           key={p.id}
                           className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-slate-300 hover:shadow-xs transition-all group"
@@ -1320,6 +1468,8 @@ export default function AdminDashboardView({
                               <img
                                 src={p.images?.[0] || '/assets/products/ayme-001.svg'}
                                 alt={p.name}
+                                loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-contain filter drop-shadow-xs"
                               />
                               {tenant.logo_url && (
@@ -1398,6 +1548,63 @@ export default function AdminDashboardView({
                         </div>
                       ))}
                     </div>
+
+                    {/* Barra de Paginación */}
+                    {displayedProducts.length > productsPerPage && (
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
+                        <div className="text-xs text-slate-500 font-medium">
+                          Mostrando <strong>{(productsPage - 1) * productsPerPage + 1}</strong> -{' '}
+                          <strong>{Math.min(productsPage * productsPerPage, displayedProducts.length)}</strong> de{' '}
+                          <strong>{displayedProducts.length}</strong> productos
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={productsPage === 1}
+                            onClick={() => setProductsPage((prev) => Math.max(1, prev - 1))}
+                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                          >
+                            ← Anterior
+                          </button>
+
+                          <div className="flex items-center gap-1">
+                            {Array.from({ length: totalPages }, (_, i) => i + 1)
+                              .filter((p) => p === 1 || p === totalPages || Math.abs(p - productsPage) <= 1)
+                              .map((p, idx, arr) => {
+                                const prev = arr[idx - 1];
+                                const hasGap = prev && p - prev > 1;
+
+                                return (
+                                  <React.Fragment key={p}>
+                                    {hasGap && <span className="text-slate-400 text-xs px-1">...</span>}
+                                    <button
+                                      type="button"
+                                      onClick={() => setProductsPage(p)}
+                                      className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                                        productsPage === p
+                                          ? 'bg-slate-900 text-white shadow-xs'
+                                          : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+                                      }`}
+                                    >
+                                      {p}
+                                    </button>
+                                  </React.Fragment>
+                                );
+                              })}
+                          </div>
+
+                          <button
+                            type="button"
+                            disabled={productsPage === totalPages}
+                            onClick={() => setProductsPage((prev) => Math.min(totalPages, prev + 1))}
+                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                          >
+                            Siguiente →
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

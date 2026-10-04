@@ -4,10 +4,13 @@ import React, { useState } from 'react';
 import {
   X,
   Check,
+  CheckCircle2,
   AlertCircle,
   Loader2,
   Upload,
-  Clipboard
+  Clipboard,
+  Search,
+  ChevronDown
 } from 'lucide-react';
 import { Category, Product } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -34,6 +37,8 @@ function EditProductModalContent({
   const [name, setName] = useState(product.name || '');
   const [sku, setSku] = useState(product.sku || '');
   const [categoryId, setCategoryId] = useState(product.category_id || categories[0]?.id || '');
+  const [catSearch, setCatSearch] = useState('');
+  const [isCatOpen, setIsCatOpen] = useState(false);
   const [description, setDescription] = useState(product.description || '');
   const [minOrderQty, setMinOrderQty] = useState(product.min_order_qty || 1);
   const [unitsPerPackage, setUnitsPerPackage] = useState(product.units_per_package || 1);
@@ -356,17 +361,56 @@ function EditProductModalContent({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-slate-700 mb-1 font-semibold">Categoría</label>
-                <select
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
+              <div className="relative">
+                <label className="block text-slate-700 mb-1 font-semibold">Categoría *</label>
+                <div
+                  onClick={() => setIsCatOpen(!isCatOpen)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 cursor-pointer flex items-center justify-between hover:bg-slate-100 transition-colors"
                 >
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
+                  <span className="truncate">
+                    {categories.find((c) => c.id === categoryId)?.name || 'Seleccionar Categoría'}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCatOpen ? 'rotate-180' : ''}`} />
+                </div>
+
+                {isCatOpen && (
+                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl p-2 shadow-xl z-30 space-y-1.5 max-h-56 overflow-y-auto">
+                    <div className="relative p-1">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={catSearch}
+                        onChange={(e) => setCatSearch(e.target.value)}
+                        placeholder="Buscar por nombre..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-3 py-1.5 text-xs text-slate-900 focus:bg-white focus:outline-none"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="space-y-0.5">
+                      {categories
+                        .filter((c) => !catSearch.trim() || c.name.toLowerCase().includes(catSearch.toLowerCase()))
+                        .map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setCategoryId(c.id);
+                              setIsCatOpen(false);
+                              setCatSearch('');
+                            }}
+                            className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                              c.id === categoryId
+                                ? 'bg-sky-50 text-sky-900 font-bold'
+                                : 'text-slate-700 hover:bg-slate-100'
+                            }`}
+                          >
+                            <span className="truncate">{c.name}</span>
+                            {c.id === categoryId && <CheckCircle2 className="w-3.5 h-3.5 text-sky-600" />}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <label className="block text-slate-700 mb-1 font-semibold">Pedido Mínimo (MOQ)</label>

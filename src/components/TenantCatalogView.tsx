@@ -51,6 +51,11 @@ export default function TenantCatalogView({
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
+  const [visibleCount, setVisibleCount] = useState<number>(20);
+
+  useEffect(() => {
+    setVisibleCount(20);
+  }, [selectedCategory, searchQuery]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -834,8 +839,9 @@ export default function TenantCatalogView({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
-            {filteredProducts.map((p, idx) => {
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
+            {filteredProducts.slice(0, visibleCount).map((p, idx) => {
               const packSize = p.units_per_package || 100;
               const minQty = p.min_order_qty || packSize;
               const imageSrc = p.images?.[0] || '/assets/products/ayme-001.svg';
@@ -855,6 +861,8 @@ export default function TenantCatalogView({
                     <img
                       src={imageSrc}
                       alt={p.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
                     />
 
@@ -972,6 +980,20 @@ export default function TenantCatalogView({
               );
             })}
           </div>
+
+            {/* Botón de Carga Progresiva / Lazy Loading */}
+            {filteredProducts.length > visibleCount && (
+              <div className="text-center py-6 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((prev) => prev + 20)}
+                  className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-full border border-slate-200 shadow-xs cursor-pointer transition-all hover:scale-105"
+                >
+                  Cargar más prendas (Mostrando {visibleCount} de {filteredProducts.length})
+                </button>
+              </div>
+            )}
+          </>
         )}
       </main>
 
