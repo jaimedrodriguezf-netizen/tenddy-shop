@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -20,6 +20,8 @@ import {
   Sparkles,
   Flame,
   Star,
+  TrendingUp,
+  Zap,
   X
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -44,9 +46,21 @@ export default function TenantCatalogView({
 }: TenantCatalogViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState<boolean>(false);
+  const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setIsSearchDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
 
@@ -192,24 +206,186 @@ export default function TenantCatalogView({
           </div>
         </div>
 
-        {/* Buscador Integrado */}
+        {/* Buscador Integrado con Dropdown de Atajos y Categorías */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 pb-2.5">
-          <div className="relative">
+          <div ref={searchContainerRef} className="relative">
             <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
             <input
               type="text"
               value={searchQuery}
+              onFocus={() => setIsSearchDropdownOpen(true)}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar productos, códigos, medidas..."
-              className="w-full bg-slate-100 border border-slate-200 rounded-full pl-10 pr-4 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:outline-none transition-all"
+              placeholder="Buscar productos, prendas, códigos SKU o colecciones..."
+              className="w-full bg-slate-100 border border-slate-200 rounded-full pl-10 pr-9 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:outline-none transition-all shadow-2xs"
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setIsSearchDropdownOpen(false);
+                }}
+                className="absolute right-3 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold cursor-pointer"
               >
                 ✕
               </button>
+            )}
+
+            {/* Dropdown Flotante de Sugerencias y Selección de Categorías */}
+            {isSearchDropdownOpen && (
+              <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-slate-200 rounded-2xl p-4 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-150 space-y-4 max-h-[80vh] overflow-y-auto">
+                {/* 1. Atajos Principales (Ofertas, Liquidación, Tendencias) */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <TrendingUp className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Popular ahora & Atajos</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedCategory('best_sellers');
+                        setSearchQuery('');
+                        setIsSearchDropdownOpen(false);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Flame className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                      <span>Tendencias</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('oferta');
+                        setSelectedCategory('all');
+                        setIsSearchDropdownOpen(false);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Tag className="w-3.5 h-3.5 text-rose-500" />
+                      <span>Ofertas</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('liquidacion');
+                        setSelectedCategory('all');
+                        setIsSearchDropdownOpen(false);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <Zap className="w-3.5 h-3.5 text-purple-500 fill-purple-500" />
+                      <span>Liquidación</span>
+                    </button>
+
+                    {showFeaturedRatings && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory('five_stars');
+                          setSearchQuery('');
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        className="px-3 py-1.5 rounded-xl bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-900 text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                      >
+                        <Star className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                        <span>5 Estrellas</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2. Seleccionar por Categorías de la Tienda */}
+                <div>
+                  <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-sky-500" />
+                      <span>Seleccionar Categoría</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      {categories.length} categorías
+                    </span>
+                  </div>
+
+                  {categories.length === 0 ? (
+                    <p className="text-xs text-slate-400 italic">No hay categorías activas.</p>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                      {/* Botón Ver Todo el Catálogo */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory('all');
+                          setSearchQuery('');
+                          setIsSearchDropdownOpen(false);
+                        }}
+                        className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                          selectedCategory === 'all'
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-800'
+                        }`}
+                      >
+                        <div className="w-7 h-7 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                          <Sparkles className="w-3.5 h-3.5 text-slate-700" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <span className="font-bold text-xs block truncate">Todas las Prendas</span>
+                          <span className="text-[10px] opacity-75 font-mono block -mt-0.5">
+                            {products.length} productos
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* Lista de categorías individuales */}
+                      {categories.map((c) => {
+                        const count = products.filter((p) => p.category_id === c.id).length;
+                        const isSelected = selectedCategory === c.id;
+
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(c.id);
+                              setSearchQuery('');
+                              setIsSearchDropdownOpen(false);
+                            }}
+                            className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                              isSelected
+                                ? 'bg-sky-50 border-sky-300 text-sky-950 font-bold'
+                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-800'
+                            }`}
+                          >
+                            <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0 flex items-center justify-center p-0.5">
+                              {c.image_url ? (
+                                <img
+                                  src={c.image_url}
+                                  alt={c.name}
+                                  className="w-full h-full object-cover rounded-full"
+                                />
+                              ) : (
+                                <span className="font-extrabold text-[11px] text-slate-700">
+                                  {c.name.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <span className="font-semibold text-xs block truncate leading-tight">
+                                {c.name}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono block">
+                                {count} {count === 1 ? 'artículo' : 'artículos'}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
