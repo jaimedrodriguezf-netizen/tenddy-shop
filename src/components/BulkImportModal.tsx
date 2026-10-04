@@ -179,7 +179,7 @@ export default function BulkImportModal({
           },
         });
       } else {
-        // Archivo Excel (.xlsx / .xls) con soporte multi-hoja
+        // Archivo Excel (.xlsx / .xls) con soporte multi-hoja y protección defensiva
         const rawResult = (await readXlsxFile(file)) as unknown;
         let rows: any[][];
 
@@ -188,20 +188,27 @@ export default function BulkImportModal({
           const sheets = rawResult as Array<{ sheet: string; data: any[][] }>;
           const sheetWithData = sheets.find((s) => Array.isArray(s.data) && s.data.length > 1) || sheets[0];
           rows = sheetWithData?.data || [];
-        } else {
+        } else if (Array.isArray(rawResult)) {
           rows = rawResult as any[][];
+        } else {
+          rows = [];
         }
 
-        if (!rows || rows.length < 2) {
-          setErrorMsg('El archivo Excel debe tener al menos una fila de encabezados y una fila con datos de productos.');
+        // Filtrar filas válidas tipo arreglo (previene error e[0].map is not a function en archivos con metadatos)
+        const validRows = rows.filter((r) => Array.isArray(r) && r.length > 0);
+
+        if (validRows.length < 2) {
+          setErrorMsg('No pudimos leer los datos de tu archivo Excel. Revisa que tenga los nombres de columnas arriba y tus prendas debajo.');
           setParsing(false);
           return;
         }
 
         // Buscar automáticamente la fila que contiene los encabezados reales
         let headerRowIndex = 0;
-        for (let r = 0; r < Math.min(rows.length, 10); r++) {
-          const rowCells = (rows[r] as any[]).map((cell: any) => normalizeKey(String(cell ?? '')));
+        for (let r = 0; r < Math.min(validRows.length, 10); r++) {
+          const currentRow = validRows[r];
+          if (!Array.isArray(currentRow)) continue;
+          const rowCells = currentRow.map((cell: any) => normalizeKey(String(cell ?? '')));
           const matchesKnownHeader = rowCells.some((k) => k === 'sku' || k === 'name' || k === 'category' || k === 'color' || k === 'tallas');
           if (matchesKnownHeader) {
             headerRowIndex = r;
@@ -209,30 +216,38 @@ export default function BulkImportModal({
           }
         }
 
-        const headerRow = rows[headerRowIndex] as any[];
+        const headerRow = validRows[headerRowIndex];
+        if (!Array.isArray(headerRow)) {
+          setErrorMsg('No pudimos identificar los nombres de las columnas en tu archivo. Descarga la plantilla oficial para guiarte.');
+          setParsing(false);
+          return;
+        }
+
         const headers = headerRow.map((h: any) => normalizeKey(String(h ?? '')));
-        const dataRows = rows.slice(headerRowIndex + 1);
+        const dataRows = validRows.slice(headerRowIndex + 1);
 
-        const productsList: ParsedProduct[] = dataRows.map((row: any[]) => {
-          const mapped: Record<string, string> = {};
-          headers.forEach((h: string, colIdx: number) => {
-            const val = row[colIdx];
-            mapped[h] = val !== undefined && val !== null ? String(val).trim() : '';
-          });
+        const productsList: ParsedProduct[] = dataRows
+          .filter((row: any) => Array.isArray(row) && row.length > 0)
+          .map((row: any[]) => {
+            const mapped: Record<string, string> = {};
+            headers.forEach((h: string, colIdx: number) => {
+              const val = row[colIdx];
+              mapped[h] = val !== undefined && val !== null ? String(val).trim() : '';
+            });
 
-          return {
-            sku: mapped.sku || '',
-            color: mapped.color || '',
-            tallas: mapped.tallas || '',
-            description_and_seams: mapped.description_and_seams || '',
-            name: mapped.name || '',
-            category: mapped.category || 'General',
-            image_url: normalizeImageUrl(mapped.image_url || ''),
-          };
-        }).filter((p) => p.name || p.sku);
+            return {
+              sku: mapped.sku || '',
+              color: mapped.color || '',
+              tallas: mapped.tallas || '',
+              description_and_seams: mapped.description_and_seams || '',
+              name: mapped.name || '',
+              category: mapped.category || 'General',
+              image_url: normalizeImageUrl(mapped.image_url || ''),
+            };
+          }).filter((p) => p.name || p.sku);
 
         if (productsList.length === 0) {
-          setErrorMsg('No se detectaron filas válidas con datos de productos en el Excel.');
+          setErrorMsg('No se detectaron prendas válidas en el archivo Excel. Revisa que las celdas contengan datos.');
         } else if (productsList.length > 3000) {
           setErrorMsg(`El archivo contiene ${productsList.length} productos. El límite por carga es de 3,000.`);
         } else {
@@ -241,8 +256,8 @@ export default function BulkImportModal({
         setParsing(false);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al procesar archivo';
-      setErrorMsg(msg);
+      console.error('Error al procesar archivo:', err);
+      setErrorMsg('No se pudo leer el archivo Excel. Asegúrate de que no esté protegido con contraseña o prueba guardarlo como archivo CSV.');
       setParsing(false);
     }
   };
