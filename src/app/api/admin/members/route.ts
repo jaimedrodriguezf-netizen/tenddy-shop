@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
+
+// Función criptográfica estándar OWASP para hashing con salt (PBKDF2-SHA512)
+function hashPassword(password: string): string {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
+  return `pbkdf2$100000$${salt}$${hash}`;
+}
 
 // Listar miembros del equipo de la fábrica
 export async function GET(request: Request) {
@@ -65,7 +73,7 @@ export async function POST(request: Request) {
         full_name: full_name.trim(),
         email: email.trim().toLowerCase(),
         phone: phone ? phone.trim() : null,
-        password_hash: password || 'temp_123456',
+        password_hash: hashPassword(password || 'temp_123456'),
         role,
         is_active: true,
       })

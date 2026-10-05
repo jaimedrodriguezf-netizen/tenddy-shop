@@ -60,19 +60,28 @@ export function checkRateLimit(ip: string, options: RateLimitOptions = { windowM
   return { isAllowed: true, remaining: options.maxRequests - entry.count };
 }
 
-// Obtener la IP real del cliente considerando proxies inversos (Hostinger, Cloudflare, Nginx)
+// Obtener la IP real del cliente considerando proxies inversos de forma segura (Cloudflare, Nginx, Hostinger)
 export function getClientIp(request: Request): string {
-  const forwardedFor = request.headers.get('x-forwarded-for');
-  if (forwardedFor) {
-    return forwardedFor.split(',')[0].trim();
-  }
-  const realIp = request.headers.get('x-real-ip');
-  if (realIp) {
-    return realIp.trim();
-  }
+  // 1. Cabecera inmutable inyectada por el edge de Cloudflare (imposible de falsificar por el cliente)
   const cfConnectingIp = request.headers.get('cf-connecting-ip');
-  if (cfConnectingIp) {
+  if (cfConnectingIp && cfConnectingIp.trim()) {
     return cfConnectingIp.trim();
   }
+
+  // 2. Cabecera directa asignada por proxies inversos de producción (Nginx, Hostinger, Vercel)
+  const realIp = request.headers.get('x-real-ip');
+  if (realIp && realIp.trim()) {
+    return realIp.trim();
+  }
+
+  // 3. Fallback a X-Forwarded-For con validación de formato IP para evitar strings arbitrarios
+  const forwardedFor = request.headers.get('x-forwarded-for');
+  if (forwardedFor && forwardedFor.trim()) {
+    const rawIp = forwardedFor.split(',')[0].trim();
+    if (/^[0-9a-f.:]+$/i.test(rawIp)) {
+      return rawIp;
+    }
+  }
+
   return '127.0.0.1';
 }

@@ -66,24 +66,35 @@ export async function POST(request: Request) {
       try {
         const matches = body.imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
-          const mimeType = matches[1];
-          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
-          const buffer = Buffer.from(matches[2], 'base64');
-          const filePath = `products/${tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
+          const mimeType = matches[1].toLowerCase().trim();
+          const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+            'image/webp': 'webp',
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+          };
+          const ext = ALLOWED_IMAGE_TYPES[mimeType];
+          if (ext) {
+            const buffer = Buffer.from(matches[2], 'base64');
+            // Límite estricto de 5MB por foto de producto
+            if (buffer.length <= 5 * 1024 * 1024) {
+              const filePath = `products/${tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
 
-          const { error: uploadErr } = await admin.storage
-            .from('support-attachments')
-            .upload(filePath, buffer, {
-              contentType: mimeType,
-              upsert: true,
-            });
+              const { error: uploadErr } = await admin.storage
+                .from('support-attachments')
+                .upload(filePath, buffer, {
+                  contentType: mimeType,
+                  upsert: true,
+                });
 
-          if (!uploadErr) {
-            const { data: pubData } = admin.storage
-              .from('support-attachments')
-              .getPublicUrl(filePath);
-            if (pubData?.publicUrl) {
-              finalImages = [pubData.publicUrl];
+              if (!uploadErr) {
+                const { data: pubData } = admin.storage
+                  .from('support-attachments')
+                  .getPublicUrl(filePath);
+                if (pubData?.publicUrl) {
+                  finalImages = [pubData.publicUrl];
+                }
+              }
             }
           }
         }
@@ -175,22 +186,32 @@ export async function PATCH(request: Request) {
       try {
         const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
-          const mimeType = matches[1];
-          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
-          const buffer = Buffer.from(matches[2], 'base64');
-          const cleanSku = (sku || currentProduct.sku).toLowerCase().replace(/[^a-z0-9]/g, '');
-          const filePath = `products/${currentProduct.tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
+          const mimeType = matches[1].toLowerCase().trim();
+          const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+            'image/webp': 'webp',
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+          };
+          const ext = ALLOWED_IMAGE_TYPES[mimeType];
+          if (ext) {
+            const buffer = Buffer.from(matches[2], 'base64');
+            if (buffer.length <= 5 * 1024 * 1024) {
+              const cleanSku = (sku || currentProduct.sku).toLowerCase().replace(/[^a-z0-9]/g, '');
+              const filePath = `products/${currentProduct.tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
 
-          const { error: uploadErr } = await admin.storage
-            .from('support-attachments')
-            .upload(filePath, buffer, { contentType: mimeType, upsert: true });
+              const { error: uploadErr } = await admin.storage
+                .from('support-attachments')
+                .upload(filePath, buffer, { contentType: mimeType, upsert: true });
 
-          if (!uploadErr) {
-            const { data: pubData } = admin.storage
-              .from('support-attachments')
-              .getPublicUrl(filePath);
-            if (pubData?.publicUrl) {
-              finalImages = [pubData.publicUrl];
+              if (!uploadErr) {
+                const { data: pubData } = admin.storage
+                  .from('support-attachments')
+                  .getPublicUrl(filePath);
+                if (pubData?.publicUrl) {
+                  finalImages = [pubData.publicUrl];
+                }
+              }
             }
           }
         }

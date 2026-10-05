@@ -1,9 +1,25 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 // Registrar o buscar cuenta corporativa de comprador B2B
 export async function POST(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // Rate limiting: máximo 10 operaciones de clientes B2B por minuto por IP para evitar enumeración masiva
+    const { isAllowed } = checkRateLimit(`b2b_cust_${clientIp}`, {
+      windowMs: 60 * 1000,
+      maxRequests: 10,
+    });
+
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes en poco tiempo. Por favor espera un momento.' },
+        { status: 429 }
+      );
+    }
+
     const body = await request.json();
     const {
       company_name,
@@ -20,6 +36,15 @@ export async function POST(request: Request) {
         { error: 'Empresa, email, teléfono y tienda son requeridos' },
         { status: 400 }
       );
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail) || cleanEmail.length > 120) {
+      return NextResponse.json({ error: 'Formato de correo electrónico inválido' }, { status: 400 });
+    }
+
+    if (phone.trim().length > 30 || company_name.trim().length > 150) {
+      return NextResponse.json({ error: 'Longitud de campos de empresa o teléfono excedida' }, { status: 400 });
     }
 
     const admin = getAdminClient();

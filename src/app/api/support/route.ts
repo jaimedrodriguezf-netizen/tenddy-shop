@@ -2,7 +2,18 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
-// Subir adjunto base64 (imagen, Excel, CSV o PDF) a Supabase Storage y devolver URL pública
+const ALLOWED_ATTACHMENT_MIMES: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-excel': 'xls',
+  'text/csv': 'csv',
+};
+
+// Subir adjunto base64 a Supabase Storage con validación estricta de MIME y límite de 5MB
 async function uploadAttachmentToStorage(
   base64DataUrl: string,
   ticketNumber: string
@@ -12,17 +23,25 @@ async function uploadAttachmentToStorage(
     if (commaIndex === -1) return null;
 
     const mimeMatch = base64DataUrl.substring(0, commaIndex).match(/data:([^;]+);base64/);
-    const mimeType = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+    if (!mimeMatch) return null;
+
+    const mimeType = mimeMatch[1].toLowerCase().trim();
+    const ext = ALLOWED_ATTACHMENT_MIMES[mimeType];
+
+    // Rechazar tipos MIME peligrosos o no autorizados (previene Stored XSS mediante SVG o HTML)
+    if (!ext) {
+      console.warn(`Tipo de archivo no permitido rechazado: ${mimeType}`);
+      return null;
+    }
+
     const base64Data = base64DataUrl.substring(commaIndex + 1);
     const buffer = Buffer.from(base64Data, 'base64');
 
-    let ext = 'bin';
-    if (mimeType.includes('webp')) ext = 'webp';
-    else if (mimeType.includes('png')) ext = 'png';
-    else if (mimeType.includes('jpeg') || mimeType.includes('jpg')) ext = 'jpg';
-    else if (mimeType.includes('spreadsheetml') || mimeType.includes('excel') || mimeType.includes('xlsx')) ext = 'xlsx';
-    else if (mimeType.includes('csv')) ext = 'csv';
-    else if (mimeType.includes('pdf')) ext = 'pdf';
+    // Límite de tamaño estricto: máximo 5MB (previene ataques DoS por agotamiento de memoria)
+    if (buffer.length > 5 * 1024 * 1024) {
+      console.warn(`Archivo excede límite de 5MB: ${(buffer.length / 1024 / 1024).toFixed(2)} MB`);
+      return null;
+    }
 
     const filePath = `tickets/${ticketNumber}-${Date.now()}.${ext}`;
 

@@ -46,21 +46,31 @@ async function processCategoryImage(
     try {
       const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
       if (matches && matches.length === 3) {
-        const mimeType = matches[1];
-        const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
-        const buffer = Buffer.from(matches[2], 'base64');
-        const cleanSlugPart = slug.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
-        const filePath = `categories/${tenantId}/${cleanSlugPart}-${Date.now()}.${ext}`;
+        const mimeType = matches[1].toLowerCase().trim();
+        const ALLOWED_IMAGE_TYPES: Record<string, string> = {
+          'image/webp': 'webp',
+          'image/jpeg': 'jpg',
+          'image/jpg': 'jpg',
+          'image/png': 'png',
+        };
+        const ext = ALLOWED_IMAGE_TYPES[mimeType];
+        if (ext) {
+          const buffer = Buffer.from(matches[2], 'base64');
+          if (buffer.length <= 5 * 1024 * 1024) {
+            const cleanSlugPart = slug.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 20);
+            const filePath = `categories/${tenantId}/${cleanSlugPart}-${Date.now()}.${ext}`;
 
-        const { error: uploadErr } = await admin.storage
-          .from('support-attachments')
-          .upload(filePath, buffer, { contentType: mimeType, upsert: true });
+            const { error: uploadErr } = await admin.storage
+              .from('support-attachments')
+              .upload(filePath, buffer, { contentType: mimeType, upsert: true });
 
-        if (!uploadErr) {
-          const { data: pubData } = admin.storage
-            .from('support-attachments')
-            .getPublicUrl(filePath);
-          return pubData?.publicUrl || null;
+            if (!uploadErr) {
+              const { data: pubData } = admin.storage
+                .from('support-attachments')
+                .getPublicUrl(filePath);
+              return pubData?.publicUrl || null;
+            }
+          }
         }
       }
     } catch (err) {

@@ -37,14 +37,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Clave maestra de plataforma inválida' }, { status: 401 });
     }
 
-    // Cookie segura de sesión exclusiva de plataforma
+    // Cookie segura de sesión exclusiva de plataforma (path: '/' para cubrir /superadmin y /api/superadmin/*)
     const cookieStore = await cookies();
     cookieStore.set('tenddy_superadmin_session', 'authenticated', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 60 * 60 * 24 * 7,
-      path: '/superadmin',
+      path: '/',
     });
 
     return NextResponse.json({ success: true });
@@ -56,6 +56,6 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const cookieStore = await cookies();
-  cookieStore.delete({ name: 'tenddy_superadmin_session', path: '/superadmin' });
+  cookieStore.delete({ name: 'tenddy_superadmin_session', path: '/' });
   return NextResponse.json({ success: true });
 }
