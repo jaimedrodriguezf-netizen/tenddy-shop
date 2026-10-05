@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { Product } from '@/lib/types';
 
 export interface CartItem {
+  id?: string;
   product: Product;
   quantity: number; // Cantidad en unidades individuales
   packageCount: number; // Cantidad en bultos/fardos
@@ -17,8 +18,8 @@ interface CartStore {
   closeCart: () => void;
   toggleCart: () => void;
   addItem: (product: Product, packagesToAdd?: number, selectedColor?: string) => void;
-  updatePackageCount: (productId: string, packageCount: number) => void;
-  removeItem: (productId: string) => void;
+  updatePackageCount: (itemKeyOrProductId: string, packageCount: number) => void;
+  removeItem: (itemKeyOrProductId: string) => void;
   clearCart: () => void;
   getTotalUnits: () => number;
   getTotalPackages: () => number;
@@ -39,10 +40,13 @@ export const useCartStore = create<CartStore>()(
           const packSize = product.units_per_package || 100;
           const minQty = product.min_order_qty || packSize;
           const minPacks = Math.ceil(minQty / packSize);
+          const colorKey = (selectedColor || 'Estándar').trim().toLowerCase();
+          const targetItemId = `${product.id}__${colorKey}`;
 
-          const existingIndex = state.items.findIndex(
-            (item) => item.product.id === product.id
-          );
+          const existingIndex = state.items.findIndex((item) => {
+            const currentItemKey = item.id || `${item.product.id}__${(item.selectedColor || 'Estándar').trim().toLowerCase()}`;
+            return currentItemKey === targetItemId;
+          });
 
           if (existingIndex > -1) {
             const currentItem = state.items[existingIndex];
@@ -50,6 +54,7 @@ export const useCartStore = create<CartStore>()(
             const updatedItems = [...state.items];
             updatedItems[existingIndex] = {
               ...currentItem,
+              id: targetItemId,
               packageCount: newPacks,
               quantity: newPacks * packSize,
               selectedColor: selectedColor || currentItem.selectedColor,
@@ -60,6 +65,7 @@ export const useCartStore = create<CartStore>()(
           // Nuevo ítem: asegurar que arranque al menos con el MOQ en paquetes
           const initialPacks = Math.max(packagesToAdd, minPacks);
           const newItem: CartItem = {
+            id: targetItemId,
             product,
             packageCount: initialPacks,
             quantity: initialPacks * packSize,
@@ -70,10 +76,11 @@ export const useCartStore = create<CartStore>()(
         });
       },
 
-      updatePackageCount: (productId, packageCount) => {
+      updatePackageCount: (itemKeyOrProductId, packageCount) => {
         set((state) => {
           const updatedItems = state.items.map((item) => {
-            if (item.product.id === productId) {
+            const currentItemKey = item.id || `${item.product.id}__${(item.selectedColor || 'Estándar').trim().toLowerCase()}`;
+            if (currentItemKey === itemKeyOrProductId || item.product.id === itemKeyOrProductId) {
               const packSize = item.product.units_per_package || 100;
               const minQty = item.product.min_order_qty || packSize;
               const minPacks = Math.ceil(minQty / packSize);
@@ -91,9 +98,12 @@ export const useCartStore = create<CartStore>()(
         });
       },
 
-      removeItem: (productId) => {
+      removeItem: (itemKeyOrProductId) => {
         set((state) => ({
-          items: state.items.filter((item) => item.product.id !== productId),
+          items: state.items.filter((item) => {
+            const currentItemKey = item.id || `${item.product.id}__${(item.selectedColor || 'Estándar').trim().toLowerCase()}`;
+            return currentItemKey !== itemKeyOrProductId && item.product.id !== itemKeyOrProductId;
+          }),
         }));
       },
 

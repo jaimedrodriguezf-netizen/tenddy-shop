@@ -97,6 +97,7 @@ export default function TenantLandingView({
         onClose={() => setModalProduct(null)}
         tenant={tenant}
         selectedBranch={selectedBranch}
+        branches={branches}
       />
 
       {/* Top Bar Corporativo */}

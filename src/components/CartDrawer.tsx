@@ -24,7 +24,7 @@ import { Tenant, Branch } from '@/lib/types';
 interface CartDrawerProps {
   tenant: Tenant;
   branches: Branch[];
-  selectedBranch: Branch;
+  selectedBranch: Branch | null;
   onSelectBranch: (branch: Branch) => void;
 }
 
@@ -228,14 +228,15 @@ export default function CartDrawer({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {items.map((item) => {
+                    {items.map((item, idx) => {
+                      const itemKey = item.id || `${item.product.id}__${idx}`;
                       const packSize = item.product.units_per_package || 100;
                       const minQty = item.product.min_order_qty || packSize;
                       const minPacks = Math.ceil(minQty / packSize);
 
                       return (
                         <div
-                          key={item.product.id}
+                          key={itemKey}
                           className="bg-slate-950/80 border border-slate-800 rounded-xl p-3 space-y-2 relative group"
                         >
                           <div className="flex items-start gap-3">
@@ -250,15 +251,22 @@ export default function CartDrawer({
                               <h4 className="font-semibold text-xs text-white truncate">
                                 {item.product.name}
                               </h4>
-                              <p className="text-[11px] text-sky-400 font-mono">
-                                SKU: {item.product.sku}
-                              </p>
+                              <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span className="text-[11px] text-sky-400 font-mono">
+                                  SKU: {item.product.sku}
+                                </span>
+                                {item.selectedColor && (
+                                  <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.2 rounded">
+                                    {item.selectedColor}
+                                  </span>
+                                )}
+                              </div>
                               <div className="text-[10px] text-slate-400 mt-1">
                                 {packSize} uds / fardo • MOQ: {minQty.toLocaleString()} uds
                               </div>
                             </div>
                             <button
-                              onClick={() => removeItem(item.product.id)}
+                              onClick={() => removeItem(itemKey)}
                               className="absolute top-3 right-3 text-slate-500 hover:text-rose-400 transition-colors p-1"
                               title="Quitar"
                             >
@@ -272,7 +280,7 @@ export default function CartDrawer({
                               <button
                                 onClick={() =>
                                   updatePackageCount(
-                                    item.product.id,
+                                    itemKey,
                                     Math.max(minPacks, item.packageCount - 1)
                                   )
                                 }
@@ -287,7 +295,7 @@ export default function CartDrawer({
                               <button
                                 onClick={() =>
                                   updatePackageCount(
-                                    item.product.id,
+                                    itemKey,
                                     item.packageCount + 1
                                   )
                                 }

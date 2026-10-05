@@ -124,6 +124,22 @@ export default function AdminDashboardView({
   const [productsPage, setProductsPage] = useState(1);
   const [productsPerPage, setProductsPerPage] = useState(15);
 
+  const [prevProductFilters, setPrevProductFilters] = useState({
+    search: productSearch,
+    category: productCategoryFilter,
+  });
+
+  if (
+    prevProductFilters.search !== productSearch ||
+    prevProductFilters.category !== productCategoryFilter
+  ) {
+    setPrevProductFilters({
+      search: productSearch,
+      category: productCategoryFilter,
+    });
+    setProductsPage(1);
+  }
+
   // Consultar notificaciones de soporte no leídas
   useEffect(() => {
     async function checkSupportNotifications() {
@@ -1173,9 +1189,10 @@ export default function AdminDashboardView({
               });
 
             const totalPages = Math.max(1, Math.ceil(displayedProducts.length / productsPerPage));
+            const safePage = Math.min(Math.max(1, productsPage), totalPages);
             const paginatedProducts = displayedProducts.slice(
-              (productsPage - 1) * productsPerPage,
-              productsPage * productsPerPage
+              (safePage - 1) * productsPerPage,
+              safePage * productsPerPage
             );
 
             return (
@@ -1553,15 +1570,15 @@ export default function AdminDashboardView({
                     {displayedProducts.length > productsPerPage && (
                       <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3 sm:p-4 flex flex-col sm:flex-row items-center justify-between gap-3 mt-4">
                         <div className="text-xs text-slate-500 font-medium">
-                          Mostrando <strong>{(productsPage - 1) * productsPerPage + 1}</strong> -{' '}
-                          <strong>{Math.min(productsPage * productsPerPage, displayedProducts.length)}</strong> de{' '}
+                          Mostrando <strong>{(safePage - 1) * productsPerPage + 1}</strong> -{' '}
+                          <strong>{Math.min(safePage * productsPerPage, displayedProducts.length)}</strong> de{' '}
                           <strong>{displayedProducts.length}</strong> productos
                         </div>
 
                         <div className="flex items-center gap-1.5">
                           <button
                             type="button"
-                            disabled={productsPage === 1}
+                            disabled={safePage === 1}
                             onClick={() => setProductsPage((prev) => Math.max(1, prev - 1))}
                             className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                           >
@@ -1570,7 +1587,7 @@ export default function AdminDashboardView({
 
                           <div className="flex items-center gap-1">
                             {Array.from({ length: totalPages }, (_, i) => i + 1)
-                              .filter((p) => p === 1 || p === totalPages || Math.abs(p - productsPage) <= 1)
+                              .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 1)
                               .map((p, idx, arr) => {
                                 const prev = arr[idx - 1];
                                 const hasGap = prev && p - prev > 1;
@@ -1582,7 +1599,7 @@ export default function AdminDashboardView({
                                       type="button"
                                       onClick={() => setProductsPage(p)}
                                       className={`w-8 h-8 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                                        productsPage === p
+                                        safePage === p
                                           ? 'bg-slate-900 text-white shadow-xs'
                                           : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
                                       }`}
@@ -1596,7 +1613,7 @@ export default function AdminDashboardView({
 
                           <button
                             type="button"
-                            disabled={productsPage === totalPages}
+                            disabled={safePage === totalPages}
                             onClick={() => setProductsPage((prev) => Math.min(totalPages, prev + 1))}
                             className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
                           >

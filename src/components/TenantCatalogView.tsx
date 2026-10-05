@@ -27,7 +27,7 @@ import {
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
-import ProductDetailModal from '@/components/ProductDetailModal';
+import ProductDetailView from '@/components/ProductDetailView';
 
 interface TenantCatalogViewProps {
   tenant: Tenant;
@@ -53,9 +53,11 @@ export default function TenantCatalogView({
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
   const [visibleCount, setVisibleCount] = useState<number>(20);
 
-  useEffect(() => {
+  const [prevFilters, setPrevFilters] = useState({ category: selectedCategory, search: searchQuery });
+  if (prevFilters.category !== selectedCategory || prevFilters.search !== searchQuery) {
+    setPrevFilters({ category: selectedCategory, search: searchQuery });
     setVisibleCount(20);
-  }, [selectedCategory, searchQuery]);
+  }
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -121,6 +123,20 @@ export default function TenantCatalogView({
     openCart();
   };
 
+  // VISTA PÁGINA COMPLETA DE PRODUCTO (CERO MODAL)
+  if (modalProduct) {
+    return (
+      <ProductDetailView
+        product={modalProduct}
+        onBack={() => setModalProduct(null)}
+        tenant={tenant}
+        selectedBranch={selectedBranch}
+        branches={branches}
+        categories={categories}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-24 selection:bg-sky-500 selection:text-white">
       {/* Drawer del Carrito Cotizador */}
@@ -129,14 +145,6 @@ export default function TenantCatalogView({
         branches={branches}
         selectedBranch={selectedBranch}
         onSelectBranch={setSelectedBranch}
-      />
-
-      {/* Modal Técnico de Producto */}
-      <ProductDetailModal
-        product={modalProduct}
-        onClose={() => setModalProduct(null)}
-        tenant={tenant}
-        selectedBranch={selectedBranch}
       />
 
       {/* =========================================================================
