@@ -87,6 +87,40 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
+    // 0. Si viene email de Google, verificar si ya tiene registrada una tienda con el mismo nombre o slug
+    if (email) {
+      const cleanEmail = email.trim().toLowerCase();
+      const { data: existingMemberships } = await admin
+        .from('tenant_members')
+        .select('tenant_id, role, tenants(id, slug, name, is_active)')
+        .eq('email', cleanEmail)
+        .eq('role', 'owner');
+
+      if (existingMemberships && existingMemberships.length > 0) {
+        for (const m of existingMemberships) {
+          const t = m.tenants as unknown as { id: string; slug: string; name: string; is_active: boolean };
+          if (t && t.is_active) {
+            const normExisting = t.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normNew = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (normExisting === normNew || t.slug === cleanSlug) {
+              return NextResponse.json(
+                {
+                  error: `Tu cuenta de Google ya tiene registrada la tienda "${t.name}". Puedes ingresar directamente a tu panel de administración.`,
+                  adminUrl: `/store/${t.slug}/admin`,
+                  redirectUrl: `/store/${t.slug}`,
+                  existingStore: {
+                    slug: t.slug,
+                    name: t.name,
+                  },
+                },
+                { status: 409 }
+              );
+            }
+          }
+        }
+      }
+    }
+
     // 1. Asignar slug único automáticamente sin fallar por duplicados
     const { data: existingTenant } = await admin
       .from('tenants')

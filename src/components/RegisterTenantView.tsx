@@ -38,6 +38,9 @@ export default function RegisterTenantView() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [existingStoreError, setExistingStoreError] = useState<{ slug: string; name: string; adminUrl: string } | null>(null);
+  const [existingStore, setExistingStore] = useState<{ slug: string; name: string } | null>(null);
+  const [forceNewStore, setForceNewStore] = useState(false);
   const [successData, setSuccessData] = useState<{ redirectUrl: string; adminUrl: string; slug: string } | null>(null);
 
   // 1. Verificar si el usuario ya está autenticado con Google
@@ -48,6 +51,22 @@ export default function RegisterTenantView() {
         if (user && user.email) {
           const name = user.user_metadata?.full_name || user.email.split('@')[0];
           setCurrentUser({ email: user.email, name });
+
+          // Verificar si ya tiene tienda registrada
+          try {
+            const res = await fetch('/api/auth/me');
+            if (res.ok) {
+              const authData = await res.json();
+              if (authData.authenticated && authData.user?.storeSlug && authData.user?.storeName) {
+                setExistingStore({
+                  slug: authData.user.storeSlug,
+                  name: authData.user.storeName,
+                });
+              }
+            }
+          } catch (e) {
+            console.error('Error consultando tienda existente:', e);
+          }
         }
       } catch (err) {
         console.error('Error verificando sesión de Google:', err);
@@ -276,6 +295,60 @@ export default function RegisterTenantView() {
               </div>
             </div>
           </div>
+        ) : existingStore && !forceNewStore ? (
+          /* PANTALLA DE TIENDA YA EXISTENTE DETECTADA (Evita duplicados) */
+          <div className="bg-slate-900/80 border border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-2xl max-w-lg mx-auto">
+            <div className="w-16 h-16 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mx-auto text-sky-400">
+              <Building2 className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <CheckCircle className="w-3.5 h-3.5" />
+                Tienda Activa Detectada
+              </span>
+              <h2 className="text-2xl font-bold text-white tracking-tight">
+                ¡Hola, {currentUser?.name}!
+              </h2>
+              <p className="text-sm text-slate-300">
+                Tu cuenta de Google ya está vinculada a la tienda <strong className="text-white">{existingStore.name}</strong>.
+              </p>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-2.5">
+              <Link
+                href={`/store/${existingStore.slug}/admin`}
+                className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-6 py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-sky-600/20 transition-all"
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Ir a Mi Panel de Control</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <Link
+                href={`/store/${existingStore.slug}`}
+                className="bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs px-5 py-3 rounded-xl flex items-center justify-center gap-2 transition-all border border-slate-700/60"
+              >
+                <span>Ver Mi Catálogo Público</span>
+              </Link>
+            </div>
+
+            <div className="pt-4 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <button
+                type="button"
+                onClick={() => setForceNewStore(true)}
+                className="hover:text-slate-200 underline cursor-pointer"
+              >
+                Crear una empresa adicional
+              </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="hover:text-rose-400 transition-colors cursor-pointer"
+              >
+                Cambiar de cuenta
+              </button>
+            </div>
+          </div>
         ) : (
           /* PASO 2: FORMULARIO ULTRA-SIMPLIFICADO DE DATOS */
           <div className="space-y-8">
@@ -321,9 +394,22 @@ export default function RegisterTenantView() {
             </div>
 
             {errorMsg && (
-              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-xs flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
-                <span>{errorMsg}</span>
+              <div className="bg-rose-500/10 border border-rose-500/20 text-rose-300 p-4 rounded-xl text-xs space-y-3">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+                  <span>{errorMsg}</span>
+                </div>
+                {existingStoreError && (
+                  <div className="pt-2 border-t border-rose-500/20 flex items-center justify-end">
+                    <Link
+                      href={existingStoreError.adminUrl}
+                      className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors"
+                    >
+                      <span>Ingresar a {existingStoreError.name}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
 
