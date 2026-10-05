@@ -3,6 +3,7 @@
 Estado: Completado y Verificado
 Fecha: 2026-10-04
 Branch: security/security-hardening
+Commit: 8b42969
 
 ## 1. Autorización & Alcance
 - **Objetivo**: Subsanar sistemáticamente los riesgos y vectores de ataque detectados durante la auditoría de seguridad: evasión de rate-limiting por IP spoofing, bloqueo de cookies de superadmin, subida de archivos maliciosos/DoS, falta de rate-limiting en B2B, ausencia de CSP y almacenamiento en texto plano.
