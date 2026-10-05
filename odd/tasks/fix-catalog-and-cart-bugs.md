@@ -3,6 +3,7 @@
 Estado: Completado y Verificado
 Fecha: 2026-10-04
 Branch: fix/catalog-and-cart-bugs
+Commit: a6b7bd0
 
 ## 1. Autorización & Alcance
 - **Objetivo**: Subsanar de forma atómica y sistemática los 6 bugs identificados en linter, detalle de producto, apertura de cotizador, ruptura visual de landing, desincronización de paginación en backoffice y soporte de variantes en carrito.
