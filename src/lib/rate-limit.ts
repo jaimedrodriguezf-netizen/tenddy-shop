@@ -7,7 +7,7 @@ interface RateLimitEntry {
 const rateLimitMap = new Map<string, RateLimitEntry>();
 
 // Limpieza periódica de memoria cada 5 minutos para evitar fugas de memoria
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitMap.entries()) {
     if (now - entry.firstRequestTime > 1000 * 60 * 15) {
@@ -16,12 +16,27 @@ setInterval(() => {
   }
 }, 1000 * 60 * 5);
 
+// Desvincular timer del event loop para no congelar contenedores serverless
+if (typeof cleanupTimer === 'object' && cleanupTimer && 'unref' in cleanupTimer && typeof cleanupTimer.unref === 'function') {
+  cleanupTimer.unref();
+}
+
 export interface RateLimitOptions {
   windowMs: number; // Ventana de tiempo (ej. 1 minuto)
   maxRequests: number; // Máximo de peticiones permitidas por IP en esa ventana
 }
 
 export function checkRateLimit(ip: string, options: RateLimitOptions = { windowMs: 60000, maxRequests: 10 }): { isAllowed: boolean; remaining: number } {
+  // Purga defensiva si el Map supera 5,000 entradas concurrentes
+  if (rateLimitMap.size > 5000) {
+    const purgeNow = Date.now();
+    for (const [key, item] of rateLimitMap.entries()) {
+      if (purgeNow - item.firstRequestTime > options.windowMs) {
+        rateLimitMap.delete(key);
+      }
+    }
+  }
+
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
 

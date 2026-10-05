@@ -30,10 +30,17 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      // Fallback si RPC falla: UPDATE directo
+      // Fallback defensivo si RPC no está disponible: leer valor previo e incrementar de forma segura
+      const { data: tenantData } = await admin
+        .from('tenants')
+        .select('views_count')
+        .eq('id', tenant_id)
+        .single();
+
+      const currentViews = tenantData?.views_count || 0;
       await admin
         .from('tenants')
-        .update({ views_count: 1 })
+        .update({ views_count: currentViews + 1 })
         .eq('id', tenant_id);
     }
 

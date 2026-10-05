@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import {
   Search,
@@ -85,35 +85,53 @@ export default function TenantCatalogView({
     (tenant.theme_config as any)?.show_featured_ratings ??
     true;
 
-  const isBestSeller = (p: Product, index: number) => {
+  const isBestSeller = (p: Product) => {
     const badge = p.attributes?.badge ? p.attributes.badge.toLowerCase() : '';
-    if (badge.includes('vendido') || badge.includes('top')) return true;
-    return index % 2 === 0 || (p.images && p.images.length > 0 && index < 20);
+    if (badge.includes('vendido') || badge.includes('top') || badge.includes('estrella')) return true;
+    const hash = (p.sku || p.id || '').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return hash % 3 === 0;
   };
 
-  const isFiveStar = (p: Product, index: number) => {
-    return index % 3 === 0 || (p.images && p.images.length > 0 && index < 25);
+  const isFiveStar = (p: Product) => {
+    const hash = (p.id || '').split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+    return hash % 2 === 0;
   };
 
-  // Filtrado reactivo en vivo por categoría y búsqueda
-  const filteredProducts = products.filter((p, index) => {
-    const matchesCategory =
-      selectedCategory === 'all'
-        ? true
-        : selectedCategory === 'best_sellers'
-        ? isBestSeller(p, index)
-        : selectedCategory === 'five_stars'
-        ? isFiveStar(p, index)
-        : p.category_id === selectedCategory;
+  // Mapa O(1) de cantidad de productos por categoría (evita O(C x P) en loops)
+  const categoryCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of products) {
+      if (p.category_id) {
+        map.set(p.category_id, (map.get(p.category_id) || 0) + 1);
+      }
+    }
+    return map;
+  }, [products]);
 
-    const matchesSearch =
-      searchQuery.trim() === '' ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.sku && p.sku.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (p.description && p.description.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filtrado reactivo en vivo optimizado con useMemo
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return products.filter((p) => {
+      const matchesCategory =
+        selectedCategory === 'all'
+          ? true
+          : selectedCategory === 'best_sellers'
+          ? isBestSeller(p)
+          : selectedCategory === 'five_stars'
+          ? isFiveStar(p)
+          : p.category_id === selectedCategory;
 
-    return matchesCategory && matchesSearch;
-  });
+      if (!matchesCategory) return false;
+
+      if (!q) return true;
+
+      return (
+        p.name.toLowerCase().includes(q) ||
+        (p.sku && p.sku.toLowerCase().includes(q)) ||
+        (p.description && p.description.toLowerCase().includes(q))
+      );
+    });
+  }, [products, selectedCategory, searchQuery]);
 
   const handleQuickAdd = (p: Product) => {
     const packSize = p.units_per_package || 1;
@@ -353,7 +371,7 @@ export default function TenantCatalogView({
 
                       {/* Lista de categorías individuales */}
                       {categories.map((c) => {
-                        const count = products.filter((p) => p.category_id === c.id).length;
+                        const count = categoryCountMap.get(c.id) || 0;
                         const isSelected = selectedCategory === c.id;
 
                         return (
@@ -526,7 +544,7 @@ export default function TenantCatalogView({
                 ) : (
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto py-1">
                     {categories.map((c) => {
-                      const count = products.filter((p) => p.category_id === c.id).length;
+                      const count = categoryCountMap.get(c.id) || 0;
 
                       return (
                         <button
@@ -714,7 +732,7 @@ export default function TenantCatalogView({
 
               {/* Categorías con fotos circulares */}
               {categories.map((c) => {
-                const count = products.filter((p) => p.category_id === c.id).length;
+                const count = categoryCountMap.get(c.id) || 0;
                 const isSelected = selectedCategory === c.id;
 
                 return (
@@ -849,7 +867,7 @@ export default function TenantCatalogView({
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
-            {filteredProducts.slice(0, visibleCount).map((p, idx) => {
+            {filteredProducts.slice(0, visibleCount).map((p) => {
               const packSize = p.units_per_package || 100;
               const minQty = p.min_order_qty || packSize;
               const imageSrc = p.images?.[0] || '/assets/products/ayme-001.svg';
@@ -882,7 +900,7 @@ export default function TenantCatalogView({
                     )}
 
                     {/* Badge Top Ventas si está habilitado */}
-                    {showBestSellers && isBestSeller(p, idx) ? (
+                    {showBestSellers && isBestSeller(p) ? (
                       <div className="absolute top-2 left-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold text-[9px] sm:text-[10px] px-2 py-0.5 rounded-md shadow-xs backdrop-blur-xs z-10 flex items-center gap-1">
                         <Flame className="w-3 h-3 text-yellow-200 fill-yellow-200" />
                         <span>Top Ventas</span>

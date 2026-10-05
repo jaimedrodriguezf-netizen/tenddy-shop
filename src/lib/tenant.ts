@@ -1,4 +1,4 @@
-import { supabase, getAdminClient } from './supabase';
+import { getAdminClient } from './supabase';
 import { Tenant, Branch, Category, Product } from './types';
 
 export async function getTenantByHostOrSlug(hostOrSlug: string): Promise<Tenant | null> {
@@ -38,7 +38,7 @@ export async function getTenantCatalog(tenantId: string) {
 
   const [categoriesRes, productsRes, branchesRes] = await Promise.all([
     admin.from('categories').select('*').eq('tenant_id', tenantId).order('name'),
-    admin.from('products').select('*').eq('tenant_id', tenantId).eq('is_active', true),
+    admin.from('products').select('*').eq('tenant_id', tenantId).eq('is_active', true).order('created_at', { ascending: false }),
     admin.from('branches').select('*').eq('tenant_id', tenantId).eq('is_active', true),
   ]);
 

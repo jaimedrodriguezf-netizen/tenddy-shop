@@ -124,6 +124,17 @@ export default function AdminDashboardView({
   const [productsPage, setProductsPage] = useState(1);
   const [productsPerPage, setProductsPerPage] = useState(15);
 
+  // Mapa O(1) de productos por categoría para evitar loops O(C x P)
+  const categoryCountMap = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of products) {
+      if (p.category_id) {
+        map.set(p.category_id, (map.get(p.category_id) || 0) + 1);
+      }
+    }
+    return map;
+  }, [products]);
+
   const [prevProductFilters, setPrevProductFilters] = useState({
     search: productSearch,
     category: productCategoryFilter,
@@ -1324,7 +1335,7 @@ export default function AdminDashboardView({
                             {categories
                               .filter((cat) => !productCategorySearch.trim() || cat.name.toLowerCase().includes(productCategorySearch.toLowerCase()))
                               .map((cat) => {
-                                const count = products.filter((p) => p.category_id === cat.id).length;
+                                const count = categoryCountMap.get(cat.id) || 0;
                                 const isSelected = productCategoryFilter === cat.id;
 
                                 return (
@@ -1374,7 +1385,7 @@ export default function AdminDashboardView({
                       </button>
 
                       {categories.map((cat) => {
-                        const count = products.filter((p) => p.category_id === cat.id).length;
+                        const count = categoryCountMap.get(cat.id) || 0;
                         const isSelected = productCategoryFilter === cat.id;
 
                         return (
