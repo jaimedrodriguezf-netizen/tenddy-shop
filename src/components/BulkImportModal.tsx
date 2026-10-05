@@ -10,9 +10,11 @@ import {
   CheckCircle2,
   Loader2,
   Table,
-  Check
+  Check,
+  Clipboard
 } from 'lucide-react';
 import readXlsxFile from 'read-excel-file/browser';
+import writeXlsxFile from 'write-excel-file/browser';
 import Papa from 'papaparse';
 import { Product } from '@/lib/types';
 
@@ -48,48 +50,71 @@ export default function BulkImportModal({
 
   if (!isOpen) return null;
 
-  // Descargar plantilla CSV compatible con Excel con los encabezados exactos del usuario
-  const downloadTemplate = () => {
-    const headers = [
-      'Código',
-      'Nombre de Prenda',
-      'Categoría',
-      'Color',
-      'Tallas',
-      'Descripción y Costuras (Detalles para Moldes y Patronaje)',
-      'Enlace Foto Principal'
-    ];
+  // Descargar plantilla oficial en formato Excel (.xlsx) nativo
+  const downloadTemplate = async () => {
+    try {
+      const HEADER_ROW = [
+        { value: 'Código', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Nombre de Prenda', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Categoría', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Color', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Tallas', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Descripción y Costuras', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Enlace Foto Principal', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+      ];
 
-    const sampleRows = [
-      [
-        'OXF-001',
-        'Camisa Oxford Manga Larga',
-        'Camisas',
-        'Azul Cielo',
-        'S, M, L, XL',
-        'Costura reforzada doble pespunte en sisas y cuello fusionado para alta durabilidad',
-        'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800'
-      ],
-      [
-        'DRL-002',
-        'Pantalón Drill Operativo',
-        'Pantalones',
-        'Kaki / Beige',
-        '28, 30, 32, 34, 36',
-        'Pretina anatómica con pasadores dobles y triple costura en tiro y entrepierna',
-        'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800'
-      ]
-    ];
+      const DATA_ROWS = [
+        [
+          { value: 'OXF-001' },
+          { value: 'Camisa Oxford Manga Larga' },
+          { value: 'Camisas' },
+          { value: 'Azul Cielo' },
+          { value: 'S, M, L, XL' },
+          { value: 'Costura reforzada doble pespunte y cuello fusionado' },
+          { value: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800' },
+        ],
+        [
+          { value: 'DRL-002' },
+          { value: 'Pantalón Drill Operativo' },
+          { value: 'Pantalones' },
+          { value: 'Kaki / Beige' },
+          { value: '28, 30, 32, 34, 36' },
+          { value: 'Pretina anatómica y triple costura en entrepierna' },
+          { value: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800' },
+        ],
+      ];
 
-    const csvContent = '\uFEFF' + [headers, ...sampleRows].map(r => r.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', 'plantilla_importacion_productos.csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const columns = [
+        { width: 14 },
+        { width: 30 },
+        { width: 18 },
+        { width: 16 },
+        { width: 20 },
+        { width: 45 },
+        { width: 40 },
+      ];
+
+      await writeXlsxFile([HEADER_ROW, ...DATA_ROWS], {
+        columns,
+        fileName: 'plantilla_productos_tenddy.xlsx',
+      } as any);
+    } catch (err) {
+      console.error('Error generando Excel:', err);
+      // Fallback CSV con delimitador de punto y coma para Excel latino
+      const headers = ['Código', 'Nombre de Prenda', 'Categoría', 'Color', 'Tallas', 'Descripción y Costuras', 'Enlace Foto Principal'];
+      const sampleRows = [
+        ['OXF-001', 'Camisa Oxford Manga Larga', 'Camisas', 'Azul Cielo', 'S, M, L, XL', 'Costura reforzada doble pespunte', 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800'],
+      ];
+      const csvContent = '\uFEFF' + [headers, ...sampleRows].map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(';')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'plantilla_productos_tenddy.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   // Normalizar nombres de columnas para que coincidan con los encabezados oficiales
@@ -227,7 +252,7 @@ export default function BulkImportModal({
         const dataRows = validRows.slice(headerRowIndex + 1);
 
         const productsList: ParsedProduct[] = dataRows
-          .filter((row: any) => Array.isArray(row) && row.length > 0)
+          .filter((row: any) => Array.isArray(row) && row.some((cell) => cell !== undefined && cell !== null && String(cell).trim() !== ''))
           .map((row: any[]) => {
             const mapped: Record<string, string> = {};
             headers.forEach((h: string, colIdx: number) => {
@@ -235,19 +260,28 @@ export default function BulkImportModal({
               mapped[h] = val !== undefined && val !== null ? String(val).trim() : '';
             });
 
+            // Mapeo inteligente con fallback por posición si los encabezados no coincidieron
+            const skuVal = mapped.sku || String(row[0] || '').trim();
+            const nameVal = mapped.name || String(row[1] || '').trim();
+            const catVal = mapped.category || String(row[2] || '').trim() || 'General';
+            const colorVal = mapped.color || String(row[3] || '').trim();
+            const tallasVal = mapped.tallas || String(row[4] || '').trim();
+            const descVal = mapped.description_and_seams || String(row[5] || '').trim();
+            const imgVal = mapped.image_url || String(row[6] || '').trim();
+
             return {
-              sku: mapped.sku || '',
-              color: mapped.color || '',
-              tallas: mapped.tallas || '',
-              description_and_seams: mapped.description_and_seams || '',
-              name: mapped.name || '',
-              category: mapped.category || 'General',
-              image_url: normalizeImageUrl(mapped.image_url || ''),
+              sku: skuVal,
+              color: colorVal,
+              tallas: tallasVal,
+              description_and_seams: descVal,
+              name: nameVal,
+              category: catVal,
+              image_url: normalizeImageUrl(imgVal),
             };
           }).filter((p) => p.name || p.sku);
 
         if (productsList.length === 0) {
-          setErrorMsg('No se detectaron prendas válidas en el archivo Excel. Revisa que las celdas contengan datos.');
+          setErrorMsg('No se detectaron prendas con datos en tu archivo Excel. Revisa que las celdas contengan al menos el código o nombre de prenda.');
         } else if (productsList.length > 3000) {
           setErrorMsg(`El archivo contiene ${productsList.length} productos. El límite por carga es de 3,000.`);
         } else {
@@ -257,8 +291,78 @@ export default function BulkImportModal({
       }
     } catch (err: unknown) {
       console.error('Error al procesar archivo:', err);
-      setErrorMsg('No se pudo leer el archivo Excel. Asegúrate de que no esté protegido con contraseña o prueba guardarlo como archivo CSV.');
+      setErrorMsg('No se pudo leer el archivo Excel. Asegúrate de que no esté protegido con contraseña o prueba descargar la plantilla oficial.');
       setParsing(false);
+    }
+  };
+
+  // Pegar celdas copiadas directamente de Excel (Ctrl + V)
+  const handlePasteFromClipboard = async () => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.readText) {
+        const text = await navigator.clipboard.readText();
+        if (!text || !text.trim()) {
+          setErrorMsg('El portapapeles está vacío. Selecciona las celdas en tu Excel, presiona Ctrl+C y vuelve a intentar.');
+          return;
+        }
+
+        const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+        if (lines.length === 0) {
+          setErrorMsg('No se detectaron filas en los datos pegados.');
+          return;
+        }
+
+        const matrix = lines.map((l) => l.split('\t').map((c) => c.trim()));
+        let headerIndex = -1;
+        const firstRowKeys = matrix[0].map((c) => normalizeKey(c));
+        if (firstRowKeys.some((k) => k === 'sku' || k === 'name' || k === 'category' || k === 'color' || k === 'tallas')) {
+          headerIndex = 0;
+        }
+
+        const dataRows = headerIndex === 0 ? matrix.slice(1) : matrix;
+        const headers = headerIndex === 0 ? firstRowKeys : [];
+
+        const productsList: ParsedProduct[] = dataRows.map((row) => {
+          const mapped: Record<string, string> = {};
+          if (headers.length > 0) {
+            headers.forEach((h, idx) => {
+              mapped[h] = row[idx] || '';
+            });
+          }
+
+          const skuVal = mapped.sku || row[0] || '';
+          const nameVal = mapped.name || row[1] || '';
+          const catVal = mapped.category || row[2] || 'General';
+          const colorVal = mapped.color || row[3] || '';
+          const tallasVal = mapped.tallas || row[4] || '';
+          const descVal = mapped.description_and_seams || row[5] || '';
+          const imgVal = mapped.image_url || row[6] || '';
+
+          return {
+            sku: skuVal,
+            name: nameVal,
+            category: catVal,
+            color: colorVal,
+            tallas: tallasVal,
+            description_and_seams: descVal,
+            image_url: normalizeImageUrl(imgVal),
+          };
+        }).filter((p) => p.name || p.sku);
+
+        if (productsList.length === 0) {
+          setErrorMsg('No pudimos reconocer prendas en los datos pegados. Asegúrate de copiar las columnas de tu Excel y prueba de nuevo.');
+        } else {
+          setFileName('Tabla pegada desde Excel');
+          setParsedProducts(productsList);
+          setSuccessMsg(`¡${productsList.length} prendas detectadas y listas para importar!`);
+          setTimeout(() => setSuccessMsg(null), 3500);
+        }
+      } else {
+        setErrorMsg('Tu navegador no permite lectura directa del portapapeles. Sube tu archivo con el botón de Excel.');
+      }
+    } catch (err) {
+      console.warn('Error leyendo portapapeles:', err);
+      setErrorMsg('No se pudo acceder al portapapeles. Sube el archivo Excel con el botón «Subir Archivo de Excel».');
     }
   };
 
@@ -330,10 +434,10 @@ export default function BulkImportModal({
           </button>
           <div>
             <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
-              Carga Masiva de Productos (Excel / CSV)
+              Carga Masiva de Productos desde Excel
             </h3>
             <p className="text-[11px] text-slate-500">
-              Carga hasta 3,000 referencias con código, colores, tallas y ficha técnica en un solo clic.
+              Carga tus prendas mayoristas subiendo tu archivo de Excel (.xlsx) o pegando tus celdas copiadas con Ctrl + V.
             </p>
           </div>
         </div>
@@ -356,23 +460,34 @@ export default function BulkImportModal({
           {/* Zona de Carga de Archivo */}
           <div className="space-y-3">
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2.5">
                 <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-sm shrink-0">
                   <Upload className="w-3.5 h-3.5" />
-                  <span>{fileName ? 'Cambiar Archivo' : 'Seleccionar Excel o CSV'}</span>
+                  <span>{fileName ? 'Cambiar Archivo Excel' : 'Subir Archivo Excel (.xlsx)'}</span>
                   <input
                     type="file"
-                    accept=".xlsx,.xls,.csv"
+                    accept=".xlsx,.xls"
                     onChange={handleFileChange}
                     className="hidden"
                   />
                 </label>
+
+                <button
+                  type="button"
+                  onClick={handlePasteFromClipboard}
+                  className="flex items-center gap-1.5 px-3.5 py-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold transition-colors"
+                  title="Pegar filas copiadas de tu hoja de cálculo"
+                >
+                  <Clipboard className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Pegar Celdas de Excel (Ctrl + V)</span>
+                </button>
+
                 <div className="min-w-0">
                   <span className="block text-xs font-bold text-slate-800 truncate">
-                    {fileName || 'Ningún archivo seleccionado'}
+                    {fileName || 'Ningún archivo cargado'}
                   </span>
                   <span className="text-[10px] text-slate-400 block">
-                    Formatos soportados: .xlsx, .xls, .csv
+                    Formatos recomendados: .xlsx, .xls
                   </span>
                 </div>
               </div>
@@ -382,10 +497,10 @@ export default function BulkImportModal({
                 type="button"
                 onClick={downloadTemplate}
                 className="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
-                title="Descargar plantilla de ejemplo con las columnas exactas"
+                title="Descargar plantilla de ejemplo oficial en Excel (.xlsx)"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span>Descargar Plantilla Oficial</span>
+                <span>Descargar Plantilla Excel (.xlsx)</span>
               </button>
             </div>
 
@@ -482,13 +597,15 @@ export default function BulkImportModal({
               type="button"
               disabled={loading || parsedProducts.length === 0}
               onClick={handleImportSubmit}
-              className="bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 text-white font-bold text-xs px-6 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed text-white font-bold text-xs px-6 py-2.5 rounded-xl flex items-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>Importando {parsedProducts.length} productos en lotes...</span>
                 </>
+              ) : parsedProducts.length === 0 ? (
+                <span>Sube tu archivo Excel para Importar</span>
               ) : (
                 <>
                   <Upload className="w-4 h-4" />
