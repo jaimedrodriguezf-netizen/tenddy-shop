@@ -17,7 +17,9 @@ import {
   RefreshCw,
   Layers,
   Upload,
-  Clipboard
+  Clipboard,
+  CornerDownRight,
+  FolderTree
 } from 'lucide-react';
 import { Category } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -56,8 +58,18 @@ export default function CategoriesManagerView({
   const [editImageBase64, setEditImageBase64] = useState<string | null>(null);
   const [editImageUrlInput, setEditImageUrlInput] = useState('');
   const [editCurrentImageUrl, setEditCurrentImageUrl] = useState<string | null>(null);
+  const [editParentId, setEditParentId] = useState<string | null>(null);
   const [compressingImage, setCompressingImage] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+
+  // Estados para crear categoría en página integrada
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [createName, setCreateName] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createImageBase64, setCreateImageBase64] = useState<string | null>(null);
+  const [createImageUrlInput, setCreateImageUrlInput] = useState('');
+  const [createParentId, setCreateParentId] = useState<string | null>(null);
+  const [savingCreate, setSavingCreate] = useState(false);
 
   const normalizeImageUrl = (url: string): string => {
     if (!url) return '';
@@ -75,13 +87,20 @@ export default function CategoriesManagerView({
   const [deletingCat, setDeletingCat] = useState<ExtendedCategory | null>(null);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
-  // Estados para crear categoría en página integrada
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
-  const [createName, setCreateName] = useState('');
-  const [createDescription, setCreateDescription] = useState('');
-  const [createImageBase64, setCreateImageBase64] = useState<string | null>(null);
-  const [createImageUrlInput, setCreateImageUrlInput] = useState('');
-  const [savingCreate, setSavingCreate] = useState(false);
+  // Helper para calcular profundidad jerárquica (1: principal, 2: subcategoría, 3: 3er nivel)
+  const getCategoryDepth = (cat: Category, allCats: Category[]): number => {
+    if (!cat.parent_id) return 1;
+    const parent = allCats.find((c) => c.id === cat.parent_id);
+    if (!parent) return 1;
+    if (!parent.parent_id) return 2;
+    return 3;
+  };
+
+  const getCategoryParentName = (cat: Category, allCats: Category[]): string | null => {
+    if (!cat.parent_id) return null;
+    const parent = allCats.find((c) => c.id === cat.parent_id);
+    return parent ? parent.name : null;
+  };
 
   // Guardar nueva categoría vía POST
   const handleSaveCreate = async (e: React.FormEvent) => {
@@ -179,6 +198,7 @@ export default function CategoriesManagerView({
     setEditImageBase64(null);
     setEditImageUrlInput('');
     setEditCurrentImageUrl(cat.image_url || null);
+    setEditParentId(cat.parent_id || null);
     setErrorMsg(null);
   };
 
@@ -205,6 +225,7 @@ export default function CategoriesManagerView({
           is_active: editIsActive,
           imageData: editImageBase64,
           image_url: !editImageBase64 ? activeImageUrl : undefined,
+          parent_id: editParentId || null,
         }),
       });
 
@@ -661,6 +682,69 @@ export default function CategoriesManagerView({
             />
           </div>
 
+          {/* Jerarquía de Categoría en Edición */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-slate-800 font-bold text-xs">
+                Jerarquía y Nivel de Categoría
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">Soporta hasta 3 niveles</span>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="catHierarchyEdit"
+                  checked={!editParentId}
+                  onChange={() => setEditParentId(null)}
+                  className="text-sky-600 focus:ring-sky-500"
+                />
+                <span className="font-semibold text-slate-800">Categoría Principal (Nivel 1)</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="catHierarchyEdit"
+                  checked={!!editParentId}
+                  onChange={() => {
+                    const firstAvailable = categories.find((c) => c.id !== editingCategory?.id && !c.parent_id)?.id || null;
+                    setEditParentId(firstAvailable);
+                  }}
+                  className="text-sky-600 focus:ring-sky-500"
+                />
+                <span className="font-semibold text-slate-800">Subcategoría (Nivel 2 o 3)</span>
+              </label>
+            </div>
+
+            {editParentId !== null && (
+              <div className="pt-2 border-t border-slate-200/60 space-y-1">
+                <label className="block text-slate-600 text-[11px] font-medium">
+                  Pertenece a (Categoría Superior):
+                </label>
+                <select
+                  value={editParentId || ''}
+                  onChange={(e) => setEditParentId(e.target.value || null)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                >
+                  {categories
+                    .filter((c) => c.id !== editingCategory?.id)
+                    .map((cat) => {
+                      const depth = getCategoryDepth(cat, categories);
+                      if (depth >= 3) return null;
+                      const indent = depth === 1 ? '📁 ' : '↳ 📂 ';
+                      return (
+                        <option key={cat.id} value={cat.id}>
+                          {indent}{cat.name} {depth === 2 ? '(Subcategoría Nivel 2)' : '(Categoría Principal)'}
+                        </option>
+                      );
+                    })}
+                </select>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-slate-700 font-semibold mb-1">
               Descripción (Opcional)
@@ -963,9 +1047,12 @@ export default function CategoriesManagerView({
 
                   return (
                     <tr key={cat.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Nombre y Foto Circular */}
+                      {/* Nombre y Foto Circular con Jerarquía */}
                       <td className="py-3.5 px-4 font-bold text-slate-900">
                         <div className="flex items-center gap-2.5">
+                          {cat.parent_id && (
+                            <CornerDownRight className="w-3.5 h-3.5 text-sky-500 shrink-0 ml-1" />
+                          )}
                           {cat.image_url ? (
                             <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center p-0.5 shadow-xs">
                               <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover rounded-full" />
@@ -975,9 +1062,27 @@ export default function CategoriesManagerView({
                               {cat.name.charAt(0).toUpperCase()}
                             </span>
                           )}
-                          <span className="truncate max-w-[200px]" title={cat.name}>
-                            {cat.name}
-                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate max-w-[200px]" title={cat.name}>
+                                {cat.name}
+                              </span>
+                              {cat.parent_id ? (
+                                <span className="text-[9px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/80 px-1.5 py-0.2 rounded-md">
+                                  Subcategoría
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.2 rounded-md">
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            {cat.parent_id && (
+                              <span className="block text-[10px] text-slate-400 font-normal truncate">
+                                de: {getCategoryParentName(cat, categories) || 'Categoría superior'}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
 

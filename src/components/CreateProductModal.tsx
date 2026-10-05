@@ -55,6 +55,23 @@ export default function CreateProductModal({
   const [aspectRatio, setAspectRatio] = useState<'vertical' | 'square'>('vertical');
   const [compressingImage, setCompressingImage] = useState(false);
 
+  const getCategoryBreadcrumb = (cat: Category, allCats: Category[]): string => {
+    const parts: string[] = [cat.name];
+    const visited = new Set<string>([cat.id]);
+    let current = cat;
+    let depth = 0;
+    while (current.parent_id && depth < 5) {
+      if (visited.has(current.parent_id)) break;
+      const parent = allCats.find((c) => c.id === current.parent_id);
+      if (!parent) break;
+      parts.unshift(parent.name);
+      visited.add(parent.id);
+      current = parent;
+      depth++;
+    }
+    return parts.join(' › ');
+  };
+
   useEffect(() => {
     setLocalCategories(categories);
     if (!categoryId && categories.length > 0) {
@@ -449,7 +466,9 @@ export default function CreateProductModal({
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 cursor-pointer flex items-center justify-between hover:bg-slate-100 transition-colors"
                 >
                   <span className="truncate">
-                    {localCategories.find((c) => c.id === categoryId)?.name || 'Seleccionar Categoría'}
+                    {localCategories.find((c) => c.id === categoryId)
+                      ? getCategoryBreadcrumb(localCategories.find((c) => c.id === categoryId)!, localCategories)
+                      : 'Seleccionar Categoría'}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCatOpen ? 'rotate-180' : ''}`} />
                 </div>
@@ -485,7 +504,7 @@ export default function CreateProductModal({
                                 : 'text-slate-700 hover:bg-slate-100'
                             }`}
                           >
-                            <span className="truncate">{c.name}</span>
+                            <span className="truncate">{getCategoryBreadcrumb(c, localCategories)}</span>
                             {c.id === categoryId && <CheckCircle2 className="w-3.5 h-3.5 text-sky-600" />}
                           </button>
                         ))}

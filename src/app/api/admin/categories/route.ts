@@ -83,7 +83,7 @@ async function processCategoryImage(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenant_id, name, description, icon_name, image_url, imageData } = body;
+    const { tenant_id, name, description, icon_name, image_url, imageData, parent_id } = body;
 
     if (!tenant_id || !name) {
       return NextResponse.json({ error: 'Nombre de la categoría y tenant son requeridos' }, { status: 400 });
@@ -132,6 +132,7 @@ export async function POST(request: Request) {
         description: description ? description.trim() : null,
         icon_name: icon_name || 'tag',
         image_url: finalImageUrl,
+        parent_id: parent_id && parent_id.trim() ? parent_id.trim() : null,
         is_active: true,
       })
       .select('*')
@@ -148,7 +149,7 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-    const { id, name, description, is_active, sort_order, image_url, imageData } = body;
+    const { id, name, description, is_active, sort_order, image_url, imageData, parent_id } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Falta id de la categoría' }, { status: 400 });
@@ -194,6 +195,14 @@ export async function PATCH(request: Request) {
 
     if (description !== undefined) {
       updatePayload.description = description ? description.trim() : null;
+    }
+
+    if (parent_id !== undefined) {
+      // Evitar que una categoría sea padre de sí misma
+      if (parent_id === id) {
+        return NextResponse.json({ error: 'Una categoría no puede ser subcategoría de sí misma' }, { status: 400 });
+      }
+      updatePayload.parent_id = parent_id && parent_id.trim() ? parent_id.trim() : null;
     }
 
     if (is_active !== undefined) {

@@ -108,6 +108,24 @@ export default function TenantCatalogView({
     return map;
   }, [products]);
 
+  // Helper recursivo para obtener todos los IDs de una categoría y sus subcategorías con protección de ciclos
+  const getCategoryAndDescendantIds = (catId: string): string[] => {
+    const ids = [catId];
+    const visited = new Set<string>([catId]);
+    const findChildren = (pid: string, depth = 0) => {
+      if (depth >= 5) return;
+      for (const c of categories) {
+        if (c.parent_id === pid && !visited.has(c.id)) {
+          visited.add(c.id);
+          ids.push(c.id);
+          findChildren(c.id, depth + 1);
+        }
+      }
+    };
+    findChildren(catId);
+    return ids;
+  };
+
   // Filtrado reactivo en vivo optimizado con useMemo
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -119,7 +137,7 @@ export default function TenantCatalogView({
           ? isBestSeller(p)
           : selectedCategory === 'five_stars'
           ? isFiveStar(p)
-          : p.category_id === selectedCategory;
+          : getCategoryAndDescendantIds(selectedCategory).includes(p.category_id || '');
 
       if (!matchesCategory) return false;
 
@@ -131,7 +149,35 @@ export default function TenantCatalogView({
         (p.description && p.description.toLowerCase().includes(q))
       );
     });
-  }, [products, selectedCategory, searchQuery]);
+  }, [products, selectedCategory, searchQuery, categories]);
+
+  // Identificar la categoría raíz activa con protección contra ciclos
+  const activeRootCategory = useMemo(() => {
+    if (selectedCategory === 'all' || selectedCategory === 'best_sellers' || selectedCategory === 'five_stars') {
+      return null;
+    }
+    const cat = categories.find((c) => c.id === selectedCategory);
+    if (!cat) return null;
+    if (!cat.parent_id) return cat;
+    const visited = new Set<string>([cat.id]);
+    let current = cat;
+    let depth = 0;
+    while (current.parent_id && depth < 5) {
+      if (visited.has(current.parent_id)) break;
+      const parent = categories.find((c) => c.id === current.parent_id);
+      if (!parent) break;
+      visited.add(parent.id);
+      current = parent;
+      depth++;
+    }
+    return current;
+  }, [selectedCategory, categories]);
+
+  // Subcategorías de la raíz activa
+  const availableSubcategories = useMemo(() => {
+    if (!activeRootCategory) return [];
+    return categories.filter((c) => c.parent_id === activeRootCategory.id);
+  }, [activeRootCategory, categories]);
 
   const handleQuickAdd = (p: Product) => {
     const packSize = p.units_per_package || 1;
@@ -495,7 +541,7 @@ export default function TenantCatalogView({
               </button>
             )}
 
-            {categories.map((c) => (
+            {categories.filter((c) => !c.parent_id).map((c) => (
               <button
                 key={c.id}
                 onClick={() => {
@@ -503,7 +549,7 @@ export default function TenantCatalogView({
                   setIsMegaMenuOpen(false);
                 }}
                 className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === c.id
+                  selectedCategory === c.id || activeRootCategory?.id === c.id
                     ? 'bg-slate-900 text-white shadow-xs'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
@@ -512,6 +558,45 @@ export default function TenantCatalogView({
               </button>
             ))}
           </div>
+
+          {/* Sub-barra de Subcategorías (Nivel 2 y 3) */}
+          {availableSubcategories.length > 0 && activeRootCategory && (
+            <div className="flex items-center gap-1.5 pt-2 pb-1 overflow-x-auto text-xs border-t border-slate-100">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
+                {activeRootCategory.name} ›
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(activeRootCategory.id)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedCategory === activeRootCategory.id
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Ver Todo {activeRootCategory.name}
+              </button>
+
+              {availableSubcategories.map((sub) => {
+                const isSelected = selectedCategory === sub.id;
+                return (
+                  <button
+                    key={sub.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(sub.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-sky-600 text-white shadow-xs font-bold'
+                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {sub.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* =========================================================================
               MEGA-MENÚ DESPLEGABLE CON FOTOS CIRCULARES
