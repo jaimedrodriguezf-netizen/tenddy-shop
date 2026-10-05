@@ -25,6 +25,7 @@ import {
   Clipboard
 } from 'lucide-react';
 import { compressImage } from '@/lib/image-compressor';
+import { translateErrorMessage } from '@/lib/error-translator';
 
 export interface TicketComment {
   id: string;
@@ -212,7 +213,7 @@ export default function TenantSupportCenterModal({
       setReplyText('');
       setReplyImageBase64(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al enviar mensaje';
+      const msg = translateErrorMessage(err, 'Error al enviar mensaje');
       setErrorMsg(msg);
     } finally {
       setSendingReply(false);
@@ -382,7 +383,7 @@ export default function TenantSupportCenterModal({
         setActiveTab('tickets');
       }, 2000);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al enviar requerimiento';
+      const msg = translateErrorMessage(err, 'Error al enviar requerimiento');
       setErrorMsg(msg);
     } finally {
       setSubmittingTicket(false);

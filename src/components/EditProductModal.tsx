@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Category, Product } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
+import { translateErrorMessage } from '@/lib/error-translator';
 
 interface EditProductModalProps {
   isOpen: boolean;
@@ -182,7 +183,7 @@ function EditProductModalContent({
       onProductUpdated(data.product);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error de conexión';
+      const msg = translateErrorMessage(err, 'No se pudo actualizar la prenda');
       setErrorMsg(msg);
     } finally {
       setLoading(false);

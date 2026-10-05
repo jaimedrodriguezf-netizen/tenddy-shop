@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { Category } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
+import { translateErrorMessage } from '@/lib/error-translator';
 
 interface ExtendedCategory extends Category {
   products?: { count: number }[];
@@ -143,7 +144,7 @@ export default function CategoriesManagerView({
       setCreateImageUrlInput('');
       setIsCreatingCategory(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error creando categoría';
+      const msg = translateErrorMessage(err, 'No se pudo crear la categoría');
       setErrorMsg(msg);
     } finally {
       setSavingCreate(false);
@@ -161,7 +162,7 @@ export default function CategoriesManagerView({
       setCategories(data.categories || []);
       onCategoriesChanged(data.categories || []);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error de conexión';
+      const msg = translateErrorMessage(err, 'No se pudieron cargar las categorías');
       setErrorMsg(msg);
     } finally {
       setLoading(false);
@@ -245,7 +246,7 @@ export default function CategoriesManagerView({
 
       setEditingCategory(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al guardar cambios';
+      const msg = translateErrorMessage(err, 'No se pudo actualizar la categoría');
       setErrorMsg(msg);
     } finally {
       setSavingEdit(false);
@@ -275,7 +276,7 @@ export default function CategoriesManagerView({
         categories.map((c) => (c.id === cat.id ? { ...c, is_active: newStatus } : c))
       );
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al cambiar estado';
+      const msg = translateErrorMessage(err, 'No se pudo cambiar el estado de la categoría');
       setErrorMsg(msg);
     }
   };
@@ -303,7 +304,7 @@ export default function CategoriesManagerView({
       onCategoriesChanged(updated);
       setDeletingCat(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al eliminar categoría';
+      const msg = translateErrorMessage(err, 'No se pudo eliminar la categoría');
       setErrorMsg(msg);
     } finally {
       setDeletingLoading(false);

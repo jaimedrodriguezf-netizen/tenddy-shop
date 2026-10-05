@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Tenant, Category, Product } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
+import { translateErrorMessage } from '@/lib/error-translator';
 
 interface CreateProductModalProps {
   isOpen: boolean;
@@ -103,7 +104,7 @@ export default function CreateProductModal({
       setIsCatOpen(false);
       setCatSearch('');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al crear categoría';
+      const msg = translateErrorMessage(err, 'Error al crear categoría');
       alert(msg);
     } finally {
       setSavingQuickCat(false);
@@ -261,7 +262,7 @@ export default function CreateProductModal({
       onProductCreated(data.product);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error de conexión';
+      const msg = translateErrorMessage(err, 'No se pudo guardar la prenda');
       setErrorMsg(msg);
     } finally {
       setLoading(false);

@@ -17,6 +17,7 @@ import readXlsxFile from 'read-excel-file/browser';
 import writeXlsxFile from 'write-excel-file/browser';
 import Papa from 'papaparse';
 import { Product } from '@/lib/types';
+import { translateErrorMessage } from '@/lib/error-translator';
 
 interface BulkImportModalProps {
   isOpen: boolean;
@@ -413,7 +414,7 @@ export default function BulkImportModal({
         onClose();
       }, 2500);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error de conexión';
+      const msg = translateErrorMessage(err, 'Error al importar productos');
       setErrorMsg(msg);
     } finally {
       setLoading(false);
