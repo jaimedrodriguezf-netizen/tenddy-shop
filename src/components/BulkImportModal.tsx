@@ -457,13 +457,52 @@ export default function BulkImportModal({
             </div>
           )}
 
-          {/* Zona de Carga de Archivo */}
-          <div className="space-y-3">
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <div className="flex flex-wrap items-center gap-2.5">
-                <label className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold cursor-pointer transition-all shadow-sm shrink-0">
-                  <Upload className="w-3.5 h-3.5" />
-                  <span>{fileName ? 'Cambiar Archivo Excel' : 'Subir Archivo Excel (.xlsx)'}</span>
+          {/* PASO 1 Y PASO 2 EN DOS TARJETAS GUIADAS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Tarjeta Paso 1: Descargar Plantilla Oficial */}
+            <div className="bg-gradient-to-br from-emerald-50 to-teal-50/40 border border-emerald-200/80 rounded-2xl p-5 space-y-3.5 flex flex-col justify-between shadow-xs">
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  Paso 1 • Descargar Formato
+                </div>
+                <h4 className="font-bold text-sm text-emerald-950 flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  Descargar Plantilla Oficial de Excel
+                </h4>
+                <p className="text-xs text-emerald-800/80 leading-relaxed">
+                  Descarga este archivo de Excel (.xlsx) con las columnas ya ordenadas y dos ejemplos de prendas listos para rellenar con tu catálogo.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={downloadTemplate}
+                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>Descargar Plantilla de Excel (.xlsx)</span>
+              </button>
+            </div>
+
+            {/* Tarjeta Paso 2: Subir Archivo o Pegar Celdas */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-3.5 flex flex-col justify-between shadow-xs">
+              <div className="space-y-1.5">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-700 border border-slate-300">
+                  Paso 2 • Cargar tus Prendas
+                </div>
+                <h4 className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                  <Upload className="w-4 h-4 text-sky-600" />
+                  Subir Archivo o Pegar Datos
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Una vez completada la plantilla, súbela aquí o copia las celdas de tu Excel (Ctrl + C) y pégalas directamente.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-2">
+                <label className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-sm">
+                  <Upload className="w-4 h-4" />
+                  <span>{fileName ? 'Cambiar Archivo' : 'Subir Archivo (.xlsx)'}</span>
                   <input
                     type="file"
                     accept=".xlsx,.xls"
@@ -475,34 +514,34 @@ export default function BulkImportModal({
                 <button
                   type="button"
                   onClick={handlePasteFromClipboard}
-                  className="flex items-center gap-1.5 px-3.5 py-2.5 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-xl text-sky-700 cursor-pointer text-xs font-semibold transition-colors"
-                  title="Pegar filas copiadas de tu hoja de cálculo"
+                  className="bg-white hover:bg-sky-50 text-sky-700 border border-sky-300 font-semibold text-xs px-3.5 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  title="Pegar filas copiadas de tu Excel (Ctrl + C en Excel y clic aquí)"
                 >
-                  <Clipboard className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Pegar Celdas de Excel (Ctrl + V)</span>
+                  <Clipboard className="w-4 h-4 text-sky-600" />
+                  <span>Pegar Celdas (Ctrl + V)</span>
                 </button>
-
-                <div className="min-w-0">
-                  <span className="block text-xs font-bold text-slate-800 truncate">
-                    {fileName || 'Ningún archivo cargado'}
-                  </span>
-                  <span className="text-[10px] text-slate-400 block">
-                    Formatos recomendados: .xlsx, .xls
-                  </span>
-                </div>
               </div>
+            </div>
+          </div>
 
-              {/* Botón Descargar Plantilla Oficial */}
+          {fileName && (
+            <div className="p-3 bg-slate-100 rounded-xl text-xs flex items-center justify-between">
+              <span className="font-semibold text-slate-800">
+                Archivo activo: <strong>{fileName}</strong>
+              </span>
               <button
                 type="button"
-                onClick={downloadTemplate}
-                className="text-xs text-sky-600 hover:text-sky-700 font-semibold flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl hover:bg-white border border-transparent hover:border-slate-200 transition-colors cursor-pointer"
-                title="Descargar plantilla de ejemplo oficial en Excel (.xlsx)"
+                onClick={() => {
+                  setFileName(null);
+                  setParsedProducts([]);
+                  setErrorMsg(null);
+                }}
+                className="text-rose-600 hover:text-rose-700 font-bold text-[11px] cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" />
-                <span>Descargar Plantilla Excel (.xlsx)</span>
+                Limpiar
               </button>
             </div>
+          )}
 
             {/* Guía de Columnas Oficiales Ordenadas */}
             <div className="p-3.5 bg-amber-50/70 rounded-2xl border border-amber-200 text-xs text-amber-900 space-y-2">
@@ -520,7 +559,6 @@ export default function BulkImportModal({
                 <span className="bg-white border border-amber-300 px-2 py-1 rounded-md text-amber-950 font-bold">7. Enlace Foto Principal</span>
               </div>
             </div>
-          </div>
 
           {/* Vista Previa de Filas Parseadas */}
           {parsing ? (
