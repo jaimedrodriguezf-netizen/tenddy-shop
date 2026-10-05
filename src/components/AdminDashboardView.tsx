@@ -722,14 +722,29 @@ export default function AdminDashboardView({
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             {activeTab === 'products' && (
-              <button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Nuevo Producto</span>
-                <span className="sm:hidden">Nuevo</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setActiveTab('categories')}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                  title="Gestionar y crear categorías de tu catálogo"
+                >
+                  <Tag className="w-3.5 h-3.5 text-sky-600" />
+                  <span className="hidden sm:inline">Categorías</span>
+                  <span className="sm:hidden">Categorías</span>
+                  <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded-full font-mono font-bold">
+                    {categories.length}
+                  </span>
+                </button>
+
+                <button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-lg flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Nuevo Producto</span>
+                  <span className="sm:hidden">Nuevo</span>
+                </button>
+              </>
             )}
 
             {/* Campanita de Notificaciones / Soporte */}
@@ -1147,6 +1162,9 @@ export default function AdminDashboardView({
                 onClose={() => setIsCreateModalOpen(false)}
                 tenant={tenant}
                 categories={categories}
+                onCategoryCreated={(newCat) => {
+                  setCategories((prev) => [...prev, newCat]);
+                }}
                 onProductCreated={(newProd) => {
                   setProducts((prev) => [newProd, ...prev]);
                   setIsCreateModalOpen(false);
@@ -1698,12 +1716,22 @@ export default function AdminDashboardView({
 
         <button
           onClick={() => setActiveTab('products')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
             activeTab === 'products' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
           }`}
         >
           <Boxes className="w-4 h-4" />
           <span>Catálogo</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('categories')}
+          className={`flex flex-col items-center gap-0.5 py-1 px-2 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+            activeTab === 'categories' ? 'text-sky-600' : 'text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Tag className="w-4 h-4" />
+          <span>Categorías</span>
         </button>
 
         <button

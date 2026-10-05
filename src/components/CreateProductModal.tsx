@@ -13,7 +13,8 @@ import {
   Clipboard,
   Search,
   ChevronDown,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Tag
 } from 'lucide-react';
 import { Tenant, Category, Product } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -24,6 +25,7 @@ interface CreateProductModalProps {
   tenant: Tenant;
   categories: Category[];
   onProductCreated: (newProduct: Product) => void;
+  onCategoryCreated?: (newCategory: Category) => void;
 }
 
 export default function CreateProductModal({
@@ -32,14 +34,19 @@ export default function CreateProductModal({
   tenant,
   categories,
   onProductCreated,
+  onCategoryCreated,
 }: CreateProductModalProps) {
   const isPlastics = tenant.industry_type === 'plastics';
 
+  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
   const [catSearch, setCatSearch] = useState('');
   const [isCatOpen, setIsCatOpen] = useState(false);
+  const [isCreatingQuickCat, setIsCreatingQuickCat] = useState(false);
+  const [quickCatName, setQuickCatName] = useState('');
+  const [savingQuickCat, setSavingQuickCat] = useState(false);
   const [description, setDescription] = useState('');
   const [minOrderQty, setMinOrderQty] = useState(100);
   const [unitsPerPackage, setUnitsPerPackage] = useState(50);
@@ -47,6 +54,44 @@ export default function CreateProductModal({
   const [imageUrlInput, setImageUrlInput] = useState<string>('');
   const [aspectRatio, setAspectRatio] = useState<'vertical' | 'square'>('vertical');
   const [compressingImage, setCompressingImage] = useState(false);
+
+  useEffect(() => {
+    setLocalCategories(categories);
+    if (!categoryId && categories.length > 0) {
+      setCategoryId(categories[0].id);
+    }
+  }, [categories]);
+
+  const handleCreateQuickCategory = async () => {
+    if (!quickCatName.trim() || savingQuickCat) return;
+    try {
+      setSavingQuickCat(true);
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenant.id,
+          name: quickCatName.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al crear la categoría');
+
+      const newCat: Category = data.category;
+      setLocalCategories((prev) => [...prev, newCat]);
+      setCategoryId(newCat.id);
+      onCategoryCreated?.(newCat);
+      setIsCreatingQuickCat(false);
+      setQuickCatName('');
+      setIsCatOpen(false);
+      setCatSearch('');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al crear categoría';
+      alert(msg);
+    } finally {
+      setSavingQuickCat(false);
+    }
+  };
 
   const normalizeImageUrl = (url: string): string => {
     if (!url) return '';
@@ -404,13 +449,13 @@ export default function CreateProductModal({
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-slate-900 cursor-pointer flex items-center justify-between hover:bg-slate-100 transition-colors"
                 >
                   <span className="truncate">
-                    {categories.find((c) => c.id === categoryId)?.name || 'Seleccionar Categoría'}
+                    {localCategories.find((c) => c.id === categoryId)?.name || 'Seleccionar Categoría'}
                   </span>
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isCatOpen ? 'rotate-180' : ''}`} />
                 </div>
 
                 {isCatOpen && (
-                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl p-2 shadow-xl z-30 space-y-1.5 max-h-56 overflow-y-auto">
+                  <div className="absolute left-0 right-0 top-full mt-1.5 bg-white border border-slate-200 rounded-2xl p-2 shadow-xl z-30 space-y-1.5 max-h-64 overflow-y-auto">
                     <div className="relative p-1">
                       <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
@@ -422,8 +467,8 @@ export default function CreateProductModal({
                         autoFocus
                       />
                     </div>
-                    <div className="space-y-0.5">
-                      {categories
+                    <div className="space-y-0.5 max-h-36 overflow-y-auto">
+                      {localCategories
                         .filter((c) => !catSearch.trim() || c.name.toLowerCase().includes(catSearch.toLowerCase()))
                         .map((c) => (
                           <button
@@ -444,6 +489,67 @@ export default function CreateProductModal({
                             {c.id === categoryId && <CheckCircle2 className="w-3.5 h-3.5 text-sky-600" />}
                           </button>
                         ))}
+                      {localCategories.filter((c) => !catSearch.trim() || c.name.toLowerCase().includes(catSearch.toLowerCase())).length === 0 && (
+                        <p className="text-center py-2 text-xs text-slate-400">No hay categorías con ese nombre</p>
+                      )}
+                    </div>
+
+                    {/* Crear Categoría Rápida Inline */}
+                    <div className="pt-2 border-t border-slate-100">
+                      {isCreatingQuickCat ? (
+                        <div className="p-2 bg-sky-50/60 rounded-xl border border-sky-200/80 space-y-2">
+                          <label className="block text-[11px] font-bold text-sky-900">
+                            Nueva Categoría
+                          </label>
+                          <input
+                            type="text"
+                            value={quickCatName}
+                            onChange={(e) => setQuickCatName(e.target.value)}
+                            placeholder="Ej: Enterizos, Vestidos..."
+                            className="w-full bg-white border border-sky-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 focus:outline-none focus:border-sky-600"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleCreateQuickCategory();
+                              }
+                            }}
+                          />
+                          <div className="flex justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsCreatingQuickCat(false);
+                                setQuickCatName('');
+                              }}
+                              className="px-2.5 py-1 text-[11px] text-slate-600 hover:text-slate-800 font-semibold cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={handleCreateQuickCategory}
+                              disabled={savingQuickCat || !quickCatName.trim()}
+                              className="px-3 py-1 text-[11px] bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-lg flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            >
+                              {savingQuickCat ? <Loader2 className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                              <span>Crear y Usar</span>
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsCreatingQuickCat(true);
+                            if (catSearch.trim()) setQuickCatName(catSearch.trim());
+                          }}
+                          className="w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-semibold text-sky-600 hover:bg-sky-50 flex items-center gap-1.5 transition-colors cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>{catSearch.trim() ? `Crear categoría "${catSearch.trim()}"` : '+ Nueva Categoría Rápida'}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
