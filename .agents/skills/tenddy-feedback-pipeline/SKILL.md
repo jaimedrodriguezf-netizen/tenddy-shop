@@ -4,7 +4,7 @@ description: "Trigger: vamos a revisar los feedback, revisar feedback, revisar l
 license: Apache-2.0
 metadata:
   author: gentleman-programming
-  version: "1.4"
+  version: "1.5"
 ---
 
 ## Activation Contract
@@ -14,6 +14,9 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 ## Hard Rules
 
 - **Cero acumulación:** NUNCA agrupar múltiples tickets. Siempre tomar exactamente **UNO** a la vez.
+- **Distinción Estricta de Cierre (Código vs. Soporte / Base de Datos Puro):**
+  - **Tickets con cambio de código (frontend / backend):** Requieren verificación estricta (`tsc --noEmit`, `npm run build`), actualización del ticket en Supabase, `npm run bump`, `git commit` y `git push`.
+  - **Tickets resueltos únicamente con atención de soporte, asesoría o respuesta en el hilo:** SOLO se inserta el comentario en `ticket_comments` y se actualiza el ticket en Supabase. **PROHIBIDO ejecutar `npm run bump`, crear commits o hacer push a Git si NO se modificó ningún archivo de código del proyecto.** No ensuciar el historial de Git con cambios vacíos de versión.
 - **Regla de Arquitectura de Vistas (Cero Formularios en Modal):**
   - **TODO formulario de creación, edición, configuración o carga masiva DEBE ser una página o vista completa integrada en el panel.**
   - **PROHIBIDO usar modales flotantes con backdrop para formularios de datos.**
@@ -38,10 +41,10 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 
 | Fase | Acción | Gate |
 | --- | --- | --- |
-| 1. Diagnóstico & Viabilidad | Seleccionar 1 ticket abierto, inspeccionar captura webp y realizar el análisis estricto de viabilidad técnica y de negocio. Validar que la solución use vistas/páginas completas (sin modales para formularios). | **STOP: Esperar aprobación del usuario.** |
-| 2. Implementación | Tras aprobación, modificar código/responder hilo con lenguaje comercial y verificar con `tsc --noEmit` y `npm run build`. | Continuar a reporte de solución. |
-| 3. Revisión de Solución | Explicar detalladamente cómo se solucionó y mostrar que compila en verde. | **STOP: Esperar aprobación del usuario.** |
-| 4. Cierre y Entrega | Tras aprobación: marcar `resolved` o `in_progress` en Supabase con resumen amigable, `npm run bump`, `git commit` y `git push`. | Confirmar y consultar si se avanza al siguiente ticket. |
+| 1. Diagnóstico & Viabilidad | Seleccionar 1 ticket abierto, inspeccionar captura webp y realizar el análisis estricto de viabilidad técnica y de negocio. Validar que la solución use vistas/páginas completas si requiere UI. | **STOP: Esperar aprobación del usuario.** |
+| 2. Implementación | Tras aprobación: si requiere código, modificar frontend/backend/BD y verificar con `tsc` y `build`. Si es soporte puro, redactar respuesta en lenguaje comercial. | Continuar a reporte de solución. |
+| 3. Revisión de Solución | Explicar detalladamente cómo se solucionó (código verificado o respuesta comercial redactada). | **STOP: Esperar aprobación del usuario.** |
+| 4. Cierre y Entrega | Tras aprobación: actualizar ticket en Supabase.<br>- **Si hubo código:** `npm run bump`, `git commit` y `git push`.<br>- **Si fue soporte puro:** registrar en BD y finalizar de inmediato (sin Git). | Confirmar y consultar si se avanza al siguiente ticket. |
 
 ## Execution Steps
 
@@ -69,19 +72,24 @@ Activar inmediatamente cuando el usuario diga "vamos a revisar los feedback", "r
 
 ### Paso 3: Presentación de la Solución
 1. Explicar claramente al usuario:
-   - Qué archivos se modificaron y qué se mejoró.
-   - Textos redactados para el cliente.
-   - Evidencia de que compila en verde (`next build`).
-2. **PAUSAR Y ESPERAR:** Preguntar "¿Apruebas esta solución para hacer commit y push?".
+   - Si hubo código: qué archivos se modificaron, qué se mejoró y evidencia de compilación en verde (`next build`).
+   - Si fue soporte puro: la respuesta final redactada para el comerciante y el resumen de resolución.
+2. **PAUSAR Y ESPERAR:** Preguntar "¿Apruebas esta solución para proceder al cierre?".
 
-### Paso 4: Cierre, Versionado, Commit y Push
+### Paso 4: Cierre, Versionado y Entrega
 *(Solo tras recibir la aprobación del Paso 3)*
-1. Actualizar el ticket en Supabase (`status = 'resolved'` o `'in_progress'`) con `resolution_summary` en tono comercial y humano.
-2. Ejecutar `npm run bump` (incrementa versión SemVer).
-3. `git add` de los archivos involucrados (sin secretos).
-4. `git commit -m "fix/feat: <descripción comercial> (ticket #XXXX), bump to vX.X.X"`.
-5. `git push origin main`.
-6. Informar commit y nueva versión, y preguntar si pasamos al siguiente ticket.
+1. Insertar respuesta en `ticket_comments` y actualizar el ticket en Supabase (`status = 'resolved'` o `'in_progress'`) con `resolution_summary` en tono comercial y humano.
+2. **Bifurcación según el tipo de solución:**
+   - **Caso A (Hubo modificaciones de código):**
+     1. Ejecutar `npm run bump` (incrementa versión SemVer).
+     2. `git add` de los archivos involucrados (sin secretos).
+     3. `git commit -m "fix/feat: <descripción comercial> (ticket #XXXX), bump to vX.X.X"`.
+     4. `git push origin main`.
+     5. Informar commit y nueva versión.
+   - **Caso B (Fue soporte puro / respuesta / base de datos):**
+     1. Confirmar que el ticket y el comentario quedaron registrados en Supabase.
+     2. **NO ejecutar `npm run bump`, NO hacer commit y NO hacer push.**
+3. Consultar al usuario si avanzamos al siguiente ticket.
 
 ## Output Contract
 
