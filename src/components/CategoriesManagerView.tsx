@@ -72,6 +72,11 @@ export default function CategoriesManagerView({
   const [createParentId, setCreateParentId] = useState<string | null>(null);
   const [savingCreate, setSavingCreate] = useState(false);
 
+  // Estado para creación rápida inline de subcategoría desde la tabla
+  const [quickAddParent, setQuickAddParent] = useState<{ id: string; name: string; depth: number } | null>(null);
+  const [quickAddName, setQuickAddName] = useState('');
+  const [savingQuickAdd, setSavingQuickAdd] = useState(false);
+
   const normalizeImageUrl = (url: string): string => {
     if (!url) return '';
     const clean = url.trim();
@@ -150,6 +155,44 @@ export default function CategoriesManagerView({
       setErrorMsg(msg);
     } finally {
       setSavingCreate(false);
+    }
+  };
+
+  // Guardar subcategoría rápida inline desde la tabla
+  const handleQuickAddSave = async () => {
+    if (!quickAddParent || !quickAddName.trim() || savingQuickAdd) return;
+
+    try {
+      setSavingQuickAdd(true);
+      setErrorMsg(null);
+
+      const res = await fetch('/api/admin/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          name: quickAddName.trim(),
+          parent_id: quickAddParent.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al crear subcategoría');
+
+      setSuccessMsg(`Categoría "${quickAddName.trim()}" agregada con éxito`);
+      setTimeout(() => setSuccessMsg(null), 3000);
+
+      const updated = [...categories, data.category];
+      setCategories(updated);
+      onCategoriesChanged(updated);
+
+      setQuickAddName('');
+      setQuickAddParent(null);
+    } catch (err: unknown) {
+      const msg = translateErrorMessage(err, 'No se pudo crear la subcategoría');
+      setErrorMsg(msg);
+    } finally {
+      setSavingQuickAdd(false);
     }
   };
 
@@ -320,29 +363,70 @@ export default function CategoriesManagerView({
     productsFilter !== 'all' ||
     showAllCategories;
 
-  const displayedCategories = categories
-    .filter((cat) => {
-      const q = searchQuery.toLowerCase().trim();
-      const matchesSearch =
-        !q ||
-        cat.name?.toLowerCase().includes(q) ||
-        cat.slug?.toLowerCase().includes(q) ||
-        cat.description?.toLowerCase().includes(q);
+  // Ordenamiento jerárquico: Raíces (Nivel 1) -> Hijas (Nivel 2) -> Nietas (Nivel 3)
+  const sortHierarchically = (cats: ExtendedCategory[]): ExtendedCategory[] => {
+    const childrenMap = new Map<string, ExtendedCategory[]>();
+    const roots: ExtendedCategory[] = [];
 
-      const matchesStatus =
-        statusFilter === 'all' ||
-        (statusFilter === 'active' && cat.is_active) ||
-        (statusFilter === 'inactive' && !cat.is_active);
+    cats.forEach((cat) => {
+      if (!cat.parent_id) {
+        roots.push(cat);
+      } else {
+        const list = childrenMap.get(cat.parent_id) || [];
+        list.push(cat);
+        childrenMap.set(cat.parent_id, list);
+      }
+    });
 
-      const prodCount = cat.products?.[0]?.count ?? 0;
-      const matchesProducts =
-        productsFilter === 'all' ||
-        (productsFilter === 'with_products' && prodCount > 0) ||
-        (productsFilter === 'empty' && prodCount === 0);
+    const compareName = (a: ExtendedCategory, b: ExtendedCategory) =>
+      a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
 
-      return matchesSearch && matchesStatus && matchesProducts;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' }));
+    roots.sort(compareName);
+
+    const result: ExtendedCategory[] = [];
+    const addedIds = new Set<string>();
+
+    const traverse = (item: ExtendedCategory) => {
+      result.push(item);
+      addedIds.add(item.id);
+      const children = (childrenMap.get(item.id) || []).sort(compareName);
+      children.forEach((child) => traverse(child));
+    };
+
+    roots.forEach((root) => traverse(root));
+
+    cats.forEach((cat) => {
+      if (!addedIds.has(cat.id)) {
+        result.push(cat);
+      }
+    });
+
+    return result;
+  };
+
+  const rawFiltered = categories.filter((cat) => {
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      cat.name?.toLowerCase().includes(q) ||
+      cat.slug?.toLowerCase().includes(q) ||
+      cat.description?.toLowerCase().includes(q);
+
+    const matchesStatus =
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && cat.is_active) ||
+      (statusFilter === 'inactive' && !cat.is_active);
+
+    const prodCount = cat.products?.[0]?.count ?? 0;
+    const matchesProducts =
+      productsFilter === 'all' ||
+      (productsFilter === 'with_products' && prodCount > 0) ||
+      (productsFilter === 'empty' && prodCount === 0);
+
+    return matchesSearch && matchesStatus && matchesProducts;
+  });
+
+  const displayedCategories = sortHierarchically(rawFiltered);
 
   const totalActive = categories.filter((c) => c.is_active).length;
   const totalProductsCount = categories.reduce((sum, c) => {
@@ -488,28 +572,13 @@ export default function CategoriesManagerView({
             )}
           </div>
 
-          <div>
-            <label className="block text-slate-700 font-semibold mb-1">
-              Nombre de la Categoría *
-            </label>
-            <input
-              type="text"
-              required
-              autoFocus
-              value={createName}
-              onChange={(e) => setCreateName(e.target.value)}
-              placeholder="Ej. Vestidos, Calzado, Camisas..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
-            />
-          </div>
-
           {/* Jerarquía de Categoría en Creación */}
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
             <div className="flex items-center justify-between">
               <label className="block text-slate-800 font-bold text-xs">
-                Jerarquía y Nivel de Categoría
+                Jerarquía y Nivel de la Nueva Categoría
               </label>
-              <span className="text-[10px] text-slate-400 font-medium">Soporta hasta 3 niveles</span>
+              <span className="text-[10px] text-slate-500 font-medium">Soporta hasta 3 niveles</span>
             </div>
 
             <div className="flex flex-wrap gap-4 pt-1">
@@ -562,6 +631,47 @@ export default function CategoriesManagerView({
                 </select>
               </div>
             )}
+          </div>
+
+          {/* Nombre Dinámico según la jerarquía elegida */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-slate-700 font-semibold">
+                {!createParentId
+                  ? 'Nombre de la Categoría Principal (Nivel 1) *'
+                  : (() => {
+                      const parent = categories.find((c) => c.id === createParentId);
+                      const pDepth = parent ? getCategoryDepth(parent, categories) : 1;
+                      return pDepth === 1
+                        ? 'Nombre de la Subcategoría (Nivel 2) *'
+                        : 'Nombre de la Categoría de 3er Nivel *';
+                    })()}
+              </label>
+              {createParentId && (
+                <span className="text-[11px] text-sky-700 font-medium bg-sky-50 border border-sky-200/80 px-2 py-0.5 rounded-md">
+                  Dentro de: {categories.find((c) => c.id === createParentId)?.name}
+                </span>
+              )}
+            </div>
+            <input
+              type="text"
+              required
+              autoFocus
+              value={createName}
+              onChange={(e) => setCreateName(e.target.value)}
+              placeholder={
+                !createParentId
+                  ? 'Ej. Ropa de Mujer, Calzado, Camisas...'
+                  : (() => {
+                      const parent = categories.find((c) => c.id === createParentId);
+                      const pDepth = parent ? getCategoryDepth(parent, categories) : 1;
+                      return pDepth === 1
+                        ? 'Ej. Pantalones, Vestidos, Blusas...'
+                        : 'Ej. Jeans Cargo, Formal, Campana...';
+                    })()
+              }
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 focus:bg-white focus:border-slate-900 focus:outline-none"
+            />
           </div>
 
           <div>
@@ -1116,82 +1226,126 @@ export default function CategoriesManagerView({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {displayedCategories.map((cat) => {
-                  const prodCount = cat.products?.[0]?.count ?? 0;
+                    const prodCount = cat.products?.[0]?.count ?? 0;
+                    const depth = getCategoryDepth(cat, categories);
+                    const isQuickAddingHere = quickAddParent?.id === cat.id;
 
-                  return (
-                    <tr key={cat.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Nombre y Foto Circular con Jerarquía */}
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
-                        <div className="flex items-center gap-2.5">
-                          {cat.parent_id && (
-                            <CornerDownRight className="w-3.5 h-3.5 text-sky-500 shrink-0 ml-1" />
-                          )}
-                          {cat.image_url ? (
-                            <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center p-0.5 shadow-xs">
-                              <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover rounded-full" />
-                            </div>
-                          ) : (
-                            <span className="w-8 h-8 rounded-full bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 font-bold text-xs shrink-0">
-                              {cat.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <span className="truncate max-w-[200px]" title={cat.name}>
-                                {cat.name}
-                              </span>
-                              {cat.parent_id ? (
-                                <span className="text-[9px] font-semibold bg-sky-50 text-sky-700 border border-sky-200/80 px-1.5 py-0.2 rounded-md">
-                                  Subcategoría
-                                </span>
+                    return (
+                      <React.Fragment key={cat.id}>
+                        <tr className={`hover:bg-slate-50/70 transition-colors ${depth === 2 ? 'bg-slate-50/30' : depth === 3 ? 'bg-slate-50/60' : ''}`}>
+                          {/* Nombre y Foto Circular con Jerarquía */}
+                          <td className="py-3.5 px-4 font-bold text-slate-900">
+                            <div className={`flex items-center gap-2.5 ${depth === 2 ? 'pl-5' : depth === 3 ? 'pl-10' : ''}`}>
+                              {cat.parent_id && (
+                                <CornerDownRight className={`w-3.5 h-3.5 shrink-0 ${depth === 3 ? 'text-indigo-500' : 'text-sky-500'}`} />
+                              )}
+                              {cat.image_url ? (
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 flex items-center justify-center p-0.5 shadow-xs">
+                                  <img src={cat.image_url} alt={cat.name} className="w-full h-full object-cover rounded-full" />
+                                </div>
                               ) : (
-                                <span className="text-[9px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 px-1.5 py-0.2 rounded-md">
-                                  Principal
+                                <span className={`w-8 h-8 rounded-full border flex items-center justify-center font-bold text-xs shrink-0 ${
+                                  depth === 1
+                                    ? 'bg-slate-100 border-slate-200 text-slate-700'
+                                    : depth === 2
+                                    ? 'bg-sky-50 border-sky-100 text-sky-600'
+                                    : 'bg-indigo-50 border-indigo-100 text-indigo-600'
+                                }`}>
+                                  {cat.name.charAt(0).toUpperCase()}
                                 </span>
                               )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="truncate max-w-[200px]" title={cat.name}>
+                                    {cat.name}
+                                  </span>
+                                  {depth === 1 ? (
+                                    <span className="text-[9px] font-bold bg-slate-100 text-slate-700 border border-slate-200 px-1.5 py-0.2 rounded-md">
+                                      Principal (N1)
+                                    </span>
+                                  ) : depth === 2 ? (
+                                    <span className="text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80 px-1.5 py-0.2 rounded-md">
+                                      Subcategoría (N2)
+                                    </span>
+                                  ) : (
+                                    <span className="text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 px-1.5 py-0.2 rounded-md">
+                                      3er Nivel (N3)
+                                    </span>
+                                  )}
+
+                                  {/* Botón Acción Rápida Inline */}
+                                  {depth === 1 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setQuickAddParent({ id: cat.id, name: cat.name, depth: 1 });
+                                        setQuickAddName('');
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-2xs"
+                                      title={`Agregar Subcategoría a ${cat.name}`}
+                                    >
+                                      <Plus className="w-2.5 h-2.5" />
+                                      <span>+ Subcategoría</span>
+                                    </button>
+                                  )}
+
+                                  {depth === 2 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setQuickAddParent({ id: cat.id, name: cat.name, depth: 2 });
+                                        setQuickAddName('');
+                                      }}
+                                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/80 rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-2xs"
+                                      title={`Agregar Categoría de 3er Nivel a ${cat.name}`}
+                                    >
+                                      <Plus className="w-2.5 h-2.5" />
+                                      <span>+ 3er Nivel</span>
+                                    </button>
+                                  )}
+                                </div>
+                                {cat.parent_id && (
+                                  <span className="block text-[10px] text-slate-400 font-normal truncate">
+                                    de: {getCategoryParentName(cat, categories) || 'Categoría superior'}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            {cat.parent_id && (
-                              <span className="block text-[10px] text-slate-400 font-normal truncate">
-                                de: {getCategoryParentName(cat, categories) || 'Categoría superior'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </td>
+                          </td>
 
-                      {/* Slug */}
-                      <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
-                        <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60 truncate max-w-[160px] inline-block" title={cat.slug}>
-                          {cat.slug}
-                        </span>
-                      </td>
+                          {/* Slug */}
+                          <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
+                            <span className="bg-slate-100 px-2 py-0.5 rounded border border-slate-200/60 truncate max-w-[160px] inline-block" title={cat.slug}>
+                              {cat.slug}
+                            </span>
+                          </td>
 
-                      {/* Descripción */}
-                      <td className="py-3.5 px-4 text-slate-500 text-[11px] max-w-xs truncate" title={cat.description || ''}>
-                        {cat.description || <span className="text-slate-300 italic">Sin descripción</span>}
-                      </td>
+                          {/* Descripción */}
+                          <td className="py-3.5 px-4 text-slate-500 text-[11px] max-w-xs truncate" title={cat.description || ''}>
+                            {cat.description || <span className="text-slate-300 italic">Sin descripción</span>}
+                          </td>
 
-                      {/* Cantidad de Productos */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
-                            prodCount > 0
-                              ? 'bg-sky-50 text-sky-700 border border-sky-200/60'
-                              : 'bg-slate-100 text-slate-400'
-                          }`}
-                        >
-                          <Boxes className="w-3 h-3" />
-                          <span>{prodCount}</span>
-                        </span>
-                      </td>
+                          {/* Cantidad de Productos */}
+                          <td className="py-3.5 px-4 text-center">
+                            <span
+                              className={`font-mono text-[11px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 ${
+                                prodCount > 0
+                                  ? 'bg-sky-50 text-sky-700 border border-sky-200/60'
+                                  : 'bg-slate-100 text-slate-400'
+                              }`}
+                            >
+                              <Boxes className="w-3 h-3" />
+                              <span>{prodCount}</span>
+                            </span>
+                          </td>
 
-                      {/* Estado Activo / Inactivo */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleActive(cat)}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
-                            cat.is_active
+                          {/* Estado Activo / Inactivo */}
+                          <td className="py-3.5 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => handleToggleActive(cat)}
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold transition-colors cursor-pointer ${
+                                cat.is_active
                               ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
                               : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-slate-200'
                           }`}
@@ -1232,8 +1386,68 @@ export default function CategoriesManagerView({
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
+
+                    {/* Fila de creación rápida inline */}
+                    {isQuickAddingHere && (
+                      <tr className="bg-sky-50/80 border-y-2 border-sky-300 transition-all">
+                        <td colSpan={6} className="py-3 px-4">
+                          <div className="flex flex-wrap items-center gap-2.5 max-w-2xl">
+                            <div className="flex items-center gap-1.5 text-xs font-extrabold text-sky-950 shrink-0">
+                              <CornerDownRight className="w-4 h-4 text-sky-600 shrink-0" />
+                              <span>
+                                Nueva {quickAddParent.depth === 1 ? 'Subcategoría' : 'Categoría de 3er Nivel'} para &ldquo;{quickAddParent.name}&rdquo;:
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              autoFocus
+                              value={quickAddName}
+                              onChange={(e) => setQuickAddName(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleQuickAddSave();
+                                }
+                                if (e.key === 'Escape') {
+                                  setQuickAddParent(null);
+                                  setQuickAddName('');
+                                }
+                              }}
+                              placeholder={
+                                quickAddParent.depth === 1
+                                  ? 'Nombre de la subcategoría (ej. Pantalones)...'
+                                  : 'Nombre del 3er nivel (ej. Jeans Cargo)...'
+                              }
+                              className="flex-1 min-w-[200px] bg-white border border-sky-300 rounded-xl px-3.5 py-1.5 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-sky-500 shadow-2xs font-medium"
+                            />
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={handleQuickAddSave}
+                                disabled={savingQuickAdd || !quickAddName.trim()}
+                                className="bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                              >
+                                {savingQuickAdd ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
+                                <span>Crear</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setQuickAddParent(null);
+                                  setQuickAddName('');
+                                }}
+                                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
+                              >
+                                Cancelar
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
               </tbody>
             </table>
           </div>
