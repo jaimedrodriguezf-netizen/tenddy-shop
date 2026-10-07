@@ -28,8 +28,11 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const isSuperadminCookie = cookieStore.get('tenddy_superadmin_session');
   const isAdmin = sessionCookie?.value === 'authenticated' || isSuperadminCookie?.value === 'authenticated';
 
-  // Para AYME INDUSTRIAS PET servimos la réplica exacta en iframe 100% aislado
-  if (tenant.slug === 'ayme-pet' || tenant.slug === 'plastpet') {
+  // Cargar catálogo dinámico desde Supabase
+  const { categories, products, branches } = await getTenantCatalog(tenant.id);
+  const storeTemplate = (tenant.theme_config as any)?.store_template || 'catalog';
+
+  if (storeTemplate === 'landing') {
     return (
       <>
         <ViewTracker tenantId={tenant.id} />
@@ -44,30 +47,6 @@ export default async function ShopPage({ params }: ShopPageProps) {
             </Link>
           </div>
         )}
-        <iframe
-          src="/standalone.html"
-          style={{
-            width: '100vw',
-            height: '100vh',
-            border: 'none',
-            position: 'fixed',
-            inset: 0,
-            zIndex: 9999,
-          }}
-          title="AYME INDUSTRIAS PET"
-        />
-      </>
-    );
-  }
-
-  // Para otros tenants, seleccionamos la plantilla (predeterminado: Catálogo Directo)
-  const { categories, products, branches } = await getTenantCatalog(tenant.id);
-  const storeTemplate = (tenant.theme_config as any)?.store_template || 'catalog';
-
-  if (storeTemplate === 'landing') {
-    return (
-      <>
-        <ViewTracker tenantId={tenant.id} />
         <TenantLandingView
           tenant={tenant}
           categories={categories}
