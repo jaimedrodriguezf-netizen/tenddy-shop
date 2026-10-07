@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   FileText
 } from 'lucide-react';
-import { Tenant, Category, Product, Brand, ProductTag } from '@/lib/types';
+import { Tenant, Category, Product, Brand, ProductTag, ProductAttribute } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
 import { translateErrorMessage } from '@/lib/error-translator';
 
@@ -840,6 +840,7 @@ export default function ProductEditorView({
                 {/* PESTAÑA: ATRIBUTOS */}
                 {dataTab === 'attributes' && (
                   <div className="space-y-4 max-w-xl">
+                    {/* Colores */}
                     <div>
                       <label className="block text-slate-800 font-bold mb-1">Colores disponibles</label>
                       <input
@@ -850,8 +851,45 @@ export default function ProductEditorView({
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none"
                       />
                       <p className="text-[11px] text-slate-400 mt-1">Separa con comas los colores para que aparezcan en el cotizador.</p>
+
+                      {/* Términos rápidos de Color registrados */}
+                      {(() => {
+                        const colorAttr = ((tenant.settings?.attributes || []) as ProductAttribute[]).find(
+                          (a) => a.slug.includes('color') || a.name.toLowerCase().includes('color')
+                        );
+                        if (!colorAttr || !colorAttr.terms || colorAttr.terms.length === 0) return null;
+                        const currentList = attrColors.split(',').map((s) => s.trim().toLowerCase());
+
+                        return (
+                          <div className="pt-1.5 flex flex-wrap gap-1">
+                            {colorAttr.terms.map((term, idx) => {
+                              const isAdded = currentList.includes(term.toLowerCase());
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    if (!isAdded) {
+                                      const next = attrColors.trim() ? `${attrColors.trim()}, ${term}` : term;
+                                      setAttrColors(next);
+                                    }
+                                  }}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-colors cursor-pointer ${
+                                    isAdded
+                                      ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                                      : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}
+                                >
+                                  + {term}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
 
+                    {/* Tallas */}
                     <div>
                       <label className="block text-slate-800 font-bold mb-1">Tallas o Tamaños</label>
                       <input
@@ -862,8 +900,45 @@ export default function ProductEditorView({
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none"
                       />
                       <p className="text-[11px] text-slate-400 mt-1">Tallas disponibles para que el cliente elija en WhatsApp.</p>
+
+                      {/* Términos rápidos de Talla registrados */}
+                      {(() => {
+                        const sizeAttr = ((tenant.settings?.attributes || []) as ProductAttribute[]).find(
+                          (a) => a.slug.includes('talla') || a.name.toLowerCase().includes('talla')
+                        );
+                        if (!sizeAttr || !sizeAttr.terms || sizeAttr.terms.length === 0) return null;
+                        const currentList = attrSizes.split(',').map((s) => s.trim().toLowerCase());
+
+                        return (
+                          <div className="pt-1.5 flex flex-wrap gap-1">
+                            {sizeAttr.terms.map((term, idx) => {
+                              const isAdded = currentList.includes(term.toLowerCase());
+                              return (
+                                <button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => {
+                                    if (!isAdded) {
+                                      const next = attrSizes.trim() ? `${attrSizes.trim()}, ${term}` : term;
+                                      setAttrSizes(next);
+                                    }
+                                  }}
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-colors cursor-pointer ${
+                                    isAdded
+                                      ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
+                                      : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                  }`}
+                                >
+                                  + {term}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
                     </div>
 
+                    {/* Composición */}
                     <div>
                       <label className="block text-slate-800 font-bold mb-1">Composición / Material / Costuras</label>
                       <input

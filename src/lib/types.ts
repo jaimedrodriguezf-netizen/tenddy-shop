@@ -40,6 +40,7 @@ export interface Tenant {
     enable_whatsapp_rfq?: boolean;
     brands?: Brand[];
     tags?: ProductTag[];
+    attributes?: ProductAttribute[];
     [key: string]: any;
   };
 }
@@ -84,6 +85,16 @@ export interface ProductTag {
   name: string;
   slug: string;
   description?: string;
+  created_at?: string;
+}
+
+export interface ProductAttribute {
+  id: string;
+  name: string;
+  slug: string;
+  enable_archives?: boolean;
+  order_by?: string;
+  terms: string[];
   created_at?: string;
 }
 
