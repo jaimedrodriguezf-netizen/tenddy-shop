@@ -69,6 +69,16 @@ export async function DELETE(request: Request) {
   const cleanSlug = rawSlug.trim().toLowerCase();
 
   const cookieStore = await cookies();
-  cookieStore.delete({ name: `admin_session_${cleanSlug}`, path: '/' });
+  if (cleanSlug) {
+    cookieStore.delete({ name: `admin_session_${cleanSlug}`, path: '/' });
+  }
+  cookieStore.delete({ name: 'tenddy_superadmin_session', path: '/' });
+
+  cookieStore.getAll().forEach((c) => {
+    if (c.name.startsWith('sb-') || c.name.startsWith('admin_session_') || c.name.startsWith('tenddy_')) {
+      cookieStore.delete({ name: c.name, path: '/' });
+    }
+  });
+
   return NextResponse.json({ success: true });
 }

@@ -38,6 +38,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
+import { supabase } from '@/lib/supabase';
 import CreateProductModal from './CreateProductModal';
 import EditProductModal from './EditProductModal';
 import BulkImportModal from './BulkImportModal';
@@ -236,8 +237,18 @@ export default function AdminDashboardView({
   };
 
   const handleLogout = async () => {
-    await fetch(`/api/admin/auth?shopSlug=${tenant.slug}`, { method: 'DELETE' });
-    window.location.reload();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Error cerrando sesión en Supabase:', e);
+    }
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch(`/api/admin/auth?shopSlug=${tenant.slug}`, { method: 'DELETE' });
+    } catch (e) {
+      console.error('Error limpiando cookies de sesión:', e);
+    }
+    window.location.href = `/store/${tenant.slug}/admin`;
   };
 
   const getStatusBadge = (status: string) => {

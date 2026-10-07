@@ -29,25 +29,43 @@ export default function AdminAuthWrapper({
   initiallyAuthenticated,
 }: AdminAuthWrapperProps) {
   const [manualAuth, setManualAuth] = useState(false);
+  const [googleUserEmail, setGoogleUserEmail] = useState<string | null>(null);
   const isAuthenticated = initiallyAuthenticated || manualAuth;
 
-  // Verificación de respaldo en cliente si la sesión está activa en Supabase Auth
+  // Inspeccionar si hay una sesión activa de Google sin provocar bucle infinito de recargas
   useEffect(() => {
     if (!isAuthenticated) {
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user?.email) {
-          // El usuario tiene sesión de Google activa, sincronizar para entrar directamente
-          window.location.reload();
+          setGoogleUserEmail(user.email);
         }
       });
     }
   }, [isAuthenticated]);
+
+  const handleSignOutGoogle = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Error cerrando sesión en Supabase:', e);
+    }
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch(`/api/admin/auth?shopSlug=${shopSlug}`, { method: 'DELETE' });
+    } catch (e) {
+      console.error('Error limpiando cookies:', e);
+    }
+    setGoogleUserEmail(null);
+    window.location.reload();
+  };
 
   if (!isAuthenticated) {
     return (
       <AdminLoginForm
         shopSlug={shopSlug}
         tenantName={tenant.name}
+        activeGoogleEmail={googleUserEmail}
+        onSignOutGoogle={handleSignOutGoogle}
         onSuccess={() => {
           setManualAuth(true);
           window.location.reload();
