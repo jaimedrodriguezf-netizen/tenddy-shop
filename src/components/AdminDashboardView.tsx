@@ -1268,6 +1268,7 @@ export default function AdminDashboardView({
                 onClose={() => setEditingProduct(null)}
                 product={editingProduct}
                 categories={categories}
+                tenant={tenant}
                 onProductUpdated={(updatedProd) => {
                   setProducts((prev) => prev.map((p) => (p.id === updatedProd.id ? updatedProd : p)));
                   setEditingProduct(null);
