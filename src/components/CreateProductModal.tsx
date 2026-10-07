@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Plus,
   X,
@@ -39,7 +39,16 @@ export default function CreateProductModal({
 }: CreateProductModalProps) {
   const isPlastics = tenant.industry_type === 'plastics';
 
-  const [localCategories, setLocalCategories] = useState<Category[]>(categories);
+  const [extraCategories, setExtraCategories] = useState<Category[]>([]);
+  const localCategories: Category[] = useMemo(() => {
+    const list: Category[] = [...categories];
+    for (const ec of extraCategories) {
+      if (!list.some((c) => c.id === ec.id)) {
+        list.push(ec);
+      }
+    }
+    return list;
+  }, [categories, extraCategories]);
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [categoryId, setCategoryId] = useState(categories[0]?.id || '');
@@ -73,12 +82,7 @@ export default function CreateProductModal({
     return parts.join(' › ');
   };
 
-  useEffect(() => {
-    setLocalCategories(categories);
-    if (!categoryId && categories.length > 0) {
-      setCategoryId(categories[0].id);
-    }
-  }, [categories]);
+
 
   const handleCreateQuickCategory = async () => {
     if (!quickCatName.trim() || savingQuickCat) return;
@@ -96,7 +100,7 @@ export default function CreateProductModal({
       if (!res.ok) throw new Error(data.error || 'Error al crear la categoría');
 
       const newCat: Category = data.category;
-      setLocalCategories((prev) => [...prev, newCat]);
+      setExtraCategories((prev) => [...prev, newCat]);
       setCategoryId(newCat.id);
       onCategoryCreated?.(newCat);
       setIsCreatingQuickCat(false);

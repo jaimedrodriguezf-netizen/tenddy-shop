@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { getAdminClient } from './supabase';
 
 export interface AuthGuardResult {
@@ -63,6 +64,41 @@ export async function verifyTenantAdmin(
   const tenantCookie = cookieStore.get(`admin_session_${targetTenant.slug}`);
   if (tenantCookie?.value === 'authenticated') {
     return { authorized: true, isSuperadmin: false, tenant: targetTenant };
+  }
+
+  // 3. Respaldo Resiliente: Validar sesión autenticada de Supabase Auth / Google OAuth
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return cookieStore.getAll();
+          },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user?.email) {
+      const { data: membership } = await admin
+        .from('tenant_members')
+        .select('id, role, is_active')
+        .eq('tenant_id', targetTenant.id)
+        .eq('email', user.email.toLowerCase().trim())
+        .eq('is_active', true)
+        .single();
+
+      if (membership) {
+        return { authorized: true, isSuperadmin: false, tenant: targetTenant };
+      }
+    }
+  } catch (authErr) {
+    console.error('Error validando sesión Supabase en auth-guard:', authErr);
   }
 
   return { authorized: false, isSuperadmin: false, error: 'Sesión no autorizada para esta tienda' };

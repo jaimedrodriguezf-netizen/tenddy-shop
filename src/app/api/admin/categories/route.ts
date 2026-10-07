@@ -83,7 +83,7 @@ async function processCategoryImage(
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { tenant_id, name, description, icon_name, image_url, imageData, parent_id } = body;
+    const { tenant_id, name, description, image_url, imageData, parent_id } = body;
 
     if (!tenant_id || !name) {
       return NextResponse.json({ error: 'Nombre de la categoría y tenant son requeridos' }, { status: 400 });
@@ -130,7 +130,6 @@ export async function POST(request: Request) {
         name: name.trim(),
         slug,
         description: description ? description.trim() : null,
-        icon_name: icon_name || 'tag',
         image_url: finalImageUrl,
         parent_id: parent_id && parent_id.trim() ? parent_id.trim() : null,
         is_active: true,

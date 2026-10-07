@@ -156,12 +156,13 @@ export default function AdminDashboardView({
     async function checkSupportNotifications() {
       try {
         const res = await fetch(`/api/admin/support?tenantId=${tenant.id}`);
+        if (!res.ok) return;
         const data = await res.json();
-        if (res.ok && data.totalUnread !== undefined) {
+        if (data.totalUnread !== undefined) {
           setUnreadSupportCount(data.totalUnread);
         }
-      } catch (e) {
-        console.error(e);
+      } catch {
+        // Silencioso en caso de fallo de red
       }
     }
     if (tenant.id) {
@@ -1663,7 +1664,6 @@ export default function AdminDashboardView({
               tenantId={tenant.id}
               initialCategories={categories}
               onCategoriesChanged={(updatedCats) => setCategories(updatedCats)}
-              onOpenCreateModal={() => {}}
             />
           )}
 

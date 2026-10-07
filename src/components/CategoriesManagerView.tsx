@@ -33,7 +33,7 @@ interface CategoriesManagerViewProps {
   tenantId: string;
   initialCategories: Category[];
   onCategoriesChanged: (categories: Category[]) => void;
-  onOpenCreateModal: () => void;
+  onOpenCreateModal?: () => void;
 }
 
 export default function CategoriesManagerView({
@@ -125,6 +125,7 @@ export default function CategoriesManagerView({
           description: createDescription.trim() || null,
           imageData: createImageBase64,
           image_url: !createImageBase64 ? activeImageUrl : undefined,
+          parent_id: createParentId && createParentId.trim() ? createParentId.trim() : null,
         }),
       });
 
@@ -142,6 +143,7 @@ export default function CategoriesManagerView({
       setCreateDescription('');
       setCreateImageBase64(null);
       setCreateImageUrlInput('');
+      setCreateParentId(null);
       setIsCreatingCategory(false);
     } catch (err: unknown) {
       const msg = translateErrorMessage(err, 'No se pudo crear la categoría');
@@ -356,7 +358,10 @@ export default function CategoriesManagerView({
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setIsCreatingCategory(false)}
+              onClick={() => {
+                setCreateParentId(null);
+                setIsCreatingCategory(false);
+              }}
               className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
             >
               ← Volver a Categorías
@@ -498,6 +503,67 @@ export default function CategoriesManagerView({
             />
           </div>
 
+          {/* Jerarquía de Categoría en Creación */}
+          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label className="block text-slate-800 font-bold text-xs">
+                Jerarquía y Nivel de Categoría
+              </label>
+              <span className="text-[10px] text-slate-400 font-medium">Soporta hasta 3 niveles</span>
+            </div>
+
+            <div className="flex flex-wrap gap-4 pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="catHierarchyCreate"
+                  checked={!createParentId}
+                  onChange={() => setCreateParentId(null)}
+                  className="text-sky-600 focus:ring-sky-500"
+                />
+                <span className="font-semibold text-slate-800">Categoría Principal (Nivel 1)</span>
+              </label>
+
+              <label className="flex items-center gap-2 cursor-pointer text-xs">
+                <input
+                  type="radio"
+                  name="catHierarchyCreate"
+                  checked={!!createParentId}
+                  onChange={() => {
+                    const firstAvailable = categories.find((c) => !c.parent_id)?.id || null;
+                    setCreateParentId(firstAvailable);
+                  }}
+                  className="text-sky-600 focus:ring-sky-500"
+                />
+                <span className="font-semibold text-slate-800">Subcategoría (Nivel 2 o 3)</span>
+              </label>
+            </div>
+
+            {createParentId !== null && (
+              <div className="pt-2 border-t border-slate-200/60 space-y-1">
+                <label className="block text-slate-600 text-[11px] font-medium">
+                  Pertenece a (Categoría Superior):
+                </label>
+                <select
+                  value={createParentId || ''}
+                  onChange={(e) => setCreateParentId(e.target.value || null)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                >
+                  {categories.map((cat) => {
+                    const depth = getCategoryDepth(cat, categories);
+                    if (depth >= 3) return null;
+                    const indent = depth === 1 ? '📁 ' : '↳ 📂 ';
+                    return (
+                      <option key={cat.id} value={cat.id}>
+                        {indent}{cat.name} {depth === 2 ? '(Subcategoría Nivel 2)' : '(Categoría Principal)'}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            )}
+          </div>
+
           <div>
             <label className="block text-slate-700 font-semibold mb-1">
               Descripción (Opcional)
@@ -514,7 +580,10 @@ export default function CategoriesManagerView({
           <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
             <button
               type="button"
-              onClick={() => setIsCreatingCategory(false)}
+              onClick={() => {
+                setCreateParentId(null);
+                setIsCreatingCategory(false);
+              }}
               className="px-4 py-2 text-slate-500 hover:text-slate-800 text-xs font-medium cursor-pointer"
             >
               Cancelar y Volver
@@ -845,7 +914,10 @@ export default function CategoriesManagerView({
             </button>
 
             <button
-              onClick={onOpenCreateModal}
+              onClick={() => {
+                if (onOpenCreateModal) onOpenCreateModal();
+                setIsCreatingCategory(true);
+              }}
               className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
