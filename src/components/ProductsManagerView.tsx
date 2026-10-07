@@ -51,7 +51,7 @@ export default function ProductsManagerView({
   const [bulkAction, setBulkAction] = useState<string>('');
   const [bulkLoading, setBulkLoading] = useState(false);
 
-  // Estados de Edición Rápida (WordPress Quick Edit)
+  // Estados de Edición Rápida en Fila
   const [quickEditId, setQuickEditId] = useState<string | null>(null);
   const [quickName, setQuickName] = useState('');
   const [quickSlug, setQuickSlug] = useState('');
@@ -148,7 +148,7 @@ export default function ProductsManagerView({
     setSelectedIds(next);
   };
 
-  // Abrir Edición Rápida (WordPress Quick Edit)
+  // Abrir Edición Rápida en Fila
   const handleStartQuickEdit = (p: Product) => {
     setQuickEditId(p.id);
     setQuickName(p.name);
@@ -458,7 +458,7 @@ export default function ProductsManagerView({
   return (
     <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-6 space-y-4 shadow-xs">
       {/* =========================================================================
-          1. CABECERA OFICIAL WOOCOMMERCE
+          1. CABECERA DE PRODUCTOS
           ========================================================================= */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div className="flex items-center gap-3">
@@ -694,7 +694,7 @@ export default function ProductsManagerView({
       </div>
 
       {/* =========================================================================
-          4. TABLA OFICIAL DE PRODUCTOS WOOCOMMERCE
+          4. TABLA DE PRODUCTOS
           ========================================================================= */}
       <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
         <div className="overflow-x-auto">
@@ -767,7 +767,7 @@ export default function ProductsManagerView({
                           </div>
                         </td>
 
-                        {/* Nombre + Row Actions de WordPress */}
+                        {/* Nombre + Acciones en Fila */}
                         <td className="py-3 px-3 font-semibold text-slate-900 max-w-xs">
                           <div className="space-y-1">
                             <span
@@ -777,7 +777,7 @@ export default function ProductsManagerView({
                               {p.name}
                             </span>
 
-                            {/* Row Actions de WordPress (visibles en hover / permanentemente útiles) */}
+                            {/* Acciones en fila (visibles en hover / permanentemente útiles) */}
                             <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-normal flex-wrap">
                               <span className="font-mono text-slate-400">ID: {shortId}</span>
                               <span className="text-slate-200">|</span>
@@ -904,7 +904,7 @@ export default function ProductsManagerView({
                       </tr>
 
                       {/* =========================================================================
-                          FILA DE EDICIÓN RÁPIDA (WORDPRESS QUICK EDIT)
+                          FILA DE EDICIÓN RÁPIDA
                           ========================================================================= */}
                       {isQuickEditing && (
                         <tr className="bg-slate-50/95 border-y-2 border-slate-300">

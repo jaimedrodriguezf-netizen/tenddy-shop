@@ -296,7 +296,7 @@ export default function AdminDashboardView({
         </div>
       </button>
 
-      {/* 2. PRODUCTOS (ESTRUCTURA OFICIAL WORDPRESS / WOOCOMMERCE) */}
+      {/* 2. PRODUCTOS (SUBMENÚ ANIDADO) */}
       <div className="space-y-0.5">
         <button
           type="button"
@@ -323,7 +323,7 @@ export default function AdminDashboardView({
           </div>
         </button>
 
-        {/* Submenú desplegable anidado (WordPress Style) */}
+        {/* Submenú desplegable anidado */}
         {isProductsMenuOpen && (
           <div className="ml-4 pl-3 border-l-2 border-slate-100 space-y-1 py-1">
             {/* 1. Todos los productos */}

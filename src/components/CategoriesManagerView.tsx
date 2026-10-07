@@ -289,7 +289,7 @@ export default function CategoriesManagerView({
     }
   };
 
-  // Ordenamiento jerárquico recursivo (Árbol estilo WordPress)
+  // Ordenamiento jerárquico recursivo (Árbol multinivel)
   const sortHierarchically = (cats: ExtendedCategory[]): ExtendedCategory[] => {
     const childrenMap = new Map<string, ExtendedCategory[]>();
     const roots: ExtendedCategory[] = [];
@@ -352,7 +352,7 @@ export default function CategoriesManagerView({
 
   return (
     <div className="space-y-6">
-      {/* 1. Encabezado Oficial Estilo WooCommerce / WordPress */}
+      {/* 1. Encabezado de Gestión de Categorías */}
       <div className="bg-white border border-slate-200/90 rounded-2xl p-5 sm:p-6 shadow-xs flex flex-wrap items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -414,7 +414,7 @@ export default function CategoriesManagerView({
       )}
 
       {/* =========================================================================
-          2. LAYOUT DIVIDIDO EN 2 COLUMNAS (WORDPRESS / WOOCOMMERCE STYLE)
+          2. LAYOUT DIVIDIDO EN 2 COLUMNAS (PANEL DE GESTIÓN INTEGRADO)
           ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* =========================================================================
@@ -764,7 +764,7 @@ export default function CategoriesManagerView({
                       const prodCount = cat.products?.[0]?.count ?? 0;
                       const isEditingThis = editingCategory?.id === cat.id;
 
-                      // Prefijo de guiones estilo WordPress / WooCommerce
+                      // Prefijo de guiones jerárquicos multinivel
                       const prefix = depth === 1 ? '' : depth === 2 ? '— ' : '—— ';
 
                       return (
