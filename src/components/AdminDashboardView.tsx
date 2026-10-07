@@ -49,6 +49,7 @@ import ProductsManagerView from './ProductsManagerView';
 import BrandsManagerView from './BrandsManagerView';
 import TagsManagerView from './TagsManagerView';
 import AttributesManagerView from './AttributesManagerView';
+import ReviewsManagerView from './ReviewsManagerView';
 import VersionBadge from './VersionBadge';
 
 interface QuoteItem {
@@ -98,11 +99,11 @@ export default function AdminDashboardView({
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'tags' | 'attributes' | 'team' | 'appearance'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'tags' | 'attributes' | 'reviews' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'attributes' || tabParam === 'team' || tabParam === 'appearance') {
+      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'attributes' || tabParam === 'reviews' || tabParam === 'team' || tabParam === 'appearance') {
         return tabParam as any;
       }
     }
@@ -305,7 +306,7 @@ export default function AdminDashboardView({
           type="button"
           onClick={() => setIsProductsMenuOpen(!isProductsMenuOpen)}
           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            activeTab === 'products' || activeTab === 'categories'
+            activeTab === 'products' || activeTab === 'categories' || activeTab === 'brands' || activeTab === 'tags' || activeTab === 'attributes' || activeTab === 'reviews'
               ? 'text-slate-900 bg-slate-100/90 font-bold'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
@@ -455,16 +456,26 @@ export default function AdminDashboardView({
             {/* 7. Valoraciones */}
             <button
               onClick={() => {
-                setActiveTab('appearance');
+                setActiveTab('reviews');
                 setIsMobileSidebarOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'reviews'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
               <div className="flex items-center gap-1.5">
                 <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
                 <span>Valoraciones</span>
               </div>
-              <span className="text-[9px] text-amber-700 font-bold bg-amber-50 border border-amber-200/80 px-1.5 py-0.2 rounded">5.0</span>
+              <span className={`text-[9px] font-bold px-1.5 py-0.2 rounded ${
+                activeTab === 'reviews'
+                  ? 'bg-slate-800 text-amber-300 border border-slate-700'
+                  : 'text-amber-700 bg-amber-50 border border-amber-200/80'
+              }`}>
+                {tenant.settings?.reviews?.filter((r: any) => r.status !== 'trash').length || 0}
+              </span>
             </button>
 
             {/* 8. Carga Masiva (Excel) */}
@@ -819,6 +830,7 @@ export default function AdminDashboardView({
               {activeTab === 'brands' && 'Marcas de Productos'}
               {activeTab === 'tags' && 'Etiquetas de Productos'}
               {activeTab === 'attributes' && 'Atributos de Productos'}
+              {activeTab === 'reviews' && 'Valoraciones'}
               {activeTab === 'team' && 'Equipo & Asesores'}
               {activeTab === 'appearance' && 'Diseño & Apariencia'}
             </h1>
@@ -1339,6 +1351,23 @@ export default function AdminDashboardView({
             <AttributesManagerView
               tenant={tenant}
               products={products}
+            />
+          )}
+
+          {/* PESTAÑA: GESTIÓN DE VALORACIONES */}
+          {activeTab === 'reviews' && (
+            <ReviewsManagerView
+              tenant={tenant}
+              products={products}
+              onReviewsChanged={(updatedReviews) => {
+                setTenant((prev) => ({
+                  ...prev,
+                  settings: {
+                    ...(prev.settings || {}),
+                    reviews: updatedReviews,
+                  },
+                }));
+              }}
             />
           )}
 

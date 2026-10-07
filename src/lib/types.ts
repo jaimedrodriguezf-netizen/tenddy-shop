@@ -41,6 +41,7 @@ export interface Tenant {
     brands?: Brand[];
     tags?: ProductTag[];
     attributes?: ProductAttribute[];
+    reviews?: ProductReview[];
     [key: string]: any;
   };
 }
@@ -96,6 +97,31 @@ export interface ProductAttribute {
   order_by?: string;
   terms: string[];
   created_at?: string;
+}
+
+export type ReviewStatus = 'approved' | 'pending' | 'spam' | 'trash';
+
+export interface ProductReviewReply {
+  content: string;
+  author_name: string;
+  created_at: string;
+}
+
+export interface ProductReview {
+  id: string;
+  tenant_id: string;
+  product_id: string;
+  product_name?: string;
+  product_image?: string;
+  type: 'review' | 'rating';
+  author_name: string;
+  author_email?: string;
+  author_ip?: string;
+  rating: number;
+  content: string;
+  status: ReviewStatus;
+  reply?: ProductReviewReply | null;
+  created_at: string;
 }
 
 export interface Product {
