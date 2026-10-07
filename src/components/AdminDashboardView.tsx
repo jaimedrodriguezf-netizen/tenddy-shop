@@ -32,7 +32,10 @@ import {
   ChevronDown,
   Layers,
   Check,
-  Bell
+  Bell,
+  Star,
+  Award,
+  SlidersHorizontal
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import CreateProductModal from './CreateProductModal';
@@ -114,7 +117,7 @@ export default function AdminDashboardView({
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [supportModalInitialTab, setSupportModalInitialTab] = useState<'tickets' | 'new' | 'fixes'>('tickets');
   const [unreadSupportCount, setUnreadSupportCount] = useState<number>(0);
-  const [isInventoryOpen, setIsInventoryOpen] = useState(true);
+  const [isProductsMenuOpen, setIsProductsMenuOpen] = useState(true);
   const [isQuotesOpen, setIsQuotesOpen] = useState(true);
   const [productSearch, setProductSearch] = useState('');
   const [productCategoryFilter, setProductCategoryFilter] = useState('all');
@@ -292,20 +295,20 @@ export default function AdminDashboardView({
         </div>
       </button>
 
-      {/* 2. INVENTARIO (ACORDEÓN DESPLEGABLE TIPO CONTIFICO / ERP) */}
+      {/* 2. PRODUCTOS (ESTRUCTURA OFICIAL WORDPRESS / WOOCOMMERCE) */}
       <div className="space-y-0.5">
         <button
           type="button"
-          onClick={() => setIsInventoryOpen(!isInventoryOpen)}
+          onClick={() => setIsProductsMenuOpen(!isProductsMenuOpen)}
           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            activeTab === 'products'
+            activeTab === 'products' || activeTab === 'categories'
               ? 'text-slate-900 bg-slate-100/90 font-bold'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
         >
           <div className="flex items-center gap-2.5">
-            <Boxes className="w-4 h-4 text-slate-500" />
-            <span>Inventario</span>
+            <Package className="w-4 h-4 text-sky-600" />
+            <span>Productos</span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold bg-slate-200/80 text-slate-600">
@@ -313,43 +316,80 @@ export default function AdminDashboardView({
             </span>
             <ChevronDown
               className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-                isInventoryOpen ? 'rotate-180' : ''
+                isProductsMenuOpen ? 'rotate-180' : ''
               }`}
             />
           </div>
         </button>
 
-        {/* Submenú desplegable de Inventario */}
-        {isInventoryOpen && (
+        {/* Submenú desplegable anidado (WordPress Style) */}
+        {isProductsMenuOpen && (
           <div className="ml-4 pl-3 border-l-2 border-slate-100 space-y-1 py-1">
+            {/* 1. Todos los productos */}
             <button
               onClick={() => {
                 setActiveTab('products');
+                setIsCreateModalOpen(false);
                 setIsMobileSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                activeTab === 'products'
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'products' && !isCreateModalOpen
                   ? 'bg-slate-900 text-white font-bold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              <span>Productos</span>
+              <span>Todos los productos</span>
               <span
                 className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'products' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200/70 text-slate-600'
+                  activeTab === 'products' && !isCreateModalOpen
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-200/70 text-slate-600'
                 }`}
               >
                 {products.length}
               </span>
             </button>
 
-            {/* Sub-item: Gestión de Categorías (CRUD) */}
+            {/* 2. Añadir un nuevo producto */}
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setIsCreateModalOpen(true);
+                setIsMobileSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'products' && isCreateModalOpen
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
+              <Plus className="w-3 h-3 text-sky-500" />
+              <span>Añadir un nuevo producto</span>
+            </button>
+
+            {/* 3. Marcas */}
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setIsCreateModalOpen(false);
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <Award className="w-3.5 h-3.5 text-amber-500" />
+                <span>Marcas</span>
+              </div>
+              <span className="text-[9px] font-mono text-slate-400">1</span>
+            </button>
+
+            {/* 4. Categorías */}
             <button
               onClick={() => {
                 setActiveTab('categories');
                 setIsMobileSidebarOpen(false);
               }}
-              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
                 activeTab === 'categories'
                   ? 'bg-slate-900 text-white font-bold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -357,28 +397,78 @@ export default function AdminDashboardView({
             >
               <div className="flex items-center gap-1.5">
                 <Tag className="w-3.5 h-3.5 text-sky-600" />
-                <span>Gestión de Categorías</span>
+                <span>Categorías</span>
               </div>
               <span
                 className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'categories' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200/70 text-slate-600'
+                  activeTab === 'categories'
+                    ? 'bg-slate-800 text-slate-200'
+                    : 'bg-slate-200/70 text-slate-600'
                 }`}
               >
                 {categories.length}
               </span>
             </button>
 
+            {/* 5. Etiquetas */}
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setIsCreateModalOpen(false);
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                <span>Etiquetas</span>
+              </div>
+              <span className="text-[9px] font-mono text-slate-400">Tags</span>
+            </button>
+
+            {/* 6. Atributos (Tallas & Colores) */}
+            <button
+              onClick={() => {
+                setActiveTab('products');
+                setIsCreateModalOpen(false);
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                <span>Atributos</span>
+              </div>
+              <span className="text-[9px] text-slate-400 font-mono">Variantes</span>
+            </button>
+
+            {/* 7. Valoraciones */}
+            <button
+              onClick={() => {
+                setActiveTab('appearance');
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+            >
+              <div className="flex items-center gap-1.5">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span>Valoraciones</span>
+              </div>
+              <span className="text-[9px] text-amber-700 font-bold bg-amber-50 border border-amber-200/80 px-1.5 py-0.2 rounded">5.0</span>
+            </button>
+
+            {/* 8. Carga Masiva (Excel) */}
             <button
               onClick={() => {
                 setIsBulkModalOpen(true);
                 setIsMobileSidebarOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
-              title="Cargar catálogo masivo con plantilla Excel o CSV"
+              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              title="Cargar catálogo masivo con plantilla Excel oficial (.xlsx)"
             >
               <div className="flex items-center gap-1.5">
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Carga Masiva (Excel)</span>
+                <span>Importar Excel</span>
               </div>
             </button>
           </div>
