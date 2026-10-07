@@ -39,6 +39,7 @@ export interface Tenant {
     currency_symbol: string;
     enable_whatsapp_rfq?: boolean;
     brands?: Brand[];
+    tags?: ProductTag[];
     [key: string]: any;
   };
 }
@@ -75,6 +76,14 @@ export interface Brand {
   description?: string;
   image_url?: string;
   is_active?: boolean;
+  created_at?: string;
+}
+
+export interface ProductTag {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
   created_at?: string;
 }
 

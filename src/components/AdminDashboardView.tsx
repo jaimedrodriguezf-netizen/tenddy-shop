@@ -47,6 +47,7 @@ import TenantSupportCenterModal from './TenantSupportCenterModal';
 import CategoriesManagerView from './CategoriesManagerView';
 import ProductsManagerView from './ProductsManagerView';
 import BrandsManagerView from './BrandsManagerView';
+import TagsManagerView from './TagsManagerView';
 import VersionBadge from './VersionBadge';
 
 interface QuoteItem {
@@ -96,11 +97,11 @@ export default function AdminDashboardView({
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'team' | 'appearance'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'tags' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'team' || tabParam === 'appearance') {
+      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'team' || tabParam === 'appearance') {
         return tabParam as any;
       }
     }
@@ -417,17 +418,19 @@ export default function AdminDashboardView({
             {/* 5. Etiquetas */}
             <button
               onClick={() => {
-                setActiveTab('products');
-                setIsCreateModalOpen(false);
+                setActiveTab('tags');
                 setIsMobileSidebarOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'tags'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
             >
               <div className="flex items-center gap-1.5">
-                <Tag className="w-3.5 h-3.5 text-slate-400" />
+                <Tag className="w-3.5 h-3.5 text-sky-600" />
                 <span>Etiquetas</span>
               </div>
-              <span className="text-[9px] font-mono text-slate-400">Tags</span>
             </button>
 
             {/* 6. Atributos (Tallas & Colores) */}
@@ -811,6 +814,7 @@ export default function AdminDashboardView({
               {activeTab === 'products' && 'Productos'}
               {activeTab === 'categories' && 'Gestión de Categorías B2B'}
               {activeTab === 'brands' && 'Marcas de Productos'}
+              {activeTab === 'tags' && 'Etiquetas de Productos'}
               {activeTab === 'team' && 'Equipo & Asesores'}
               {activeTab === 'appearance' && 'Diseño & Apariencia'}
             </h1>
@@ -1313,6 +1317,14 @@ export default function AdminDashboardView({
           {/* PESTAÑA: GESTIÓN DE MARCAS */}
           {activeTab === 'brands' && (
             <BrandsManagerView
+              tenant={tenant}
+              products={products}
+            />
+          )}
+
+          {/* PESTAÑA: GESTIÓN DE ETIQUETAS */}
+          {activeTab === 'tags' && (
+            <TagsManagerView
               tenant={tenant}
               products={products}
             />

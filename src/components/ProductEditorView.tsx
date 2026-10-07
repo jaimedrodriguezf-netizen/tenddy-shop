@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   FileText
 } from 'lucide-react';
-import { Tenant, Category, Product, Brand } from '@/lib/types';
+import { Tenant, Category, Product, Brand, ProductTag } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
 import { translateErrorMessage } from '@/lib/error-translator';
 
@@ -1199,7 +1199,7 @@ export default function ProductEditorView({
                 </h4>
               </div>
 
-              <div className="space-y-1.5 text-xs">
+              <div className="space-y-2 text-xs">
                 <input
                   type="text"
                   value={tagsInput}
@@ -1210,6 +1210,38 @@ export default function ProductEditorView({
                 <p className="text-[11px] text-slate-400">
                   Ej: Ofertas, Verano, Tendencias, Más Vendidos.
                 </p>
+
+                {/* Etiquetas frecuentes para añadir con un clic */}
+                {((tenant.settings?.tags || []) as ProductTag[]).length > 0 && (
+                  <div className="space-y-1 pt-1 border-t border-slate-100">
+                    <span className="text-[10px] text-slate-500 font-bold block">Elegir de las etiquetas más utilizadas:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {((tenant.settings?.tags || []) as ProductTag[]).map((t) => {
+                        const currentList = tagsInput.split(',').map((s) => s.trim().toLowerCase());
+                        const isAdded = currentList.includes(t.name.toLowerCase());
+                        return (
+                          <button
+                            key={t.id}
+                            type="button"
+                            onClick={() => {
+                              if (!isAdded) {
+                                const next = tagsInput.trim() ? `${tagsInput.trim()}, ${t.name}` : t.name;
+                                setTagsInput(next);
+                              }
+                            }}
+                            className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-colors cursor-pointer ${
+                              isAdded
+                                ? 'bg-sky-100 text-sky-800 border-sky-300'
+                                : 'bg-slate-50 hover:bg-slate-100 text-slate-600 border-slate-200'
+                            }`}
+                          >
+                            + {t.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
