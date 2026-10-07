@@ -16,6 +16,11 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Falta tenantId' }, { status: 400 });
     }
 
+    const auth = await verifyTenantAdmin({ tenantId });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
     const admin = getAdminClient();
     const { data: tenant, error } = await admin
       .from('tenants')
