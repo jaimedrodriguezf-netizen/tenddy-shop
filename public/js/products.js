@@ -27,9 +27,9 @@ class ProductCatalog {
             const res = await fetch('/api/store/ayme-pet/products');
             if (!res.ok) return;
             const data = await res.json();
-            if (data.products && data.products.length > 0) {
+            if (data && data.success) {
                 // Sincronizar categorías si vienen de Supabase
-                if (data.categories && data.categories.length > 0) {
+                if (Array.isArray(data.categories)) {
                     const iconMap = {
                         'bebidas': '🥤',
                         'farma': '💊',
@@ -49,42 +49,45 @@ class ProductCatalog {
                 }
 
                 // Sincronizar productos en vivo desde Supabase
-                const mappedProducts = data.products.map(p => {
-                    const specs = p.attributes?.specs || {};
-                    const catObj = data.categories?.find(c => c.id === p.category_id);
-                    const catSlug = catObj?.slug || 'bebidas';
+                // Si la base de datos está vacía (productos eliminados), se refleja fielmente sin reinyectar datos viejos
+                if (Array.isArray(data.products)) {
+                    const mappedProducts = data.products.map(p => {
+                        const specs = p.attributes?.specs || {};
+                        const catObj = data.categories?.find(c => c.id === p.category_id);
+                        const catSlug = catObj?.slug || 'bebidas';
 
-                    return {
-                        id: p.sku ? p.sku.toLowerCase() : p.id,
-                        name: p.name,
-                        category: catSlug,
-                        sector: p.attributes?.sector || (catSlug === 'quimicos' || catSlug === 'preformas' ? 'industrial' : catSlug === 'farma' || catSlug === 'cosmetica' ? 'farma_cosmetica' : 'bebidas'),
-                        packSize: p.units_per_package || 100,
-                        moq: p.min_order_qty || 500,
-                        image: p.images?.[0] || '/assets/products/ayme-001.svg',
-                        badge: p.attributes?.badge || null,
-                        specs: {
-                            capacidad: specs.capacidad || 'N/A',
-                            altura: specs.altura || 'N/A',
-                            diametro: specs.diametro || 'N/A',
-                            boca: specs.boca || '28 mm',
-                            gramaje: specs.gramaje || 'N/A',
-                            material: specs.material || 'PET Grado Virgen',
-                            empaque: specs.empaque || `Fardo x ${p.units_per_package || 100} uds`,
-                            acabado: specs.acabado || 'Cristalino',
-                            resistencia: specs.resistencia || 'Alta Resistencia'
-                        },
-                        description: p.description || '',
-                        features: Array.isArray(p.attributes?.features) ? p.attributes.features : [
-                            'Inocuidad certificada para contacto directo',
-                            'Homogeneidad en la distribución del espesor de pared',
-                            'Rosca estándar compatible con tapas de seguridad'
-                        ]
-                    };
-                });
+                        return {
+                            id: p.sku ? p.sku.toLowerCase() : p.id,
+                            name: p.name,
+                            category: catSlug,
+                            sector: p.attributes?.sector || (catSlug === 'quimicos' || catSlug === 'preformas' ? 'industrial' : catSlug === 'farma' || catSlug === 'cosmetica' ? 'farma_cosmetica' : 'bebidas'),
+                            packSize: p.units_per_package || 100,
+                            moq: p.min_order_qty || 500,
+                            image: p.images?.[0] || '/assets/products/ayme-001.svg',
+                            badge: p.attributes?.badge || null,
+                            specs: {
+                                capacidad: specs.capacidad || 'N/A',
+                                altura: specs.altura || 'N/A',
+                                diametro: specs.diametro || 'N/A',
+                                boca: specs.boca || '28 mm',
+                                gramaje: specs.gramaje || 'N/A',
+                                material: specs.material || 'PET Grado Virgen',
+                                empaque: specs.empaque || `Fardo x ${p.units_per_package || 100} uds`,
+                                acabado: specs.acabado || 'Cristalino',
+                                resistencia: specs.resistencia || 'Alta Resistencia'
+                            },
+                            description: p.description || '',
+                            features: Array.isArray(p.attributes?.features) ? p.attributes.features : [
+                                'Inocuidad certificada para contacto directo',
+                                'Homogeneidad en la distribución del espesor de pared',
+                                'Rosca estándar compatible con tapas de seguridad'
+                            ]
+                        };
+                    });
 
-                window.PRODUCTS = mappedProducts;
-                this.renderProducts();
+                    window.PRODUCTS = mappedProducts;
+                    this.renderProducts();
+                }
             }
         } catch (e) {
             console.log('Catálogo en modo local/offline activo');
