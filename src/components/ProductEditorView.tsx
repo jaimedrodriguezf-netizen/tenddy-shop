@@ -20,7 +20,7 @@ import {
   ArrowLeft,
   FileText
 } from 'lucide-react';
-import { Tenant, Category, Product } from '@/lib/types';
+import { Tenant, Category, Product, Brand } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
 import { translateErrorMessage } from '@/lib/error-translator';
 
@@ -1215,21 +1215,46 @@ export default function ProductEditorView({
 
             {/* 6. METABOX: MARCAS DEL PRODUCTO */}
             <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-              <div className="border-b border-slate-100 pb-2.5">
+              <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
                   Marcas de productos
                 </h4>
+                <Award className="w-3.5 h-3.5 text-amber-500" />
               </div>
 
-              <div className="space-y-1 text-xs">
-                <input
-                  type="text"
-                  value={brand}
-                  onChange={(e) => setBrand(e.target.value)}
-                  placeholder="Nombre de la marca o confección..."
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:bg-white focus:outline-none"
-                />
-                <span className="text-[11px] text-slate-400 block mt-1">Marca o sello comercial de la tienda.</span>
+              <div className="space-y-2 text-xs">
+                {/* Selector si existen marcas registradas */}
+                {((tenant.settings?.brands || []) as Brand[]).length > 0 && (
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-0.5 text-[11px]">Elegir marca registrada:</label>
+                    <select
+                      value={brand}
+                      onChange={(e) => setBrand(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-800 cursor-pointer font-medium"
+                    >
+                      <option value="">— Sin marca asignada —</option>
+                      {((tenant.settings?.brands || []) as Brand[]).map((b) => (
+                        <option key={b.id} value={b.name}>
+                          {b.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-slate-700 font-semibold mb-0.5 text-[11px]">
+                    {((tenant.settings?.brands || []) as Brand[]).length > 0 ? 'O escribir marca personalizada:' : 'Nombre de la marca:'}
+                  </label>
+                  <input
+                    type="text"
+                    value={brand}
+                    onChange={(e) => setBrand(e.target.value)}
+                    placeholder="Ej. Oxford, Denim Co, Tenddy..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-900 focus:bg-white focus:outline-none"
+                  />
+                  <span className="text-[10px] text-slate-400 block mt-1">Marca o sello comercial de confección.</span>
+                </div>
               </div>
             </div>
           </div>

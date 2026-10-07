@@ -38,6 +38,8 @@ export interface Tenant {
     currency: string;
     currency_symbol: string;
     enable_whatsapp_rfq?: boolean;
+    brands?: Brand[];
+    [key: string]: any;
   };
 }
 
@@ -63,6 +65,17 @@ export interface Category {
   sort_order?: number;
   image_url?: string;
   parent_id?: string | null;
+}
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  parent_id?: string | null;
+  description?: string;
+  image_url?: string;
+  is_active?: boolean;
+  created_at?: string;
 }
 
 export interface Product {
