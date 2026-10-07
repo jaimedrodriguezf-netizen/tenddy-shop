@@ -18,10 +18,14 @@ export function proxy(request: NextRequest) {
   const currentHost = hostname.split(':')[0].toLowerCase();
   const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tenddy.shop').toLowerCase();
 
+  // Detectar si el host es una dirección IP (IPv4, Tailscale, LAN)
+  const isIpAddress = /^(\d{1,3}\.){3}\d{1,3}$/.test(currentHost);
+
   // Si visita el dominio raíz o rutas reservadas globales de la plataforma
   const isRootDomain =
     currentHost === 'localhost' ||
     currentHost === '127.0.0.1' ||
+    isIpAddress ||
     currentHost === rootDomain ||
     currentHost === `www.${rootDomain}` ||
     currentHost.endsWith('.vercel.app');
