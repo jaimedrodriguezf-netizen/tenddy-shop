@@ -15,6 +15,7 @@ export interface Tenant {
     show_best_sellers?: boolean;
     show_featured_ratings?: boolean;
     store_template?: string;
+    custom_theme?: string;
   };
   landing_config: {
     hero_title: string;
