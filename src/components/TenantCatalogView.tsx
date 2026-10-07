@@ -22,7 +22,8 @@ import {
   Star,
   TrendingUp,
   Zap,
-  X
+  X,
+  CornerDownRight
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
@@ -46,6 +47,7 @@ export default function TenantCatalogView({
 }: TenantCatalogViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isMegaMenuOpen, setIsMegaMenuOpen] = useState<boolean>(false);
+  const [hoveredMegaRootId, setHoveredMegaRootId] = useState<string | null>(null);
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -173,11 +175,33 @@ export default function TenantCatalogView({
     return current;
   }, [selectedCategory, categories]);
 
+  // Categorías raíz (Nivel 1 sin parent_id)
+  const rootCategories = useMemo(() => {
+    return categories.filter((c) => !c.parent_id);
+  }, [categories]);
+
   // Subcategorías de la raíz activa
   const availableSubcategories = useMemo(() => {
     if (!activeRootCategory) return [];
     return categories.filter((c) => c.parent_id === activeRootCategory.id);
   }, [activeRootCategory, categories]);
+
+  // Subcategoría activa de nivel 2 (si la selección actual es nivel 2 o 3)
+  const activeSubCategory = useMemo(() => {
+    if (!activeRootCategory || selectedCategory === activeRootCategory.id) return null;
+    const cat = categories.find((c) => c.id === selectedCategory);
+    if (!cat) return null;
+    if (cat.parent_id === activeRootCategory.id) return cat;
+    const parent = categories.find((c) => c.id === cat.parent_id);
+    if (parent && parent.parent_id === activeRootCategory.id) return parent;
+    return null;
+  }, [selectedCategory, activeRootCategory, categories]);
+
+  // Tercer nivel disponible bajo la subcategoría activa
+  const availableThirdLevel = useMemo(() => {
+    if (!activeSubCategory) return [];
+    return categories.filter((c) => c.parent_id === activeSubCategory.id);
+  }, [activeSubCategory, categories]);
 
   const handleQuickAdd = (p: Product) => {
     const packSize = p.units_per_package || 1;
@@ -415,48 +439,80 @@ export default function TenantCatalogView({
                         </div>
                       </button>
 
-                      {/* Lista de categorías individuales */}
-                      {categories.map((c) => {
-                        const count = categoryCountMap.get(c.id) || 0;
-                        const isSelected = selectedCategory === c.id;
+                      {/* Lista de categorías organizadas jerárquicamente */}
+                      {rootCategories.map((rc) => {
+                        const count = getCategoryAndDescendantIds(rc.id).reduce(
+                          (sum, id) => sum + (categoryCountMap.get(id) || 0),
+                          0
+                        );
+                        const isSelected = selectedCategory === rc.id;
+                        const subcats = categories.filter((c) => c.parent_id === rc.id);
 
                         return (
-                          <button
-                            key={c.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(c.id);
-                              setSearchQuery('');
-                              setIsSearchDropdownOpen(false);
-                            }}
-                            className={`flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
-                              isSelected
-                                ? 'bg-sky-50 border-sky-300 text-sky-950 font-bold'
-                                : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-800'
-                            }`}
-                          >
-                            <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0 flex items-center justify-center p-0.5">
-                              {c.image_url ? (
-                                <img
-                                  src={c.image_url}
-                                  alt={c.name}
-                                  className="w-full h-full object-cover rounded-full"
-                                />
-                              ) : (
-                                <span className="font-extrabold text-[11px] text-slate-700">
-                                  {c.name.charAt(0).toUpperCase()}
+                          <div key={rc.id} className="space-y-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(rc.id);
+                                setSearchQuery('');
+                                setIsSearchDropdownOpen(false);
+                              }}
+                              className={`w-full flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                                isSelected
+                                  ? 'bg-sky-50 border-sky-300 text-sky-950 font-bold'
+                                  : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-800'
+                              }`}
+                            >
+                              <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0 flex items-center justify-center p-0.5">
+                                {rc.image_url ? (
+                                  <img
+                                    src={rc.image_url}
+                                    alt={rc.name}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                ) : (
+                                  <span className="font-extrabold text-[11px] text-slate-700">
+                                    {rc.name.charAt(0).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <span className="font-semibold text-xs block truncate leading-tight">
+                                  {rc.name}
                                 </span>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <span className="font-semibold text-xs block truncate leading-tight">
-                                {c.name}
-                              </span>
-                              <span className="text-[10px] text-slate-400 font-mono block">
-                                {count} {count === 1 ? 'artículo' : 'artículos'}
-                              </span>
-                            </div>
-                          </button>
+                                <span className="text-[10px] text-slate-400 font-mono block">
+                                  {count} {count === 1 ? 'artículo' : 'artículos'}
+                                </span>
+                              </div>
+                            </button>
+
+                            {/* Subcategorías como chips en el dropdown */}
+                            {subcats.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pl-4 pb-1">
+                                {subcats.map((sub) => {
+                                  const isSubSelected = selectedCategory === sub.id;
+                                  return (
+                                    <button
+                                      key={sub.id}
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedCategory(sub.id);
+                                        setSearchQuery('');
+                                        setIsSearchDropdownOpen(false);
+                                      }}
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors cursor-pointer ${
+                                        isSubSelected
+                                          ? 'bg-sky-600 text-white border-sky-600 font-bold'
+                                          : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
+                                      }`}
+                                    >
+                                      {sub.name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -559,11 +615,12 @@ export default function TenantCatalogView({
             ))}
           </div>
 
-          {/* Sub-barra de Subcategorías (Nivel 2 y 3) */}
+          {/* Sub-barra de Subcategorías (Nivel 2) */}
           {availableSubcategories.length > 0 && activeRootCategory && (
-            <div className="flex items-center gap-1.5 pt-2 pb-1 overflow-x-auto text-xs border-t border-slate-100">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
-                {activeRootCategory.name} ›
+            <div className="flex items-center gap-1.5 pt-2 pb-1 overflow-x-auto text-xs border-t border-slate-100 scrollbar-none">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-0.5">
+                <span>{activeRootCategory.name}</span>
+                <ChevronRight className="w-3 h-3 text-slate-300" />
               </span>
 
               <button
@@ -571,7 +628,7 @@ export default function TenantCatalogView({
                 onClick={() => setSelectedCategory(activeRootCategory.id)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                   selectedCategory === activeRootCategory.id
-                    ? 'bg-slate-900 text-white shadow-xs'
+                    ? 'bg-slate-900 text-white shadow-xs font-bold'
                     : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
@@ -579,7 +636,7 @@ export default function TenantCatalogView({
               </button>
 
               {availableSubcategories.map((sub) => {
-                const isSelected = selectedCategory === sub.id;
+                const isSelected = selectedCategory === sub.id || activeSubCategory?.id === sub.id;
                 return (
                   <button
                     key={sub.id}
@@ -598,78 +655,288 @@ export default function TenantCatalogView({
             </div>
           )}
 
+          {/* Sub-barra reactiva de 3er Nivel (Nivel 3) */}
+          {availableThirdLevel.length > 0 && activeSubCategory && (
+            <div className="flex items-center gap-1.5 pt-1.5 pb-1 overflow-x-auto text-[11px] border-t border-slate-100/80 scrollbar-none bg-sky-50/40 -mx-3 sm:-mx-6 px-3 sm:px-6">
+              <span className="text-[10px] font-extrabold text-sky-800 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-0.5">
+                <CornerDownRight className="w-3 h-3 text-sky-600" />
+                <span>{activeSubCategory.name}</span>
+                <ChevronRight className="w-3 h-3 text-sky-400" />
+              </span>
+
+              <button
+                type="button"
+                onClick={() => setSelectedCategory(activeSubCategory.id)}
+                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  selectedCategory === activeSubCategory.id
+                    ? 'bg-sky-700 text-white shadow-xs font-bold'
+                    : 'bg-sky-100/80 text-sky-800 hover:bg-sky-200/80 border border-sky-200'
+                }`}
+              >
+                Todo en {activeSubCategory.name}
+              </button>
+
+              {availableThirdLevel.map((tl) => {
+                const isSelected = selectedCategory === tl.id;
+                return (
+                  <button
+                    key={tl.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(tl.id)}
+                    className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                        : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
+                    }`}
+                  >
+                    {tl.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* =========================================================================
-              MEGA-MENÚ DESPLEGABLE CON FOTOS CIRCULARES
+              MEGA-MENÚ DESPLEGABLE CON 2 PANELES E IMÁGENES EN HOVER
               ========================================================================= */}
           {isMegaMenuOpen && (
-            <div className="absolute left-0 right-0 top-full bg-white border-b border-slate-200 shadow-xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="absolute left-0 right-0 top-full bg-white border-b border-slate-200 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2 duration-200">
               <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+                {/* Cabecera del Mega Menú */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs">
                       <Layers className="w-4 h-4" />
                     </span>
-                    <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
-                      Explorar Categorías & Colecciones
-                    </h3>
+                    <div>
+                      <h3 className="font-extrabold text-sm sm:text-base text-slate-900">
+                        Explorar Categorías & Colecciones
+                      </h3>
+                      <p className="text-[11px] text-slate-500">
+                        Navega por las colecciones principales y descubre todas las subcategorías con fotos.
+                      </p>
+                    </div>
                   </div>
 
                   <button
                     onClick={() => setIsMegaMenuOpen(false)}
-                    className="text-slate-400 hover:text-slate-700 p-1 cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
+                    title="Cerrar menú"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {categories.length === 0 ? (
-                  <p className="text-xs text-slate-400 py-6 text-center italic">
+                {rootCategories.length === 0 ? (
+                  <p className="text-xs text-slate-400 py-8 text-center italic">
                     No hay categorías activas en este momento.
                   </p>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto py-1">
-                    {categories.map((c) => {
-                      const count = categoryCountMap.get(c.id) || 0;
+                  <div className="flex flex-col md:flex-row gap-4 max-h-[70vh] overflow-hidden">
+                    {/* PANEL IZQUIERDO: Categorías Principales (Nivel 1) */}
+                    <div className="w-full md:w-72 shrink-0 overflow-y-auto pr-1 md:border-r border-slate-100 space-y-1 max-h-[28vh] md:max-h-[60vh] scrollbar-thin">
+                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 py-1">
+                        Categorías Principales
+                      </div>
+                      {rootCategories.map((root) => {
+                        const isHovered = (hoveredMegaRootId || rootCategories[0]?.id) === root.id;
+                        const rootCount = getCategoryAndDescendantIds(root.id).reduce(
+                          (sum, id) => sum + (categoryCountMap.get(id) || 0),
+                          0
+                        );
+                        const subCount = categories.filter((c) => c.parent_id === root.id).length;
+
+                        return (
+                          <button
+                            key={root.id}
+                            type="button"
+                            onMouseEnter={() => setHoveredMegaRootId(root.id)}
+                            onClick={() => {
+                              setHoveredMegaRootId(root.id);
+                              if (subCount === 0) {
+                                setSelectedCategory(root.id);
+                                setIsMegaMenuOpen(false);
+                              }
+                            }}
+                            className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                              isHovered
+                                ? 'bg-sky-50 text-sky-950 font-bold border border-sky-200/80 shadow-2xs'
+                                : 'hover:bg-slate-50 text-slate-700 border border-transparent'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {root.image_url ? (
+                                <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 p-0.5 shadow-2xs">
+                                  <img
+                                    src={root.image_url}
+                                    alt={root.name}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                </div>
+                              ) : (
+                                <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                  isHovered ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
+                                }`}>
+                                  {root.name.charAt(0).toUpperCase()}
+                                </span>
+                              )}
+                              <div className="min-w-0">
+                                <span className="text-xs truncate block">{root.name}</span>
+                                <span className="text-[10px] text-slate-400 font-normal">
+                                  {subCount > 0 ? `${subCount} subcategorías` : `${rootCount} prendas`}
+                                </span>
+                              </div>
+                            </div>
+
+                            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${
+                              isHovered ? 'text-sky-600 translate-x-0.5' : 'text-slate-300'
+                            }`} />
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* PANEL DERECHO: Subcategorías (Nivel 2) y 3er Nivel (Nivel 3) */}
+                    {(() => {
+                      const activeRoot = rootCategories.find(
+                        (r) => r.id === (hoveredMegaRootId || rootCategories[0]?.id)
+                      ) || rootCategories[0];
+
+                      if (!activeRoot) return null;
+
+                      const subcats = categories.filter((c) => c.parent_id === activeRoot.id);
+                      const totalRootProducts = getCategoryAndDescendantIds(activeRoot.id).reduce(
+                        (sum, id) => sum + (categoryCountMap.get(id) || 0),
+                        0
+                      );
 
                       return (
-                        <button
-                          key={c.id}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCategory(c.id);
-                            setIsMegaMenuOpen(false);
-                          }}
-                          className={`flex flex-col items-center gap-2 p-2.5 rounded-2xl transition-all text-center group cursor-pointer ${
-                            selectedCategory === c.id
-                              ? 'bg-sky-50/80 border border-sky-200'
-                              : 'hover:bg-slate-50 border border-transparent'
-                          }`}
-                        >
-                          <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 group-hover:border-slate-900 group-hover:scale-105 transition-all p-0.5 flex items-center justify-center shadow-xs">
-                            {c.image_url ? (
-                              <img
-                                src={c.image_url}
-                                alt={c.name}
-                                className="w-full h-full object-cover rounded-full"
-                              />
-                            ) : (
-                              <span className="font-extrabold text-lg text-slate-700">
-                                {c.name.charAt(0).toUpperCase()}
-                              </span>
-                            )}
+                        <div className="flex-1 overflow-y-auto pl-0 md:pl-3 max-h-[42vh] md:max-h-[60vh] space-y-4">
+                          {/* Banner de la categoría principal activa */}
+                          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-3.5 flex flex-wrap items-center justify-between gap-3">
+                            <div className="flex items-center gap-3">
+                              {activeRoot.image_url && (
+                                <div className="w-10 h-10 rounded-full overflow-hidden border border-slate-200 bg-white p-0.5 shrink-0 shadow-2xs">
+                                  <img
+                                    src={activeRoot.image_url}
+                                    alt={activeRoot.name}
+                                    className="w-full h-full object-cover rounded-full"
+                                  />
+                                </div>
+                              )}
+                              <div>
+                                <h4 className="font-extrabold text-sm text-slate-900">{activeRoot.name}</h4>
+                                <p className="text-[11px] text-slate-500">
+                                  {totalRootProducts} prendas disponibles en esta colección
+                                </p>
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(activeRoot.id);
+                                setIsMegaMenuOpen(false);
+                              }}
+                              className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-3.5 py-1.5 rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                            >
+                              <span>Ver Todo en {activeRoot.name}</span>
+                              <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
                           </div>
 
-                          <div className="min-w-0 w-full">
-                            <span className="font-bold text-[11px] sm:text-xs text-slate-800 line-clamp-1 group-hover:text-sky-600 transition-colors block">
-                              {c.name}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
-                              {count} {count === 1 ? 'artículo' : 'artículos'}
-                            </span>
-                          </div>
-                        </button>
+                          {/* Subcategorías de Nivel 2 */}
+                          {subcats.length === 0 ? (
+                            <div className="text-center py-10 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 p-6 space-y-2">
+                              <p className="text-xs text-slate-600 font-semibold">
+                                Esta colección no tiene subcategorías divididas.
+                              </p>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedCategory(activeRoot.id);
+                                  setIsMegaMenuOpen(false);
+                                }}
+                                className="text-xs text-sky-600 hover:text-sky-800 font-bold underline cursor-pointer"
+                              >
+                                Ver todos los productos de {activeRoot.name}
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {subcats.map((sub) => {
+                                const subProductsCount = getCategoryAndDescendantIds(sub.id).reduce(
+                                  (sum, id) => sum + (categoryCountMap.get(id) || 0),
+                                  0
+                                );
+                                const thirdLevels = categories.filter((c) => c.parent_id === sub.id);
+
+                                return (
+                                  <div
+                                    key={sub.id}
+                                    className="bg-white border border-slate-200/90 rounded-2xl p-3 hover:border-sky-300 hover:shadow-xs transition-all space-y-2.5 flex flex-col justify-between"
+                                  >
+                                    <div>
+                                      {/* Cabecera de Subcategoría (Nivel 2) */}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setSelectedCategory(sub.id);
+                                          setIsMegaMenuOpen(false);
+                                        }}
+                                        className="w-full flex items-center gap-2.5 text-left group cursor-pointer"
+                                      >
+                                        {sub.image_url ? (
+                                          <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shrink-0 p-0.5 group-hover:scale-105 transition-transform shadow-2xs">
+                                            <img
+                                              src={sub.image_url}
+                                              alt={sub.name}
+                                              className="w-full h-full object-cover rounded-full"
+                                            />
+                                          </div>
+                                        ) : (
+                                          <span className="w-8 h-8 rounded-full bg-sky-50 border border-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sky-100 transition-colors">
+                                            {sub.name.charAt(0).toUpperCase()}
+                                          </span>
+                                        )}
+                                        <div className="min-w-0 flex-1">
+                                          <span className="font-extrabold text-xs text-slate-800 group-hover:text-sky-600 transition-colors block truncate">
+                                            {sub.name}
+                                          </span>
+                                          <span className="text-[10px] text-slate-400 font-mono block -mt-0.5">
+                                            {subProductsCount} prendas
+                                          </span>
+                                        </div>
+                                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-sky-600 transition-colors shrink-0" />
+                                      </button>
+
+                                      {/* Chips de 3er Nivel */}
+                                      {thirdLevels.length > 0 && (
+                                        <div className="pt-2 border-t border-slate-100 flex flex-wrap gap-1">
+                                          {thirdLevels.map((tl) => (
+                                            <button
+                                              key={tl.id}
+                                              type="button"
+                                              onClick={() => {
+                                                setSelectedCategory(tl.id);
+                                                setIsMegaMenuOpen(false);
+                                              }}
+                                              className="px-2 py-0.5 bg-slate-50 hover:bg-sky-50 text-slate-600 hover:text-sky-700 border border-slate-200/70 hover:border-sky-200 rounded-md text-[10px] font-medium transition-colors cursor-pointer"
+                                            >
+                                              {tl.name}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
                       );
-                    })}
+                    })()}
                   </div>
                 )}
               </div>
@@ -816,8 +1083,14 @@ export default function TenantCatalogView({
               )}
 
               {/* Categorías con fotos circulares */}
-              {categories.map((c) => {
-                const count = categoryCountMap.get(c.id) || 0;
+              {(activeRootCategory && availableSubcategories.length > 0
+                ? availableSubcategories
+                : rootCategories
+              ).map((c) => {
+                const count = getCategoryAndDescendantIds(c.id).reduce(
+                  (sum, id) => sum + (categoryCountMap.get(id) || 0),
+                  0
+                );
                 const isSelected = selectedCategory === c.id;
 
                 return (
