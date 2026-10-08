@@ -16,14 +16,15 @@ const CONFIG = {
     plantLocation: "Llano Grande, Quito - Ecuador (Despachos a nivel nacional)"
 };
 
-// Categorías y Productos se sincronizan en vivo desde la base de datos de Supabase (/api/store/ayme-pet/products)
-const CATEGORIES = [
-    { id: "all", name: "Todos los Envases", icon: "📦" }
-];
+// Categorías y Productos dinámicos sincronizados en tiempo real con Supabase
+window.CATEGORIES = window.CATEGORIES || [{ id: "all", name: "Todos los Envases", icon: "📦" }];
+var CATEGORIES = window.CATEGORIES;
 
-const SECTOR_TYPES = [];
+window.SECTOR_TYPES = window.SECTOR_TYPES || [];
+var SECTOR_TYPES = window.SECTOR_TYPES;
 
-const PRODUCTS = [];
+window.PRODUCTS = window.PRODUCTS || [];
+var PRODUCTS = window.PRODUCTS;
 
 const TESTIMONIALS = [
     {

@@ -45,6 +45,7 @@ class ProductCatalog {
                         icon: iconMap[c.slug] || '📦'
                     }));
                     window.CATEGORIES = [{ id: 'all', name: 'Todos los Envases', icon: '📦' }, ...mappedCats];
+                    if (typeof CATEGORIES !== 'undefined') CATEGORIES = window.CATEGORIES;
                     this.renderCategoryPills();
 
                     // Sincronizar opciones del selector de contacto
@@ -104,10 +105,13 @@ class ProductCatalog {
                     });
 
                     window.PRODUCTS = mappedProducts;
+                    if (typeof PRODUCTS !== 'undefined') PRODUCTS = window.PRODUCTS;
                     this.renderProducts();
 
                     // Sincronizar productos destacados del home
-                    if (window.app && typeof window.app.renderHomeFeatured === 'function') {
+                    if (window.appInstance && typeof window.appInstance.renderHomeFeatured === 'function') {
+                        window.appInstance.renderHomeFeatured();
+                    } else if (window.app && typeof window.app.renderHomeFeatured === 'function') {
                         window.app.renderHomeFeatured();
                     }
                 }
@@ -138,7 +142,8 @@ class ProductCatalog {
         const container = document.getElementById('category-filter-pills');
         if (!container) return;
 
-        container.innerHTML = CATEGORIES.map(cat => `
+        const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []);
+        container.innerHTML = cats.map(cat => `
             <button type="button" class="filter-pill ${this.currentCategory === cat.id ? 'active' : ''}" data-category="${cat.id}">
                 <span>${cat.icon}</span>
                 <span>${cat.name}</span>
@@ -147,7 +152,8 @@ class ProductCatalog {
     }
 
     getFilteredProducts() {
-        let list = [...PRODUCTS];
+        const sourceList = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []) || [];
+        let list = [...sourceList];
 
         if (this.currentSector !== 'all') {
             list = list.filter(p => p.sector === this.currentSector);
@@ -216,7 +222,7 @@ class ProductCatalog {
                 </div>
                 <div class="product-card-body">
                     <div class="product-meta">
-                        <span class="product-tag">${CATEGORIES.find(c => c.id === prod.category)?.name || prod.category}</span>
+                        <span class="product-tag">${(window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : [])).find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
                         <span class="product-tag tag-accent-pill">
                             ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : 'Accesorio'}
                         </span>
@@ -241,7 +247,8 @@ class ProductCatalog {
     }
 
     openQuickView(productId) {
-        const prod = PRODUCTS.find(p => p.id === productId);
+        const sourceList = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []) || [];
+        const prod = sourceList.find(p => p.id === productId);
         if (!prod) return;
 
         this.selectedProduct = prod;
@@ -251,6 +258,7 @@ class ProductCatalog {
 
         if (!modal || !container) return;
 
+        const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []) || [];
         container.innerHTML = `
             <div class="product-modal-grid">
                 <div class="product-modal-gallery">
@@ -259,7 +267,7 @@ class ProductCatalog {
                 </div>
                 <div class="product-modal-info">
                     <div class="product-modal-tags">
-                        <span class="product-tag">${CATEGORIES.find(c => c.id === prod.category)?.name || prod.category}</span>
+                        <span class="product-tag">${cats.find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
                         <span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">Grado Alimenticio & Farma</span>
                     </div>
 
@@ -317,7 +325,8 @@ class ProductCatalog {
     }
 
     handleDirectWhatsApp(productId) {
-        const prod = PRODUCTS.find(p => p.id === productId);
+        const sourceList = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []) || [];
+        const prod = sourceList.find(p => p.id === productId);
         if (!prod) return;
 
         let msg = `¡Hola *${CONFIG.businessName}*! Deseo solicitar cotización para este envase:\n\n`;

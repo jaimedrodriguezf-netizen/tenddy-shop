@@ -99,12 +99,18 @@ class App {
         const container = document.getElementById('home-featured-products');
         if (!container) return;
 
-        // Mostrar 5 envases destacados en la fila de 5 columnas
-        const featured = PRODUCTS.slice(0, 5);
+        const list = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []) || [];
+        const featured = list.slice(0, 5);
+
+        if (featured.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
 
         if (window.productCatalog) {
             container.innerHTML = featured.map(prod => window.productCatalog.generateCardHTML(prod)).join('');
         } else {
+            const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []) || [];
             container.innerHTML = featured.map(prod => `
                 <article class="product-card technical-b2b-card" data-id="${prod.id}">
                     <div class="product-card-media">
@@ -117,7 +123,7 @@ class App {
                     </div>
                     <div class="product-card-body">
                         <div class="product-meta">
-                            <span class="product-tag">${CATEGORIES.find(c => c.id === prod.category)?.name || prod.category}</span>
+                            <span class="product-tag">${cats.find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
                             <span class="product-tag tag-accent-pill">
                                 ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : 'Accesorio'}
                             </span>
