@@ -123,9 +123,9 @@ class App {
                     </div>
                     <div class="product-card-body">
                         <div class="product-meta">
-                            <span class="product-tag">${cats.find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
+                            <span class="product-tag">${prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General'}</span>
                             <span class="product-tag tag-accent-pill">
-                                ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : 'Accesorio'}
+                                ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : (prod.badge || 'Producto'))}
                             </span>
                         </div>
                         <h3 class="product-title" onclick="productCatalog.openQuickView('${prod.id}')" title="${prod.name}">

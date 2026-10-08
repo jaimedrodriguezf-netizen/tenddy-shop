@@ -73,13 +73,15 @@ class ProductCatalog {
                     const mappedProducts = data.products.map(p => {
                         const specs = p.attributes?.specs || {};
                         const catObj = data.categories?.find(c => c.id === p.category_id);
-                        const catSlug = catObj?.slug || 'bebidas';
+                        const catSlug = catObj?.slug || (p.category_id ? String(p.category_id) : 'general');
+                        const catName = catObj?.name || (p.attributes?.brand || 'Catálogo General');
 
                         return {
                             id: p.sku ? p.sku.toLowerCase() : p.id,
                             name: p.name,
                             category: catSlug,
-                            sector: p.attributes?.sector || (catSlug === 'quimicos' || catSlug === 'preformas' ? 'industrial' : catSlug === 'farma' || catSlug === 'cosmetica' ? 'farma_cosmetica' : 'bebidas'),
+                            categoryName: catName,
+                            sector: p.attributes?.sector || 'all',
                             packSize: p.units_per_package || 100,
                             moq: p.min_order_qty || 500,
                             image: p.images?.[0] || '/assets/products/ayme-001.svg',
@@ -215,7 +217,7 @@ class ProductCatalog {
                 </div>
                 <div class="product-card-body">
                     <div class="product-meta">
-                        <span class="product-tag">${(window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : [])).find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
+                        <span class="product-tag">${prod.categoryName || (window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : [])).find(c => c && c.id === prod.category)?.name || 'Catálogo General'}</span>
                         <span class="product-tag tag-accent-pill">
                             ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : 'Accesorio')}
                         </span>
@@ -260,8 +262,8 @@ class ProductCatalog {
                 </div>
                 <div class="product-modal-info">
                     <div class="product-modal-tags">
-                        <span class="product-tag">${cats.find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
-                        <span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">Grado Alimenticio & Farma</span>
+                        <span class="product-tag">${prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General'}</span>
+                        ${prod.badge ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${prod.badge}</span>` : (prod.specs?.material ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${prod.specs.material}</span>` : '')}
                     </div>
 
                     <h2 class="product-modal-title">${prod.name}</h2>
