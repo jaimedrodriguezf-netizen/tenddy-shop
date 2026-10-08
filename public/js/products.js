@@ -85,15 +85,8 @@ class ProductCatalog {
                             image: p.images?.[0] || '/assets/products/ayme-001.svg',
                             badge: p.attributes?.badge || null,
                             specs: {
-                                capacidad: specs.capacidad || 'N/A',
-                                altura: specs.altura || 'N/A',
-                                diametro: specs.diametro || 'N/A',
-                                boca: specs.boca || '28 mm',
-                                gramaje: specs.gramaje || 'N/A',
-                                material: specs.material || 'PET Grado Virgen',
+                                ...specs,
                                 empaque: specs.empaque || `Fardo x ${p.units_per_package || 100} uds`,
-                                acabado: specs.acabado || 'Cristalino',
-                                resistencia: specs.resistencia || 'Alta Resistencia'
                             },
                             description: p.description || '',
                             features: Array.isArray(p.attributes?.features) ? p.attributes.features : [
@@ -224,7 +217,7 @@ class ProductCatalog {
                     <div class="product-meta">
                         <span class="product-tag">${(window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : [])).find(c => c && c.id === prod.category)?.name || prod.category || 'Envase'}</span>
                         <span class="product-tag tag-accent-pill">
-                            ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : 'Accesorio'}
+                            ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : 'Accesorio')}
                         </span>
                     </div>
 
@@ -275,7 +268,7 @@ class ProductCatalog {
 
                     <div style="background: var(--bg-soft); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; border-left: 4px solid var(--accent);">
                         <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.2rem;">
-                            Capacidad: ${prod.specs?.capacidad || 'N/A'}
+                            ${prod.specs?.capacidad ? `Capacidad: ${prod.specs.capacidad}` : (prod.specs?.ancho ? `Dimensiones: ${prod.specs.ancho} x ${prod.specs.alto || ''}` : 'Especificación de Fábrica')}
                         </div>
                         <div style="font-size: 0.82rem; color: var(--text-muted);">
                             Presentación: ${prod.specs?.empaque || `Fardo x ${prod.packSize} unidades`}
