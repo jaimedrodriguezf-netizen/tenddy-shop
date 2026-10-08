@@ -34,8 +34,228 @@ const SECTOR_TYPES = [
     { id: "industrial", name: "🧪 Químicos & Agro" }
 ];
 
-// Los productos del catálogo se sincronizan en vivo desde la base de datos de Supabase (/api/store/ayme-pet/products)
-const PRODUCTS = [];
+const PRODUCTS = [
+    {
+        id: "ayme-001",
+        name: "Botella PET Cilíndrica 500ml Boca 28mm PCO",
+        category: "bebidas",
+        sector: "bebidas",
+        packSize: 100,
+        moq: 500,
+        image: "/assets/products/ayme-001.svg",
+        badge: "Alta Rotación",
+        specs: {
+            capacidad: "500 ml (16.9 oz)",
+            altura: "205 mm",
+            diametro: "Ø 64.2 mm",
+            boca: "28 mm PCO 1881",
+            gramaje: "21.0 g ± 0.5g",
+            material: "PET 100% Virgen Grado Alimenticio",
+            empaque: "Fardo termoencogible x 100 uds",
+            acabado: "Cristal Ultra Transparente",
+            resistencia: "Hasta 4.0 Bar (Apta Gasificada)"
+        },
+        description: "Envase PET cilíndrico estándar de alta transparencia y simetría perfecta. Diseñado para embotellado de agua purificada, jugos pasteurizados, bebidas isotónicas, té frío y sodas.",
+        features: [
+            "Inocuidad certificada para contacto directo con bebidas y alimentos",
+            "Homogeneidad en la distribución del espesor de pared",
+            "Rosca estándar PCO 1881 compatible con tapas con anillo de seguridad",
+            "Disponible en cristal transparente, azul cielo o verde botillería"
+        ]
+    },
+    {
+        id: "ayme-002",
+        name: "Botella PET Boston Round 250ml Boca 24/410 Cosmética",
+        category: "cosmetica",
+        sector: "farma_cosmetica",
+        packSize: 150,
+        moq: 600,
+        image: "/assets/products/ayme-002.svg",
+        badge: "Línea Cosmética",
+        specs: {
+            capacidad: "250 ml (8.4 oz)",
+            altura: "152 mm",
+            diametro: "Ø 56.0 mm",
+            boca: "24/410 mm Cosmética",
+            gramaje: "24.0 g",
+            material: "PET de Alto Brillo",
+            empaque: "Caja máster corrugada x 150 uds",
+            acabado: "Cristalino / Ámbar / Blanco Opaco",
+            resistencia: "Excelente barrera aromática y química"
+        },
+        description: "Clásico formato Boston Round con hombros redondeados continuos. Optimizado para líneas de cosmética, geles antibacteriales, lociones corporales, shampoos y tónicos.",
+        features: [
+            "Acabado superficial liso de alto brillo para serigrafía o etiquetas autoadhesivas",
+            "Compatibilidad total con válvulas dosificadoras, atomizadores spray y tapas disc-top",
+            "Rigidez estructural ante compresión y vaciado",
+            "Opción de fabricación en color cristal, ámbar fotoprotector o blanco opaco"
+        ]
+    },
+    {
+        id: "ayme-003",
+        name: "Frasco PET Farmacéutico Ámbar 120ml Boca 28mm",
+        category: "farma",
+        sector: "farma_cosmetica",
+        packSize: 200,
+        moq: 1000,
+        image: "/assets/products/ayme-003.svg",
+        badge: "Protección UV",
+        specs: {
+            capacidad: "120 ml (4.0 oz)",
+            altura: "112 mm",
+            diametro: "Ø 49.5 mm",
+            boca: "28 mm DIN / PCO",
+            gramaje: "18.5 g",
+            material: "PET Grado Farmacéutico",
+            empaque: "Caja higiénica termo-sellada x 200 uds",
+            acabado: "Ámbar con Filtro UV Activo",
+            resistencia: "Inerte a jarabes, soluciones y alcoholes"
+        },
+        description: "Envase farmacéutico tipo jarabe con barrera fotoquímica contra radiación UV. Especialmente diseñado para laboratorios farmacéuticos, jarabes pediátricos y fórmulas magistrales.",
+        features: [
+            "Protección contra degradación por luz ultravioleta",
+            "Inviolabilidad con tapa rosca precintada y copas dosificadoras",
+            "Producción en ambiente de grado limpio con control de partículas",
+            "Certificación de no migración de polímeros"
+        ]
+    },
+    {
+        id: "ayme-004",
+        name: "Garrafa / Galón PET 4 Litros con Asa Integrada Reforzada",
+        category: "quimicos",
+        sector: "industrial",
+        packSize: 30,
+        moq: 300,
+        image: "/assets/products/ayme-004.svg",
+        badge: "Uso Industrial Pesado",
+        specs: {
+            capacidad: "4.000 ml (1 Galón Americano)",
+            altura: "315 mm",
+            diametro: "Ø 155 mm x 132 mm (Oval)",
+            boca: "38 mm Rosca de 3 Hilos",
+            gramaje: "115.0 g ± 2g",
+            material: "PET Virgen Reforzado",
+            empaque: "Paca protegida x 30 uds",
+            acabado: "Cristalino con Nervaduras Anticolapso",
+            resistencia: "Apilamiento hasta 4 niveles estibados"
+        },
+        description: "Galón PET rígido de alto gramaje con asa ergonómica inyectada. Diseñado para productos químicos de limpieza, desinfectantes, lubricantes, aceites comestibles y cloro.",
+        features: [
+            "Asa resistente a caídas y esfuerzos mecánicos de transporte",
+            "Fondo nervado anticolapso para llenado a presión y líquidos densos",
+            "Rosca 38mm con sello de anillo de seguridad y liner de inducción",
+            "Transparencia total para visualizar el nivel y color del producto envasado"
+        ]
+    },
+    {
+        id: "ayme-005",
+        name: "Botella PET Cuadrada 1 Litro Boca 38mm Juice & Dairy",
+        category: "bebidas",
+        sector: "bebidas",
+        packSize: 80,
+        moq: 400,
+        image: "/assets/products/ayme-005.svg",
+        badge: "Línea Lácteos & Jugos",
+        specs: {
+            capacidad: "1.000 ml (33.8 oz)",
+            altura: "235 mm",
+            diametro: "78 mm x 78 mm (Base Cuadrada)",
+            boca: "38 mm Boca Ancha",
+            gramaje: "32.0 g",
+            material: "PET Grado Alimenticio",
+            empaque: "Fardo x 80 uds",
+            acabado: "Cristal / Blanco Lechoso",
+            resistencia: "Apta para llenado en caliente (Hot-fill)"
+        },
+        description: "Envase PET de sección cuadrada que maximiza el espacio en estanterías y pallets. Boca ancha de 38mm para llenado rápido de leche, yogures, jugos espesos y salsas.",
+        features: [
+            "Optimización de hasta un 25% de espacio en empaque secundario",
+            "Panel plano para etiquetado envolvente de alta visibilidad",
+            "Apta para tapas de 38mm con cierre de seguridad hermético"
+        ]
+    },
+    {
+        id: "ayme-006",
+        name: "Frasco PET Boca Ancha 500ml para Alimentos & Salsas",
+        category: "alimentos",
+        sector: "bebidas",
+        packSize: 120,
+        moq: 500,
+        image: "/assets/products/ayme-006.svg",
+        badge: "Línea Alimentos",
+        specs: {
+            capacidad: "500 ml (16.9 oz)",
+            altura: "138 mm",
+            diametro: "Ø 82.0 mm",
+            boca: "63 mm Rosca Continua",
+            gramaje: "36.0 g",
+            material: "PET Grado Alimentario",
+            empaque: "Caja corrugada x 120 uds",
+            acabado: "Cristal de Alta Transparencia",
+            resistencia: "Sellado por Inducción"
+        },
+        description: "Pote / tarro PET de boca extra ancha de 63mm. Perfecto para envasado de miel, mermeladas, mayonesas, salsas, frutos secos, polvos nutricionales y golosinas.",
+        features: [
+            "Fácil dosificación y extracción del producto con cuchara",
+            "Compatible con tapas rosca plásticas y sellos termosellables de aluminio",
+            "Ligero e irrompible frente a los tradicionales frascos de vidrio"
+        ]
+    },
+    {
+        id: "ayme-007",
+        name: "Tapa Rosca 28mm PCO 1881 con Precinto de Seguridad",
+        category: "tapas",
+        sector: "bebidas",
+        packSize: 5000,
+        moq: 10000,
+        image: "/assets/products/ayme-007.svg",
+        badge: "Inyección PP",
+        specs: {
+            capacidad: "Cierre Estándar PCO 1881",
+            altura: "15.5 mm",
+            diametro: "Ø 30.5 mm Exterior",
+            boca: "28 mm PCO",
+            gramaje: "2.4 g",
+            material: "Polipropileno (PP) Copolímero",
+            empaque: "Caja máster x 5.000 uds",
+            acabado: "Estriado Antideslizante",
+            resistencia: "Retención de gas hasta 4.5 bar"
+        },
+        description: "Tapas plásticas inyectadas en PP virgen con banda de seguridad autodestructible al abrir. Garantiza inviolabilidad y cierre 100% hermético para bebidas.",
+        features: [
+            "Colores disponibles: Rojo, Azul, Blanco, Negro, Verde, Amarillo y Dorado",
+            "Liner estanco para evitar fugas de líquidos y gas",
+            "Compatible con taponadoras automáticas de alta velocidad"
+        ]
+    },
+    {
+        id: "ayme-008",
+        name: "Preformas PET 28mm PCO (18g - 21g - 28g - 36g)",
+        category: "preformas",
+        sector: "industrial",
+        packSize: 8000,
+        moq: 20000,
+        image: "/assets/products/ayme-008.svg",
+        badge: "Materia Prima Inyectada",
+        specs: {
+            capacidad: "Para soplado de 250ml a 1500ml",
+            altura: "88 mm a 125 mm",
+            diametro: "Ø 24 mm a 28 mm",
+            boca: "28 mm PCO 1881 / 1810",
+            gramaje: "18g / 21g / 28g / 36g",
+            material: "Resina PET Virgen Grado Botella (IV 0.80 - 0.84)",
+            empaque: "Octabin / Caja industrial x 8.000 uds",
+            acabado: "Transparente Cristal / Azul / Ámbar",
+            resistencia: "Bi-orientación homogénea"
+        },
+        description: "Preformas inyectadas con maquinaria europea de alta precisión y moldes de canal caliente multicanal. Libres de rebabas y con viscosidad intrínseca óptima.",
+        features: [
+            "Excelente procesabilidad en sopladoras lineales y rotativas",
+            "Bajo nivel de acetaldehído (AA) para no alterar sabor ni olor del agua",
+            "Disponibilidad continua por pallet o despacho en camión completo"
+        ]
+    }
+];
 
 const TESTIMONIALS = [
     {

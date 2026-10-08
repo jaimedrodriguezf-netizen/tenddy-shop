@@ -6,7 +6,6 @@ import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import TenantLandingView from '@/components/TenantLandingView';
 import TenantCatalogView from '@/components/TenantCatalogView';
 import ViewTracker from '@/components/ViewTracker';
-import { CUSTOM_THEMES } from '@/storefronts/custom/registry';
 
 interface ShopPageProps {
   params: Promise<{
@@ -29,30 +28,41 @@ export default async function ShopPage({ params }: ShopPageProps) {
   const isSuperadminCookie = cookieStore.get('tenddy_superadmin_session');
   const isAdmin = sessionCookie?.value === 'authenticated' || isSuperadminCookie?.value === 'authenticated';
 
-  // Cargar catálogo dinámico desde Supabase
-  const { categories, products, branches } = await getTenantCatalog(tenant.id);
-  const themeConfig = tenant.theme_config || {};
-
-  // 1. MODALIDAD PERSONALIZADA (CUSTOM THEMES / ENTERPRISE)
-  // Si el tenant tiene un storefront a medida registrado en el catálogo canónico
-  const CustomTheme = CUSTOM_THEMES[themeConfig.custom_theme || tenant.slug];
-  if (CustomTheme) {
+  // Para AYME INDUSTRIAS PET y PLASTPET servimos su tema oficial y finalizado original en iframe 100% aislado
+  if (tenant.slug === 'ayme-pet' || tenant.slug === 'plastpet') {
     return (
       <>
         <ViewTracker tenantId={tenant.id} />
-        <CustomTheme
-          tenant={tenant}
-          products={products}
-          categories={categories}
-          branches={branches}
-          isAdmin={isAdmin}
+        {isAdmin && (
+          <div className="fixed top-3 right-3 z-[10000] animate-fade-in">
+            <Link
+              href={`/store/${tenant.slug}/admin`}
+              className="bg-slate-900/95 hover:bg-slate-900 text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105"
+            >
+              <LayoutDashboard className="w-4 h-4 text-sky-400" />
+              <span>Volver a Mi Panel</span>
+            </Link>
+          </div>
+        )}
+        <iframe
+          src="/standalone.html"
+          style={{
+            width: '100vw',
+            height: '100vh',
+            border: 'none',
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+          }}
+          title="AYME INDUSTRIAS PET"
         />
       </>
     );
   }
 
-  // 2. MODALIDAD ESTÁNDAR: Landing B2B parametrizada
-  const storeTemplate = (themeConfig as any)?.store_template || 'catalog';
+  // Cargar catálogo dinámico desde Supabase
+  const { categories, products, branches } = await getTenantCatalog(tenant.id);
+  const storeTemplate = (tenant.theme_config as any)?.store_template || 'catalog';
 
   if (storeTemplate === 'landing') {
     return (
