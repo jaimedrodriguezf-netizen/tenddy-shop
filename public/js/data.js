@@ -21,12 +21,7 @@ const CATEGORIES = [
     { id: "all", name: "Todos los Envases", icon: "📦" }
 ];
 
-const SECTOR_TYPES = [
-    { id: "all", name: "Todos los Sectores" },
-    { id: "bebidas", name: "🥤 Bebidas & Alimentos" },
-    { id: "farma_cosmetica", name: "🧴 Farma & Cosmética" },
-    { id: "industrial", name: "🧪 Químicos & Agro" }
-];
+const SECTOR_TYPES = [];
 
 const PRODUCTS = [];
 

@@ -46,6 +46,24 @@ class ProductCatalog {
                     }));
                     window.CATEGORIES = [{ id: 'all', name: 'Todos los Envases', icon: '📦' }, ...mappedCats];
                     this.renderCategoryPills();
+
+                    // Sincronizar opciones del selector de contacto
+                    const contactSelect = document.getElementById('home-contact-type');
+                    if (contactSelect && mappedCats.length > 0) {
+                        contactSelect.innerHTML = `
+                            <option value="Cotización General de Envases">📦 Cotización General de Envases</option>
+                            ${mappedCats.map(c => `<option value="${c.name}">${c.icon} Línea ${c.name}</option>`).join('')}
+                            <option value="Fabricación de Molde Personalizado">📐 Fabricación de Molde Personalizado 3D</option>
+                        `;
+                    }
+
+                    // Sincronizar enlaces de categorías en el footer
+                    const footerList = document.getElementById('footer-categories-list');
+                    if (footerList && mappedCats.length > 0) {
+                        footerList.innerHTML = mappedCats.map(c => `
+                            <li><a href="#productos" data-nav-target="productos" onclick="if(window.productCatalog){window.productCatalog.currentCategory='${c.id}'; window.productCatalog.renderCategoryPills(); window.productCatalog.renderProducts();}">${c.name}</a></li>
+                        `).join('');
+                    }
                 }
 
                 // Sincronizar productos en vivo desde Supabase
@@ -87,6 +105,11 @@ class ProductCatalog {
 
                     window.PRODUCTS = mappedProducts;
                     this.renderProducts();
+
+                    // Sincronizar productos destacados del home
+                    if (window.app && typeof window.app.renderHomeFeatured === 'function') {
+                        window.app.renderHomeFeatured();
+                    }
                 }
             }
         } catch (e) {
@@ -98,6 +121,12 @@ class ProductCatalog {
         const container = document.getElementById('pet-type-tabs');
         if (!container) return;
 
+        if (!SECTOR_TYPES || SECTOR_TYPES.length === 0) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'flex';
         container.innerHTML = SECTOR_TYPES.map(s => `
             <button type="button" class="pet-tab ${this.currentSector === s.id ? 'active' : ''}" data-sector="${s.id}">
                 ${s.name}
