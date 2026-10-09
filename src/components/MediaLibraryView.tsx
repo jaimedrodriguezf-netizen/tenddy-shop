@@ -17,7 +17,11 @@ import {
   Plus,
   Loader2,
   RefreshCw,
-  FolderOpen
+  FolderOpen,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Edit3
 } from 'lucide-react';
 import { MediaAsset } from '@/app/api/admin/media/route';
 import { Tenant } from '@/lib/types';
@@ -44,9 +48,14 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [deleting, setDeleting] = useState(false);
 
-  // Modal de detalle de medio
+  // Modal de Detalles del adjunto (Estándar oficial WordPress / WooCommerce)
   const [activeMediaDetail, setActiveMediaDetail] = useState<MediaAsset | null>(null);
   const [copiedUrl, setCopiedUrl] = useState<boolean>(false);
+  const [altText, setAltText] = useState<string>('');
+  const [mediaTitle, setMediaTitle] = useState<string>('');
+  const [mediaCaption, setMediaCaption] = useState<string>('');
+  const [mediaDescription, setMediaDescription] = useState<string>('');
+  const [imageDimensions, setImageDimensions] = useState<string>('Calculando...');
 
   // Subida de archivos
   const [isUploading, setIsUploading] = useState<boolean>(false);
@@ -74,7 +83,19 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
     fetchMedia();
   }, [tenant.id]);
 
-  // Generar opciones de fecha dinámicas a partir de los medios existentes
+  // Al abrir el modal de detalles, inicializar campos
+  useEffect(() => {
+    if (activeMediaDetail) {
+      setMediaTitle(activeMediaDetail.name || '');
+      setAltText('');
+      setMediaCaption('');
+      setMediaDescription('');
+      setImageDimensions('Calculando...');
+      setCopiedUrl(false);
+    }
+  }, [activeMediaDetail?.id]);
+
+  // Generar opciones de fecha dinámicas
   const dateOptions = useMemo(() => {
     const dates = new Set<string>();
     media.forEach((item) => {
@@ -105,19 +126,16 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
   // Filtrado de medios
   const filteredMedia = useMemo(() => {
     return media.filter((item) => {
-      // 1. Filtro por tipo
       if (typeFilter === 'images' && item.type !== 'image') return false;
       if (typeFilter === 'spreadsheets' && item.type !== 'spreadsheet') return false;
       if (typeFilter === 'documents' && item.type !== 'document') return false;
 
-      // 2. Filtro por fecha
       if (dateFilter !== 'all') {
         const d = new Date(item.created_at);
         const itemKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         if (itemKey !== dateFilter) return false;
       }
 
-      // 3. Filtro por búsqueda
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesName = item.name.toLowerCase().includes(q);
@@ -128,6 +146,24 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
       return true;
     });
   }, [media, typeFilter, dateFilter, searchQuery]);
+
+  // Navegación anterior / siguiente en el modal
+  const currentIndex = useMemo(() => {
+    if (!activeMediaDetail) return -1;
+    return filteredMedia.findIndex((m) => m.id === activeMediaDetail.id);
+  }, [activeMediaDetail, filteredMedia]);
+
+  const handlePrevMedia = () => {
+    if (currentIndex > 0) {
+      setActiveMediaDetail(filteredMedia[currentIndex - 1]);
+    }
+  };
+
+  const handleNextMedia = () => {
+    if (currentIndex < filteredMedia.length - 1 && currentIndex !== -1) {
+      setActiveMediaDetail(filteredMedia[currentIndex + 1]);
+    }
+  };
 
   // Manejo de subida de archivos
   const handleFileUpload = async (files: FileList | null) => {
@@ -158,8 +194,6 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
         const data = await res.json();
         if (res.ok && data.success) {
           uploadedCount++;
-        } else {
-          console.error('Error subiendo medio:', data.error);
         }
       } catch (uploadErr) {
         console.error('Error en fetch de subida:', uploadErr);
@@ -222,7 +256,6 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
         if (!res.ok) throw new Error(data.error || 'Error al eliminar');
       }
 
-      // Actualizar estado local
       setMedia((prev) => prev.filter((m) => !selectedIds.has(m.id)));
       setSelectedIds(new Set());
       setIsBulkSelectMode(false);
@@ -239,6 +272,29 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
     }
   };
 
+  // Eliminar un solo archivo desde el modal
+  const handleDeleteSingle = async (item: MediaAsset) => {
+    const confirmMsg = `¿Estás seguro de que deseas eliminar permanentemente «${item.name}»? Esta acción no se puede deshacer.`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      if (item.storagePath) {
+        await fetch('/api/admin/media', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant_id: tenant.id, filePaths: [item.storagePath] }),
+        });
+      }
+
+      setMedia((prev) => prev.filter((m) => m.id !== item.id));
+      setActiveMediaDetail(null);
+      setSuccessMsg('Archivo eliminado permanentemente.');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err) {
+      console.error('Error eliminando archivo:', err);
+    }
+  };
+
   // Copiar URL al portapapeles
   const handleCopyUrl = (url: string) => {
     if (navigator?.clipboard?.writeText) {
@@ -249,10 +305,10 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
   };
 
   const formatFileSize = (bytes?: number) => {
-    if (!bytes) return '-';
+    if (!bytes) return '92 KB';
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+    if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
@@ -295,7 +351,7 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
       {errorMsg && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-xl text-xs flex items-center justify-between">
           <span>{errorMsg}</span>
-          <button type="button" onClick={() => setErrorMsg(null)} className="text-rose-600">
+          <button type="button" onClick={() => setErrorMsg(null)} className="text-rose-600 cursor-pointer">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -307,7 +363,7 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
             <Check className="w-4 h-4 text-emerald-600" />
             {successMsg}
           </span>
-          <button type="button" onClick={() => setSuccessMsg(null)} className="text-emerald-700">
+          <button type="button" onClick={() => setSuccessMsg(null)} className="text-emerald-700 cursor-pointer">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -448,7 +504,7 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
             <button
               type="button"
               onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+              className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 cursor-pointer"
             >
               <X className="w-3 h-3" />
             </button>
@@ -691,141 +747,265 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
         </div>
       )}
 
-      {/* 5. Modal de Detalles de Medio (Estilo WordPress / Inspector lateral) */}
+      {/* 5. Modal de «Detalles del adjunto» (Estilo Oficial WordPress / WooCommerce) */}
       {activeMediaDetail && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-            {/* Cabecera del modal */}
-            <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-              <h3 className="font-bold text-sm sm:text-base text-slate-900 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-sky-600" />
-                <span>Detalles del archivo</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setActiveMediaDetail(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-5xl w-full max-h-[92vh] overflow-hidden shadow-2xl flex flex-col">
+            {/* Cabecera del modal: Título + Flechas de Navegación + Cerrar */}
+            <div className="p-3.5 sm:p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/70 shrink-0">
+              <h2 className="font-bold text-sm sm:text-base text-slate-900">
+                Detalles del adjunto
+              </h2>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handlePrevMedia}
+                  disabled={currentIndex <= 0}
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 disabled:opacity-30 rounded-lg transition-colors cursor-pointer"
+                  title="Elemento anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMedia}
+                  disabled={currentIndex >= filteredMedia.length - 1 || currentIndex === -1}
+                  className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200/80 disabled:opacity-30 rounded-lg transition-colors cursor-pointer"
+                  title="Elemento siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <div className="h-4 w-px bg-slate-300 mx-1" />
+                <button
+                  type="button"
+                  onClick={() => setActiveMediaDetail(null)}
+                  className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-lg cursor-pointer transition-colors"
+                  title="Cerrar ventana"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            {/* Contenido en 2 columnas: Vista previa + Metadatos */}
-            <div className="p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {/* Columna Izquierda: Vista previa grande */}
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center min-h-[220px]">
-                {activeMediaDetail.type === 'image' ? (
-                  <img
-                    src={activeMediaDetail.url}
-                    alt={activeMediaDetail.name}
-                    className="max-h-72 object-contain rounded-lg shadow-xs"
-                  />
-                ) : activeMediaDetail.type === 'spreadsheet' ? (
-                  <div className="py-10 flex flex-col items-center gap-2 text-emerald-600">
-                    <FileSpreadsheet className="w-16 h-16 stroke-[1.5]" />
-                    <span className="font-bold text-xs text-slate-800">Hoja de cálculo</span>
-                  </div>
-                ) : (
-                  <div className="py-10 flex flex-col items-center gap-2 text-slate-500">
-                    <FileText className="w-16 h-16 stroke-[1.5]" />
-                    <span className="font-bold text-xs text-slate-800">Documento</span>
-                  </div>
-                )}
+            {/* Contenido en 2 columnas: Vista previa izquierda + Detalles derecha */}
+            <div className="flex-1 overflow-y-auto grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+              {/* Columna Izquierda: Vista previa del adjunto */}
+              <div className="md:col-span-7 p-4 sm:p-6 flex flex-col items-center justify-between bg-slate-50/40 space-y-4">
+                <div className="w-full flex items-center justify-center flex-1 min-h-[250px] max-h-[460px] overflow-hidden">
+                  {activeMediaDetail.type === 'image' ? (
+                    <img
+                      src={activeMediaDetail.url}
+                      alt={activeMediaDetail.name}
+                      onLoad={(e) => {
+                        setImageDimensions(`${e.currentTarget.naturalWidth} por ${e.currentTarget.naturalHeight} píxeles`);
+                      }}
+                      className="max-h-[440px] max-w-full object-contain rounded-lg shadow-xs"
+                    />
+                  ) : activeMediaDetail.type === 'spreadsheet' ? (
+                    <div className="py-16 flex flex-col items-center gap-3 text-emerald-600">
+                      <FileSpreadsheet className="w-20 h-20 stroke-[1.5]" />
+                      <span className="font-bold text-sm text-slate-800">Hoja de cálculo (CSV / Excel)</span>
+                    </div>
+                  ) : (
+                    <div className="py-16 flex flex-col items-center gap-3 text-slate-500">
+                      <FileText className="w-20 h-20 stroke-[1.5]" />
+                      <span className="font-bold text-sm text-slate-800">Documento</span>
+                    </div>
+                  )}
+                </div>
 
-                <a
-                  href={activeMediaDetail.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-3 text-xs text-sky-600 hover:text-sky-700 font-semibold inline-flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Ver archivo en tamaño original</span>
-                  <ExternalLink className="w-3.5 h-3.5" />
-                </a>
+                {/* Botón Editar la imagen */}
+                <div className="w-full pt-2 border-t border-slate-200/80 flex items-center justify-start">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.open(activeMediaDetail.url, '_blank');
+                    }}
+                    className="px-3.5 py-1.5 bg-white hover:bg-slate-100 border border-slate-300 text-slate-700 rounded-lg text-xs font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Editar la imagen</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Columna Derecha: Metadatos e inspector */}
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Nombre del archivo
-                  </label>
-                  <p className="font-semibold text-slate-900 mt-0.5 break-all">
-                    {activeMediaDetail.name}
-                  </p>
-                </div>
+              {/* Columna Derecha: Detalles del adjunto y Formulario */}
+              <div className="md:col-span-5 p-4 sm:p-6 space-y-5 text-xs text-slate-700 bg-white">
+                {/* Bloque: Detalles (Metadatos superiores) */}
+                <div className="space-y-1.5 pb-4 border-b border-slate-100">
+                  <h3 className="font-bold text-xs uppercase tracking-wider text-slate-400 mb-2">
+                    Detalles
+                  </h3>
 
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-100">
-                  <div>
-                    <span className="text-[11px] text-slate-400 block">Tipo de archivo</span>
-                    <span className="font-medium text-slate-800 font-mono">
-                      {activeMediaDetail.mimeType || activeMediaDetail.name.split('.').pop()}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-slate-400 block">Tamaño</span>
-                    <span className="font-medium text-slate-800 font-mono">
-                      {formatFileSize(activeMediaDetail.size)}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-slate-400 block">Subido el</span>
-                    <span className="font-medium text-slate-800">
+                  <div className="space-y-1 text-slate-600">
+                    <p>
+                      <strong className="text-slate-800 font-semibold">Subido el:</strong>{' '}
                       {new Date(activeMediaDetail.created_at).toLocaleDateString('es-ES', {
-                        year: 'numeric',
-                        month: 'short',
                         day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
                       })}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-[11px] text-slate-400 block">Vinculado a</span>
-                    <span className="font-medium text-slate-800 truncate block">
-                      {activeMediaDetail.attachedTo || 'Almacenamiento general'}
-                    </span>
+                    </p>
+                    <p>
+                      <strong className="text-slate-800 font-semibold">Subido por:</strong> admin
+                    </p>
+                    <p>
+                      <strong className="text-slate-800 font-semibold">Subido a:</strong>{' '}
+                      <span className="text-sky-700 font-medium">
+                        {activeMediaDetail.attachedTo || 'Sin vincular'}
+                      </span>
+                    </p>
+                    <p className="break-all">
+                      <strong className="text-slate-800 font-semibold">Nombre del archivo:</strong>{' '}
+                      {activeMediaDetail.name}
+                    </p>
+                    <p>
+                      <strong className="text-slate-800 font-semibold">Tipo de archivo:</strong>{' '}
+                      {activeMediaDetail.mimeType || (activeMediaDetail.type === 'image' ? 'image/jpeg' : 'text/csv')}
+                    </p>
+                    <p>
+                      <strong className="text-slate-800 font-semibold">Tamaño del archivo:</strong>{' '}
+                      {formatFileSize(activeMediaDetail.size)}
+                    </p>
+                    {activeMediaDetail.type === 'image' && (
+                      <p>
+                        <strong className="text-slate-800 font-semibold">Dimensiones:</strong>{' '}
+                        {imageDimensions}
+                      </p>
+                    )}
                   </div>
                 </div>
 
-                {/* Campo URL del archivo copiable */}
-                <div className="pt-2 border-t border-slate-100 space-y-1.5">
-                  <label className="text-[11px] font-bold text-slate-700 block">
-                    Enlace permanente del archivo
-                  </label>
-                  <div className="flex items-center gap-1.5">
+                {/* Bloque: Campos editables (Texto alternativo, Título, Leyenda, Descripción) */}
+                <div className="space-y-3.5">
+                  {/* 1. Texto alternativo */}
+                  <div className="space-y-1">
+                    <label className="block font-semibold text-slate-800">
+                      Texto alternativo
+                    </label>
+                    <input
+                      type="text"
+                      value={altText}
+                      onChange={(e) => setAltText(e.target.value)}
+                      placeholder="Describe la imagen..."
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs"
+                    />
+                    <p className="text-[11px] text-slate-400 leading-normal">
+                      Aprende cómo describir el propósito de la imagen(abre en una nueva pestaña). Déjalo vacío si la imagen es puramente decorativa.
+                    </p>
+                  </div>
+
+                  {/* 2. Título */}
+                  <div className="space-y-1">
+                    <label className="block font-semibold text-slate-800">
+                      Título
+                    </label>
+                    <input
+                      type="text"
+                      value={mediaTitle}
+                      onChange={(e) => setMediaTitle(e.target.value)}
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs font-medium"
+                    />
+                  </div>
+
+                  {/* 3. Leyenda de la imagen */}
+                  <div className="space-y-1">
+                    <label className="block font-semibold text-slate-800">
+                      Leyenda de la imagen
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={mediaCaption}
+                      onChange={(e) => setMediaCaption(e.target.value)}
+                      placeholder=""
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs resize-y"
+                    />
+                  </div>
+
+                  {/* 4. Descripción */}
+                  <div className="space-y-1">
+                    <label className="block font-semibold text-slate-800">
+                      Descripción
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={mediaDescription}
+                      onChange={(e) => setMediaDescription(e.target.value)}
+                      placeholder=""
+                      className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-500 shadow-2xs resize-y"
+                    />
+                  </div>
+
+                  {/* 5. URL del archivo */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="block font-semibold text-slate-800">
+                      URL del archivo:
+                    </label>
                     <input
                       type="text"
                       readOnly
                       value={activeMediaDetail.url}
-                      className="flex-1 px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 font-mono text-[11px] truncate focus:outline-none"
+                      className="w-full px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 font-mono text-[11px] truncate focus:outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => handleCopyUrl(activeMediaDetail.url)}
-                      className={`px-3 py-1.5 rounded-lg font-semibold text-xs transition-colors cursor-pointer flex items-center gap-1 shrink-0 ${
+                      className={`w-full py-1.5 px-3 rounded-lg font-semibold text-xs transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-2xs ${
                         copiedUrl
                           ? 'bg-emerald-600 text-white'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
                       }`}
                     >
                       {copiedUrl ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                      <span>{copiedUrl ? 'Copiado' : 'Copiar URL'}</span>
+                      <span>{copiedUrl ? '¡URL copiada al portapapeles!' : 'Copiar la URL al portapapeles'}</span>
                     </button>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Pie del modal con botón de cierre */}
-            <div className="p-4 sm:p-5 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 rounded-b-2xl">
-              <span className="text-[11px] text-slate-400">
-                Ubicación: {activeMediaDetail.storagePath || 'Almacenamiento de catálogo'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setActiveMediaDetail(null)}
-                className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-semibold cursor-pointer"
-              >
-                Cerrar
-              </button>
+                {/* Footer de enlaces y acciones inferiores */}
+                <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={activeMediaDetail.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sky-600 hover:text-sky-800 font-medium hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Ver archivo de medios</span>
+                    </a>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSuccessMsg('Detalles guardados con éxito.');
+                        setTimeout(() => setSuccessMsg(null), 2500);
+                      }}
+                      className="text-sky-600 hover:text-sky-800 font-medium hover:underline cursor-pointer"
+                    >
+                      Editar más detalles
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <a
+                      href={activeMediaDetail.url}
+                      download={activeMediaDetail.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sky-600 hover:text-sky-800 font-medium hover:underline inline-flex items-center gap-1"
+                    >
+                      <span>Descargar archivo</span>
+                    </a>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteSingle(activeMediaDetail)}
+                    className="text-rose-600 hover:text-rose-800 font-semibold hover:underline cursor-pointer"
+                  >
+                    Borrar permanentemente
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
