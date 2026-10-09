@@ -12,9 +12,12 @@ import {
   ArrowRight,
   ArrowLeft,
   X,
-  Check
+  Check,
+  Download,
+  FileSpreadsheet
 } from 'lucide-react';
 import readXlsxFile from 'read-excel-file/browser';
+import writeXlsxFile from 'write-excel-file/browser';
 import Papa from 'papaparse';
 import { Product } from '@/lib/types';
 import { translateErrorMessage } from '@/lib/error-translator';
@@ -222,6 +225,216 @@ export default function BulkImportModal({
   const handleClearFile = () => {
     setSelectedFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Descargar archivo CSV de ejemplo
+  const downloadSampleCsv = () => {
+    const headers = [
+      'Type',
+      'SKU',
+      'Name',
+      'Published',
+      'Is featured?',
+      'Visibility in catalog',
+      'Short description',
+      'Description',
+      'In stock?',
+      'Stock',
+      'Regular price',
+      'Sale price',
+      'Categories',
+      'Tags',
+      'Images',
+      'Color',
+      'Tallas'
+    ];
+
+    const sampleRows = [
+      [
+        'simple',
+        'TSHIRT-001',
+        'Camiseta Algodón Premium',
+        '1',
+        '0',
+        'visible',
+        'Camiseta 100% algodón orgánico',
+        'Confeccionada con costuras reforzadas y cuello redondo anatómico.',
+        '1',
+        '50',
+        '25.00',
+        '19.90',
+        'Camisetas, Ropa Casual',
+        'algodón, verano, tendencia',
+        'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800',
+        'Blanco',
+        'S, M, L, XL'
+      ],
+      [
+        'simple',
+        'HOODIE-002',
+        'Sudadera con Capucha Clásica',
+        '1',
+        '1',
+        'visible',
+        'Sudadera térmica con bolsillo canguro',
+        'Interior afelpado de alta densidad ideal para climas templados.',
+        '1',
+        '30',
+        '45.00',
+        '38.00',
+        'Sudaderas, Abrigos',
+        'invierno, urbano',
+        'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800',
+        'Negro',
+        'M, L, XL'
+      ],
+      [
+        'simple',
+        'PANT-003',
+        'Pantalón Drill Operativo',
+        '1',
+        '0',
+        'visible',
+        'Pantalón resistente con triple costura',
+        'Pretina elástica y bolsillos laterales de carga reforzados.',
+        '1',
+        '40',
+        '35.00',
+        '',
+        'Pantalones',
+        'trabajo, drill',
+        'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800',
+        'Kaki',
+        '28, 30, 32, 34'
+      ]
+    ];
+
+    const csvContent = '\uFEFF' + [headers, ...sampleRows]
+      .map((row) => row.map((val) => `"${String(val).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'ejemplo_productos_tenddy.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Descargar plantilla oficial en Excel (.xlsx)
+  const downloadSampleXlsx = async () => {
+    try {
+      const HEADER_ROW = [
+        { value: 'Type', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'SKU', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Name', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Published', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Is featured?', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Visibility in catalog', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Short description', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Description', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'In stock?', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Stock', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Regular price', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Sale price', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Categories', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Tags', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Images', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Color', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Tallas', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+      ];
+
+      const DATA_ROWS = [
+        [
+          { value: 'simple' },
+          { value: 'TSHIRT-001' },
+          { value: 'Camiseta Algodón Premium' },
+          { value: '1' },
+          { value: '0' },
+          { value: 'visible' },
+          { value: 'Camiseta 100% algodón orgánico' },
+          { value: 'Confeccionada con costuras reforzadas y cuello redondo anatómico.' },
+          { value: '1' },
+          { value: 50 },
+          { value: 25.0 },
+          { value: 19.9 },
+          { value: 'Camisetas, Ropa Casual' },
+          { value: 'algodón, verano, tendencia' },
+          { value: 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=800' },
+          { value: 'Blanco' },
+          { value: 'S, M, L, XL' },
+        ],
+        [
+          { value: 'simple' },
+          { value: 'HOODIE-002' },
+          { value: 'Sudadera con Capucha Clásica' },
+          { value: '1' },
+          { value: '1' },
+          { value: 'visible' },
+          { value: 'Sudadera térmica con bolsillo canguro' },
+          { value: 'Interior afelpado de alta densidad ideal para climas templados.' },
+          { value: '1' },
+          { value: 30 },
+          { value: 45.0 },
+          { value: 38.0 },
+          { value: 'Sudaderas, Abrigos' },
+          { value: 'invierno, urbano' },
+          { value: 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800' },
+          { value: 'Negro' },
+          { value: 'M, L, XL' },
+        ],
+        [
+          { value: 'simple' },
+          { value: 'PANT-003' },
+          { value: 'Pantalón Drill Operativo' },
+          { value: '1' },
+          { value: '0' },
+          { value: 'visible' },
+          { value: 'Pantalón resistente con triple costura' },
+          { value: 'Pretina elástica y bolsillos laterales de carga reforzados.' },
+          { value: '1' },
+          { value: 40 },
+          { value: 35.0 },
+          { value: null },
+          { value: 'Pantalones' },
+          { value: 'trabajo, drill' },
+          { value: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800' },
+          { value: 'Kaki' },
+          { value: '28, 30, 32, 34' },
+        ],
+      ];
+
+      const columns = [
+        { width: 12 },
+        { width: 16 },
+        { width: 30 },
+        { width: 12 },
+        { width: 14 },
+        { width: 20 },
+        { width: 35 },
+        { width: 45 },
+        { width: 12 },
+        { width: 12 },
+        { width: 14 },
+        { width: 14 },
+        { width: 25 },
+        { width: 25 },
+        { width: 50 },
+        { width: 16 },
+        { width: 20 },
+      ];
+
+      await writeXlsxFile([HEADER_ROW, ...DATA_ROWS], {
+        columns,
+        fileName: 'ejemplo_productos_tenddy.xlsx',
+      } as any);
+    } catch (err) {
+      console.error('Error generando Excel:', err);
+      downloadSampleCsv();
+    }
   };
 
   // Continuar al paso 2: Validar y extraer encabezados
@@ -536,6 +749,39 @@ export default function BulkImportModal({
               <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
                 Esta herramienta te permite importar (o fusionar) datos de productos a tu tienda desde un archivo CSV o TXT.
               </p>
+            </div>
+
+            {/* Descargar plantilla de ejemplo CSV / Excel */}
+            <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="space-y-0.5">
+                <span className="font-semibold text-slate-900 flex items-center gap-1.5">
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <span>¿Necesitas una plantilla de ejemplo para rellenar tu catálogo?</span>
+                </span>
+                <p className="text-[11px] text-slate-500">
+                  Descarga nuestro archivo de ejemplo con todas las columnas configuradas y ejemplos reales.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={downloadSampleCsv}
+                  className="px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-lg font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  title="Descargar archivo CSV de ejemplo"
+                >
+                  <Download className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Ejemplo CSV</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadSampleXlsx}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold flex items-center gap-1.5 shadow-2xs transition-colors cursor-pointer"
+                  title="Descargar plantilla de Excel (.xlsx)"
+                >
+                  <Download className="w-3.5 h-3.5 text-white" />
+                  <span>Descargar Excel (.xlsx)</span>
+                </button>
+              </div>
             </div>
 
             {/* Selector de Archivo */}
