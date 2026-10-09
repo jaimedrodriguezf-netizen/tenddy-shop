@@ -229,6 +229,13 @@ export default function BulkImportModal({
 
   // Descargar archivo CSV de ejemplo
   const downloadSampleCsv = () => {
+    try {
+      window.location.href = '/api/admin/products/template?format=csv';
+      return;
+    } catch {
+      // Fallback a descarga de Blob en cliente
+    }
+
     const headers = [
       'Type',
       'SKU',
@@ -326,6 +333,13 @@ export default function BulkImportModal({
 
   // Descargar plantilla oficial en Excel (.xlsx)
   const downloadSampleXlsx = async () => {
+    try {
+      window.location.href = '/api/admin/products/template?format=xlsx';
+      return;
+    } catch {
+      // Fallback a generación en navegador
+    }
+
     try {
       const HEADER_ROW = [
         { value: 'Type', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
@@ -429,8 +443,7 @@ export default function BulkImportModal({
 
       await writeXlsxFile([HEADER_ROW, ...DATA_ROWS], {
         columns,
-        fileName: 'ejemplo_productos_tenddy.xlsx',
-      } as any);
+      } as any).toFile('ejemplo_productos_tenddy.xlsx');
     } catch (err) {
       console.error('Error generando Excel:', err);
       downloadSampleCsv();

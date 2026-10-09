@@ -428,8 +428,7 @@ export default function ProductsManagerView({
       const filename = `${tenant.slug}-productos-${new Date().toISOString().split('T')[0]}.xlsx`;
       await writeXlsxFile([headerRow, ...dataRows], {
         columns: schema.map((s) => ({ width: s.width })),
-        fileName: filename,
-      } as any);
+      } as any).toFile(filename);
 
       setSuccessMsg(`Catálogo exportado exitosamente (${products.length} productos)`);
       setTimeout(() => setSuccessMsg(null), 3000);
@@ -486,10 +485,19 @@ export default function ProductsManagerView({
         { width: 50 },
       ];
 
+      // Descarga directa vía endpoint de servidor con fallback a cliente
+      try {
+        window.location.href = '/api/admin/products/template?format=xlsx';
+        setSuccessMsg('Plantilla oficial de Excel descargada');
+        setTimeout(() => setSuccessMsg(null), 3000);
+        return;
+      } catch {
+        // Fallback a generación en navegador
+      }
+
       await writeXlsxFile([HEADER_ROW, ...DATA_ROWS], {
         columns,
-        fileName: `plantilla_productos_${tenant.slug}.xlsx`,
-      } as any);
+      } as any).toFile(`plantilla_productos_${tenant.slug}.xlsx`);
 
       setSuccessMsg('Plantilla oficial de Excel descargada');
       setTimeout(() => setSuccessMsg(null), 3000);
