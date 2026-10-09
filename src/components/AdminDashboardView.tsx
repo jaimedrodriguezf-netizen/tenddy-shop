@@ -1316,7 +1316,6 @@ export default function AdminDashboardView({
                 tenantId={tenant.id}
                 onProductsImported={(newProducts) => {
                   setProducts((prev) => [...newProducts, ...prev]);
-                  setIsBulkModalOpen(false);
                 }}
               />
             ) : (
