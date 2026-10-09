@@ -11,8 +11,13 @@ interface BulkProductRow {
   tallas?: string;
   detalles_patronaje?: string;
   image_url?: string;
+  images?: string[];
+  price?: number | null;
+  sale_price?: number | null;
+  stock?: number | null;
   min_order_qty?: number;
   units_per_package?: number;
+  update_if_exists?: boolean;
 }
 
 export async function POST(request: Request) {
@@ -42,15 +47,16 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
-    // 2. Cargar SKUs existentes para detectar y omitir productos duplicados (Ticket #4603)
+    // 2. Cargar SKUs existentes para detectar duplicados o actualizar (Ticket #4603)
     const { data: existingProducts } = await admin
       .from('products')
-      .select('sku')
+      .select('id, sku, attributes')
       .eq('tenant_id', tenant_id);
 
-    const existingSkuSet = new Set(
-      (existingProducts || []).map((p) => p.sku?.toUpperCase().trim()).filter(Boolean)
-    );
+    const existingProductMap = new Map<string, { id: string; attributes: any }>();
+    (existingProducts || []).forEach((p) => {
+      if (p.sku) existingProductMap.set(p.sku.toUpperCase().trim(), p);
+    });
 
     // 3. Cargar categorías existentes para este tenant
     const { data: existingCategories } = await admin
@@ -96,17 +102,63 @@ export async function POST(request: Request) {
       }
     }
 
-    // 5. Preparar payload masivo de productos omitiendo duplicados
+    // 5. Preparar payload masivo de productos (nuevos y actualizaciones)
     const seenBatchSkus = new Set<string>();
     let duplicateRowsCount = 0;
+    let updatedProductsCount = 0;
     const productsToInsert = [];
+    const productsToUpdate = [];
 
     for (let idx = 0; idx < products.length; idx++) {
       const p = products[idx];
       const rawSku = p.sku ? p.sku.trim().toUpperCase() : '';
+      const catId = p.category_name ? categoryMap.get(p.category_name.toLowerCase().trim()) : null;
 
-      // Si el SKU ya existe en la base de datos o en este mismo archivo, omitir para no duplicar
-      if (rawSku && (existingSkuSet.has(rawSku) || seenBatchSkus.has(rawSku))) {
+      // Extraer y normalizar imágenes (soporta una o múltiples URLs separadas por coma, punto y coma, o saltos de línea)
+      const imageArray: string[] = [];
+      const rawImageValues: string[] = [];
+      if (Array.isArray(p.images) && p.images.length > 0) {
+        rawImageValues.push(...p.images);
+      } else if (p.image_url) {
+        rawImageValues.push(p.image_url);
+      }
+
+      for (const rawVal of rawImageValues) {
+        if (!rawVal) continue;
+        const tokens = String(rawVal).split(/[\r\n,;]+/).map((t) => t.trim()).filter(Boolean);
+        for (const token of tokens) {
+          let cleanUrl = token;
+          if (cleanUrl.startsWith('http://')) {
+            cleanUrl = cleanUrl.replace('http://', 'https://');
+          }
+          if (cleanUrl.startsWith('https://') || cleanUrl.startsWith('http://')) {
+            imageArray.push(cleanUrl);
+          }
+        }
+      }
+
+      // Si el SKU ya existe en la base de datos
+      if (rawSku && existingProductMap.has(rawSku)) {
+        if (p.update_if_exists) {
+          const existing = existingProductMap.get(rawSku)!;
+          const updateData: Record<string, any> = {
+            id: existing.id,
+            name: p.name.trim(),
+            description: p.description ? p.description.trim() : null,
+          };
+          if (catId) updateData.category_id = catId;
+          if (imageArray.length > 0) updateData.images = imageArray;
+          if (p.price !== undefined && p.price !== null) updateData.price = Number(p.price);
+          if (p.stock !== undefined && p.stock !== null) updateData.stock = Number(p.stock);
+
+          productsToUpdate.push(updateData);
+        } else {
+          duplicateRowsCount++;
+        }
+        continue;
+      }
+
+      if (rawSku && seenBatchSkus.has(rawSku)) {
         duplicateRowsCount++;
         continue;
       }
@@ -130,16 +182,10 @@ export async function POST(request: Request) {
       const uniqueSuffix = `${Date.now()}-${idx + 1}-${Math.random().toString(36).substring(2, 7)}`;
       const slug = `${baseSlug}-${cleanSkuPart}-${uniqueSuffix}`;
 
-      const catId = p.category_name ? categoryMap.get(p.category_name.toLowerCase().trim()) : null;
-
       const specs: Record<string, string> = {};
       if (p.color) specs.color = p.color.trim();
       if (p.tallas) specs.tallas = p.tallas.trim();
       if (p.detalles_patronaje) specs.costuras_patronaje = p.detalles_patronaje.trim();
-
-      const imageArray = p.image_url && p.image_url.startsWith('http')
-        ? [p.image_url.trim()]
-        : [];
 
       productsToInsert.push({
         tenant_id,
@@ -160,20 +206,22 @@ export async function POST(request: Request) {
       });
     }
 
-    if (productsToInsert.length === 0) {
-      return NextResponse.json({
-        success: true,
-        count: 0,
-        skippedDuplicates: duplicateRowsCount,
-        newCategoriesCount: uniqueCategoryNames.size,
-        message: `Todos los ${duplicateRowsCount} productos del archivo ya estaban subidos en tu catálogo. No se duplicó ningún diseño repetido.`,
-        products: [],
-      });
+    // Ejecutar actualizaciones si aplica
+    for (const up of productsToUpdate) {
+      const { id, ...dataToUpdate } = up;
+      const { error: updErr } = await admin
+        .from('products')
+        .update(dataToUpdate)
+        .eq('id', id);
+
+      if (!updErr) {
+        updatedProductsCount++;
+      }
     }
 
-    // 5. Inserción masiva en Supabase por lotes (chunks de 100) para soportar 2000+ productos sin timeouts
+    // 6. Inserción masiva en Supabase por lotes (chunks de 100) para soportar 2000+ productos sin timeouts
     const CHUNK_SIZE = 100;
-    const insertedProducts: unknown[] = [];
+    const insertedProducts: any[] = [];
 
     for (let i = 0; i < productsToInsert.length; i += CHUNK_SIZE) {
       const chunk = productsToInsert.slice(i, i + CHUNK_SIZE);
@@ -198,20 +246,27 @@ export async function POST(request: Request) {
       }
     }
 
-    const message = duplicateRowsCount > 0
+    const message = updatedProductsCount > 0
+      ? `Se importaron ${insertedProducts.length} productos nuevos y se actualizaron ${updatedProductsCount} existentes.`
+      : duplicateRowsCount > 0
       ? `Se importaron ${insertedProducts.length} productos nuevos. Se omitieron ${duplicateRowsCount} productos repetidos para no duplicar tu catálogo.`
       : `¡${insertedProducts.length} productos importados exitosamente! Se crearon ${uniqueCategoryNames.size} nuevas categorías.`;
 
     return NextResponse.json({
       success: true,
-      count: insertedProducts.length,
+      count: insertedProducts.length + updatedProductsCount,
+      insertedCount: insertedProducts.length,
+      updatedCount: updatedProductsCount,
       skippedDuplicates: duplicateRowsCount,
       newCategoriesCount: uniqueCategoryNames.size,
-      products: insertedProducts,
       message,
+      products: insertedProducts,
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error procesando carga masiva de productos:', err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : 'Error inesperado durante la carga masiva' },
+      { status: 500 }
+    );
   }
 }

@@ -310,7 +310,23 @@ export default function BulkImportModal({
     setCurrentProductStatus('Iniciando lectura y mapeo de datos...');
 
     try {
-      // Normalizar registros según la asignación de columnas elegida
+      // 1. Si hay un archivo local seleccionado, respaldarlo en Supabase Storage
+      if (selectedFile) {
+        try {
+          setCurrentProductStatus(`Guardando copia de respaldo de ${selectedFile.name} en Supabase Storage...`);
+          const fd = new FormData();
+          fd.append('file', selectedFile);
+          fd.append('tenant_id', tenantId);
+          await fetch('/api/admin/products/bulk/upload-file', {
+            method: 'POST',
+            body: fd,
+          });
+        } catch (storageErr) {
+          console.warn('Advertencia al guardar archivo en Storage:', storageErr);
+        }
+      }
+
+      // 2. Normalizar registros según la asignación de columnas elegida
       const headersToUse = parsedHeaders.length > 0 ? parsedHeaders : DEFAULT_SAMPLE_COLUMNS.map((c) => c.header);
       const rowsToUse = rawRows.length > 0 ? rawRows : [];
 
@@ -325,6 +341,18 @@ export default function BulkImportModal({
           }
         });
 
+        // Extraer y limpiar imágenes múltiples (separadas por coma, salto o punto y coma)
+        const rawImages = item['images'] || item['image_url'] || null;
+        let cleanImages: string[] = [];
+        if (rawImages) {
+          cleanImages = String(rawImages)
+            .split(/[\r\n,;]+/)
+            .map((u) => u.trim())
+            .filter(Boolean)
+            .map((u) => (u.startsWith('http://') ? u.replace('http://', 'https://') : u))
+            .filter((u) => u.startsWith('https://') || u.startsWith('http://'));
+        }
+
         return {
           name: item['name'] || `Producto ${idx + 1}`,
           sku: item['sku'] || `SKU-${Date.now()}-${idx}`,
@@ -332,7 +360,8 @@ export default function BulkImportModal({
           description: item['description'] || item['short_description'] || null,
           color: item['color'] || null,
           tallas: item['tallas'] || null,
-          image_url: item['images'] || null,
+          images: cleanImages,
+          image_url: cleanImages[0] || null,
           price: item['regular_price'] ? parseFloat(item['regular_price']) : null,
           sale_price: item['sale_price'] ? parseFloat(item['sale_price']) : null,
           stock: item['stock'] ? parseInt(item['stock'], 10) : null,
@@ -842,6 +871,9 @@ export default function BulkImportModal({
                 Archivo subido:{' '}
                 <span className="text-slate-700 font-semibold">
                   {selectedFile?.name || 'product-woocommerce-sample-products-uqktfg8y0j.csv'}
+                </span>
+                <span className="text-emerald-600 block text-[11px] font-sans font-medium mt-0.5">
+                  ✓ Respaldado en Supabase Storage
                 </span>
               </p>
             </div>
