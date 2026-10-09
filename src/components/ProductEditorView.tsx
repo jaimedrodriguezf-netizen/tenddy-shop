@@ -18,7 +18,8 @@ import {
   AlertCircle,
   Eye,
   ArrowLeft,
-  FileText
+  FileText,
+  Trash2
 } from 'lucide-react';
 import { Tenant, Category, Product, Brand, ProductTag, ProductAttribute } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -120,6 +121,31 @@ export default function ProductEditorView({
   // UI State
   const [compressingImage, setCompressingImage] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingLoading, setDeletingLoading] = useState(false);
+
+  const handleDeleteThisProduct = async () => {
+    if (!product) return;
+    if (!confirm(`¿Estás seguro de que deseas mover "${product.name}" a la papelera?`)) {
+      return;
+    }
+
+    try {
+      setDeletingLoading(true);
+      const res = await fetch(`/api/admin/products?productId=${product.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al eliminar');
+
+      // Notificar al padre y volver a la lista
+      onProductSaved?.({ ...product, is_active: false } as any);
+      onBack();
+    } catch (err: unknown) {
+      alert('Error al eliminar producto: ' + (err instanceof Error ? err.message : 'Error desconocido'));
+    } finally {
+      setDeletingLoading(false);
+    }
+  };
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
@@ -1016,13 +1042,25 @@ export default function ProductEditorView({
               </div>
 
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                <button
-                  type="button"
-                  onClick={onBack}
-                  className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
-                >
-                  Cancelar
-                </button>
+                {isEditing ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteThisProduct}
+                    disabled={deletingLoading}
+                    className="text-rose-600 hover:text-rose-800 text-xs font-bold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                  >
+                    {deletingLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    <span>Mover a la papelera</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={onBack}
+                    className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                )}
 
                 <button
                   type="submit"

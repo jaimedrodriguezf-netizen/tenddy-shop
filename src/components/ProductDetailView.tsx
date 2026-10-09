@@ -49,9 +49,9 @@ export default function ProductDetailView({
   const minPacks = Math.ceil(minQty / packSize);
 
   // Imágenes multi-ángulo (frente, espalda, costados)
-  const images = (product.images && product.images.length > 0)
+  const images = (product.images && product.images.length > 0 && (!product.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics'))
     ? product.images
-    : ['/assets/products/ayme-001.svg'];
+    : ['/assets/placeholder-product.svg'];
 
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [packageCount, setPackageCount] = useState<number>(minPacks);

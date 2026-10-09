@@ -139,7 +139,7 @@ export async function POST(request: Request) {
 
       const imageArray = p.image_url && p.image_url.startsWith('http')
         ? [p.image_url.trim()]
-        : ['/assets/products/ayme-001.svg'];
+        : [];
 
       productsToInsert.push({
         tenant_id,

@@ -1228,7 +1228,8 @@ export default function TenantCatalogView({
             {filteredProducts.slice(0, visibleCount).map((p) => {
               const packSize = p.units_per_package || 100;
               const minQty = p.min_order_qty || packSize;
-              const imageSrc = p.images?.[0] || '/assets/products/ayme-001.svg';
+              const hasValidImage = p.images && p.images.length > 0 && p.images[0] && (!p.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics');
+              const imageSrc = hasValidImage ? p.images[0] : '/assets/placeholder-product.svg';
 
               return (
                 <div

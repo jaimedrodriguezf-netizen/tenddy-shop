@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" width="100%" height="100%">
+  <rect width="400" height="400" fill="#F8FAFC" rx="16"/>
+  <rect x="2" y="2" width="396" height="396" fill="none" stroke="#E2E8F0" stroke-width="4" rx="14"/>
+  <g transform="translate(140, 120)" stroke="#94A3B8" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 10 L110 35 L60 60 L10 35 Z"/>
+    <path d="M10 35 L10 85 L60 110 L60 60 Z"/>
+    <path d="M110 35 L110 85 L60 110 Z"/>
+    <line x1="35" y1="23" x2="85" y2="48" stroke-dasharray="4 4" stroke-width="2"/>
+  </g>
+  <text x="200" y="270" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#94A3B8" letter-spacing="0.5">
+    Foto no disponible
+  </text>
+  <text x="200" y="292" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="11" font-weight="500" fill="#CBD5E1">
+    Sube una imagen desde tu panel
+  </text>
+</svg>

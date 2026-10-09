@@ -103,8 +103,8 @@ export async function POST(request: Request) {
       }
     }
 
-    if (finalImages.length === 0) {
-      finalImages = ['/assets/products/ayme-001.svg'];
+    if (!finalImages) {
+      finalImages = [];
     }
 
     const { data: product, error } = await admin

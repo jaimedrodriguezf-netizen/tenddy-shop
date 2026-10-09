@@ -14,7 +14,8 @@ import {
   AlertCircle,
   ChevronLeft,
   ChevronRight,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Package
 } from 'lucide-react';
 import writeXlsxFile from 'write-excel-file/browser';
 import { Tenant, Category, Product } from '@/lib/types';
@@ -440,6 +441,64 @@ export default function ProductsManagerView({
     }
   };
 
+  // Descargar plantilla oficial de Excel para rellenar
+  const handleDownloadTemplate = async () => {
+    try {
+      const isClothing = tenant.industry_type === 'clothing' || tenant.slug.includes('m-d');
+      const HEADER_ROW = [
+        { value: 'Código', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: isClothing ? 'Nombre de Prenda' : 'Nombre de Producto', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Categoría', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: isClothing ? 'Color' : 'Variante / Color', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: isClothing ? 'Tallas' : 'Medidas / Tallas', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Descripción', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+        { value: 'Enlace Foto Principal', fontWeight: 'bold', backgroundColor: '#0284c7', color: '#ffffff' },
+      ];
+
+      const DATA_ROWS = [
+        [
+          { value: 'MOD-001' },
+          { value: isClothing ? 'Vestido Casual Manga Larga' : 'Producto Ejemplo 1' },
+          { value: categories[0]?.name || 'General' },
+          { value: 'Azul' },
+          { value: 'S, M, L' },
+          { value: 'Confección de alta calidad con acabados reforzados' },
+          { value: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=800' },
+        ],
+        [
+          { value: 'MOD-002' },
+          { value: isClothing ? 'Pantalón Operativo / Casual' : 'Producto Ejemplo 2' },
+          { value: categories[1]?.name || categories[0]?.name || 'General' },
+          { value: 'Negro' },
+          { value: '28, 30, 32' },
+          { value: 'Tela resistente y costura anatómica' },
+          { value: 'https://images.unsplash.com/photo-1624378439575-d8705ad7ae80?w=800' },
+        ],
+      ];
+
+      const columns = [
+        { width: 14 },
+        { width: 30 },
+        { width: 18 },
+        { width: 16 },
+        { width: 20 },
+        { width: 45 },
+        { width: 50 },
+      ];
+
+      await writeXlsxFile([HEADER_ROW, ...DATA_ROWS], {
+        columns,
+        fileName: `plantilla_productos_${tenant.slug}.xlsx`,
+      } as any);
+
+      setSuccessMsg('Plantilla oficial de Excel descargada');
+      setTimeout(() => setSuccessMsg(null), 3000);
+    } catch (err: unknown) {
+      const msg = translateErrorMessage(err, 'No se pudo descargar la plantilla');
+      setErrorMsg(msg);
+    }
+  };
+
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return '07/10/2026';
     try {
@@ -472,6 +531,15 @@ export default function ProductsManagerView({
               className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-slate-200"
             >
               Añadir un nuevo producto
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadTemplate}
+              className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors cursor-pointer border border-slate-200 flex items-center gap-1"
+              title="Descargar plantilla Excel oficial para rellenar catálogo"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-teal-600" />
+              <span>Plantilla Excel</span>
             </button>
             <button
               type="button"
@@ -758,12 +826,16 @@ export default function ProductsManagerView({
                         {/* Imagen Miniatura */}
                         <td className="py-3 px-3 text-center">
                           <div className="w-10 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto p-0.5 flex items-center justify-center shadow-2xs">
-                            <img
-                              src={p.images?.[0] || '/assets/products/ayme-001.svg'}
-                              alt={p.name}
-                              loading="lazy"
-                              className="w-full h-full object-cover rounded"
-                            />
+                            {p.images && p.images[0] && (!p.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics') ? (
+                              <img
+                                src={p.images[0]}
+                                alt={p.name}
+                                loading="lazy"
+                                className="w-full h-full object-cover rounded"
+                              />
+                            ) : (
+                              <Package className="w-4 h-4 text-slate-400" />
+                            )}
                           </div>
                         </td>
 
