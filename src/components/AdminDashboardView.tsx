@@ -35,7 +35,8 @@ import {
   Bell,
   Star,
   Award,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Tenant, Branch, Product, Category } from '@/lib/types';
 import { supabase } from '@/lib/supabase';
@@ -51,6 +52,7 @@ import BrandsManagerView from './BrandsManagerView';
 import TagsManagerView from './TagsManagerView';
 import AttributesManagerView from './AttributesManagerView';
 import ReviewsManagerView from './ReviewsManagerView';
+import MediaLibraryView from './MediaLibraryView';
 import VersionBadge from './VersionBadge';
 
 interface QuoteItem {
@@ -100,11 +102,11 @@ export default function AdminDashboardView({
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'tags' | 'attributes' | 'reviews' | 'import_excel' | 'team' | 'appearance'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'media' | 'categories' | 'brands' | 'tags' | 'attributes' | 'reviews' | 'import_excel' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'attributes' || tabParam === 'reviews' || tabParam === 'import_excel' || tabParam === 'team' || tabParam === 'appearance') {
+      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'media' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'attributes' || tabParam === 'reviews' || tabParam === 'import_excel' || tabParam === 'team' || tabParam === 'appearance') {
         return tabParam as any;
       }
     }
@@ -307,6 +309,24 @@ export default function AdminDashboardView({
         <div className="flex items-center gap-2.5">
           <TrendingUp className="w-4 h-4 text-sky-500" />
           <span>Dashboard</span>
+        </div>
+      </button>
+
+      {/* MEDIOS / BIBLIOTECA DE MEDIOS */}
+      <button
+        onClick={() => {
+          setActiveTab('media');
+          setIsMobileSidebarOpen(false);
+        }}
+        className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+          activeTab === 'media'
+            ? 'bg-slate-900 text-white shadow-sm font-bold'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+        }`}
+      >
+        <div className="flex items-center gap-2.5">
+          <ImageIcon className="w-4 h-4 text-emerald-500" />
+          <span>Medios</span>
         </div>
       </button>
 
@@ -842,7 +862,9 @@ export default function AdminDashboardView({
             <h1 className="text-xs sm:text-base font-bold text-slate-900 tracking-tight truncate">
               {activeTab === 'dashboard' && 'Dashboard • Resumen de Negocio'}
               {activeTab === 'quotes' && 'Cotizaciones & Pedidos'}
+              {activeTab === 'media' && 'Biblioteca de medios'}
               {activeTab === 'products' && 'Productos'}
+              {activeTab === 'import_excel' && 'Importar Productos (Excel / CSV)'}
               {activeTab === 'categories' && 'Gestión de Categorías B2B'}
               {activeTab === 'brands' && 'Marcas de Productos'}
               {activeTab === 'tags' && 'Etiquetas de Productos'}
@@ -1338,6 +1360,11 @@ export default function AdminDashboardView({
                 setProducts((prev) => [...newProducts, ...prev]);
               }}
             />
+          )}
+
+          {/* PESTAÑA: BIBLIOTECA DE MEDIOS */}
+          {activeTab === 'media' && (
+            <MediaLibraryView tenant={tenant} />
           )}
 
           {/* PESTAÑA: GESTIÓN DE CATEGORÍAS (CRUD COMPLETO) */}
