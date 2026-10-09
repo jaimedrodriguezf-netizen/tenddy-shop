@@ -100,11 +100,11 @@ export default function AdminDashboardView({
 }: AdminDashboardViewProps) {
   const [tenant, setTenant] = useState<Tenant>(initialTenant);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'tags' | 'attributes' | 'reviews' | 'team' | 'appearance'>(() => {
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'quotes' | 'products' | 'categories' | 'brands' | 'tags' | 'attributes' | 'reviews' | 'import_excel' | 'team' | 'appearance'>(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tabParam = params.get('tab');
-      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'attributes' || tabParam === 'reviews' || tabParam === 'team' || tabParam === 'appearance') {
+      if (tabParam === 'dashboard' || tabParam === 'products' || tabParam === 'quotes' || tabParam === 'categories' || tabParam === 'brands' || tabParam === 'tags' || tabParam === 'attributes' || tabParam === 'reviews' || tabParam === 'import_excel' || tabParam === 'team' || tabParam === 'appearance') {
         return tabParam as any;
       }
     }
@@ -118,7 +118,6 @@ export default function AdminDashboardView({
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [supportModalInitialTab, setSupportModalInitialTab] = useState<'tickets' | 'new' | 'fixes'>('tickets');
@@ -317,7 +316,7 @@ export default function AdminDashboardView({
           type="button"
           onClick={() => setIsProductsMenuOpen(!isProductsMenuOpen)}
           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-            activeTab === 'products' || activeTab === 'categories' || activeTab === 'brands' || activeTab === 'tags' || activeTab === 'attributes' || activeTab === 'reviews'
+            activeTab === 'products' || activeTab === 'categories' || activeTab === 'brands' || activeTab === 'tags' || activeTab === 'attributes' || activeTab === 'reviews' || activeTab === 'import_excel'
               ? 'text-slate-900 bg-slate-100/90 font-bold'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
           }`}
@@ -346,10 +345,11 @@ export default function AdminDashboardView({
               onClick={() => {
                 setActiveTab('products');
                 setIsCreateModalOpen(false);
+                setEditingProduct(null);
                 setIsMobileSidebarOpen(false);
               }}
               className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
-                activeTab === 'products' && !isCreateModalOpen
+                activeTab === 'products' && !isCreateModalOpen && !editingProduct
                   ? 'bg-slate-900 text-white font-bold shadow-xs'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
@@ -357,7 +357,7 @@ export default function AdminDashboardView({
               <span>Todos los productos</span>
               <span
                 className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full ${
-                  activeTab === 'products' && !isCreateModalOpen
+                  activeTab === 'products' && !isCreateModalOpen && !editingProduct
                     ? 'bg-slate-800 text-slate-200'
                     : 'bg-slate-200/70 text-slate-600'
                 }`}
@@ -492,10 +492,16 @@ export default function AdminDashboardView({
             {/* 8. Carga Masiva (Excel) */}
             <button
               onClick={() => {
-                setIsBulkModalOpen(true);
+                setActiveTab('import_excel');
+                setIsCreateModalOpen(false);
+                setEditingProduct(null);
                 setIsMobileSidebarOpen(false);
               }}
-              className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+              className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer ${
+                activeTab === 'import_excel'
+                  ? 'bg-slate-900 text-white font-bold shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+              }`}
               title="Cargar catálogo masivo con plantilla Excel oficial (.xlsx)"
             >
               <div className="flex items-center gap-1.5">
@@ -1309,15 +1315,6 @@ export default function AdminDashboardView({
                   setEditingProduct(null);
                 }}
               />
-            ) : isBulkModalOpen ? (
-              <BulkImportModal
-                isOpen={true}
-                onClose={() => setIsBulkModalOpen(false)}
-                tenantId={tenant.id}
-                onProductsImported={(newProducts) => {
-                  setProducts((prev) => [...newProducts, ...prev]);
-                }}
-              />
             ) : (
               <ProductsManagerView
                 tenant={tenant}
@@ -1325,10 +1322,22 @@ export default function AdminDashboardView({
                 categories={categories}
                 onProductsChanged={(updated) => setProducts(updated)}
                 onOpenCreateModal={() => setIsCreateModalOpen(true)}
-                onOpenBulkModal={() => setIsBulkModalOpen(true)}
+                onOpenBulkModal={() => setActiveTab('import_excel')}
                 onEditProduct={(p) => setEditingProduct(p)}
               />
             )
+          )}
+
+          {/* PESTAÑA: IMPORTAR PRODUCTOS (CSV / EXCEL WIZARD) */}
+          {activeTab === 'import_excel' && (
+            <BulkImportModal
+              isOpen={true}
+              onClose={() => setActiveTab('products')}
+              tenantId={tenant.id}
+              onProductsImported={(newProducts) => {
+                setProducts((prev) => [...newProducts, ...prev]);
+              }}
+            />
           )}
 
           {/* PESTAÑA: GESTIÓN DE CATEGORÍAS (CRUD COMPLETO) */}
