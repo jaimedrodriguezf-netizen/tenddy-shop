@@ -19,7 +19,10 @@ import {
   Eye,
   ArrowLeft,
   FileText,
-  Trash2
+  Trash2,
+  Star,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Tenant, Category, Product, Brand, ProductTag, ProductAttribute } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -120,6 +123,7 @@ export default function ProductEditorView({
 
   // UI State
   const [compressingImage, setCompressingImage] = useState(false);
+  const [uploadingGallery, setUploadingGallery] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingLoading, setDeletingLoading] = useState(false);
 
@@ -277,6 +281,76 @@ export default function ProductEditorView({
       setGalleryUrls([...galleryUrls, clean]);
     }
     setGalleryUrlInput('');
+  };
+
+  // Convertir una foto de la galería en Imagen Principal (hace swap automático con la actual)
+  const handleMakeMainImage = (indexToPromote: number) => {
+    const selectedGalleryUrl = galleryUrls[indexToPromote];
+    if (!selectedGalleryUrl) return;
+
+    // Obtener la imagen principal actual si existe
+    const currentPrimary = mainImageBase64 || (mainImageUrlInput.trim() ? normalizeImageUrl(mainImageUrlInput) : null) || currentMainImageUrl;
+
+    // Remover la foto seleccionada de la galería
+    const newGallery = galleryUrls.filter((_, i) => i !== indexToPromote);
+
+    // Si había una foto principal previa y es distinta, moverla a la galería para no perderla
+    if (currentPrimary && currentPrimary !== selectedGalleryUrl) {
+      newGallery.unshift(currentPrimary);
+    }
+
+    setMainImageBase64(null);
+    setMainImageUrlInput('');
+    setCurrentMainImageUrl(selectedGalleryUrl);
+    setGalleryUrls(newGallery.slice(0, 7));
+  };
+
+  // Reordenar fotos dentro de la galería
+  const handleMoveGallery = (index: number, direction: 'left' | 'right') => {
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= galleryUrls.length) return;
+    const updated = [...galleryUrls];
+    const [item] = updated.splice(index, 1);
+    updated.splice(targetIndex, 0, item);
+    setGalleryUrls(updated);
+  };
+
+  // Subir archivo directo a la galería vía Supabase Storage
+  const handleGalleryFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (galleryUrls.length >= 7) {
+      alert('Límite de imágenes: Cada producto puede tener hasta 8 imágenes en total (1 principal y 7 de galería).');
+      return;
+    }
+
+    try {
+      setUploadingGallery(true);
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('tenant_id', tenant.id);
+      fd.append('folder', 'products');
+
+      const res = await fetch('/api/admin/media', {
+        method: 'POST',
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.url) {
+        throw new Error(data.error || 'No se pudo subir la foto a la galería');
+      }
+
+      const uploadedUrl = normalizeImageUrl(data.url);
+      if (!galleryUrls.includes(uploadedUrl)) {
+        setGalleryUrls([...galleryUrls, uploadedUrl]);
+      }
+    } catch (err: unknown) {
+      alert(err instanceof Error ? err.message : 'Error al subir imagen a la galería');
+    } finally {
+      setUploadingGallery(false);
+      e.target.value = '';
+    }
   };
 
   // Crear categoría rápida desde el metabox lateral
@@ -1086,12 +1160,18 @@ export default function ProductEditorView({
               </div>
             </div>
 
-            {/* 2. METABOX: IMAGEN DEL PRODUCTO (PRINCIPAL) */}
+            {/* 2. METABOX: IMAGEN DEL PRODUCTO (PORTADA) */}
             <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
               <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
-                <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
-                  Imagen del producto
-                </h4>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                    Imagen del producto
+                  </h4>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs">
+                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-500" />
+                    Portada
+                  </span>
+                </div>
                 {(mainImageBase64 || mainImageUrlInput || currentMainImageUrl) && (
                   <button
                     type="button"
@@ -1100,7 +1180,7 @@ export default function ProductEditorView({
                       setMainImageUrlInput('');
                       setCurrentMainImageUrl(null);
                     }}
-                    className="text-[11px] text-rose-600 hover:text-rose-700 font-bold cursor-pointer"
+                    className="text-[11px] text-rose-600 hover:text-rose-700 font-bold cursor-pointer transition-colors"
                   >
                     Eliminar imagen
                   </button>
@@ -1108,13 +1188,19 @@ export default function ProductEditorView({
               </div>
 
               {/* Vista Previa de la Imagen */}
-              <div className="w-full aspect-[3/4] max-h-56 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center p-1 relative shadow-2xs">
+              <div className="w-full aspect-[3/4] max-h-56 rounded-xl overflow-hidden bg-slate-50 border border-slate-200 flex items-center justify-center p-1 relative shadow-2xs group">
                 {mainImageBase64 || normalizeImageUrl(mainImageUrlInput) || currentMainImageUrl ? (
-                  <img
-                    src={mainImageBase64 || normalizeImageUrl(mainImageUrlInput) || (currentMainImageUrl as string)}
-                    alt="Imagen del producto"
-                    className="w-full h-full object-contain rounded-lg"
-                  />
+                  <>
+                    <img
+                      src={mainImageBase64 || normalizeImageUrl(mainImageUrlInput) || (currentMainImageUrl as string)}
+                      alt="Imagen del producto"
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                    <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span>Foto destacada ({1 + galleryUrls.length}/8 total)</span>
+                    </div>
+                  </>
                 ) : (
                   <div className="text-center p-4 text-slate-400 space-y-1">
                     <ImageIcon className="w-8 h-8 mx-auto text-slate-300" />
@@ -1153,47 +1239,119 @@ export default function ProductEditorView({
 
             {/* 3. METABOX: GALERÍA DE IMÁGENES DEL PRODUCTO */}
             <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-              <div className="border-b border-slate-100 pb-2.5">
-                <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
-                  Galería del producto
-                </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Fotos adicionales (ángulos, espalda, costuras).</p>
+              <div className="border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="font-extrabold text-xs text-slate-900 uppercase tracking-wider">
+                      Galería del producto
+                    </h4>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded">
+                      {galleryUrls.length}/7 fotos
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">Fotos secundarias (ángulos, espalda, costuras).</p>
+                </div>
               </div>
 
-              {/* Grilla de Miniaturas */}
-              {galleryUrls.length > 0 && (
-                <div className="grid grid-cols-4 gap-2">
+              {/* Grilla de Miniaturas con cambio a Portada y Reordenamiento */}
+              {galleryUrls.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {galleryUrls.map((url, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 p-0.5 group">
-                      <img src={url} alt={`Galería ${idx + 1}`} className="w-full h-full object-cover rounded" />
+                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-slate-200 bg-slate-50 p-0.5 group shadow-2xs transition-all hover:border-sky-300">
+                      <img src={url} alt={`Galería ${idx + 1}`} className="w-full h-full object-cover rounded-lg" />
+                      
+                      {/* Badge de número */}
+                      <span className="absolute top-1 left-1 bg-black/65 backdrop-blur-xs text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs">
+                        #{idx + 2}
+                      </span>
+
+                      {/* Botón Eliminar */}
                       <button
                         type="button"
                         onClick={() => setGalleryUrls(galleryUrls.filter((_, i) => i !== idx))}
-                        className="absolute top-0.5 right-0.5 w-4 h-4 bg-rose-600 text-white rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                        title="Eliminar de la galería"
+                        className="absolute top-1 right-1 w-5 h-5 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center text-[11px] font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-xs cursor-pointer"
                       >
                         ✕
+                      </button>
+
+                      {/* Flechas de reordenamiento */}
+                      <div className="absolute top-1 inset-x-8 flex justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => handleMoveGallery(idx, 'left')}
+                            title="Mover a la izquierda"
+                            className="w-4 h-4 bg-slate-900/80 hover:bg-slate-900 text-white rounded flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <ChevronLeft className="w-3 h-3" />
+                          </button>
+                        )}
+                        {idx < galleryUrls.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleMoveGallery(idx, 'right')}
+                            title="Mover a la derecha"
+                            className="w-4 h-4 bg-slate-900/80 hover:bg-slate-900 text-white rounded flex items-center justify-center cursor-pointer shadow-xs"
+                          >
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Botón Hacer Portada (Swap con la Principal) */}
+                      <button
+                        type="button"
+                        onClick={() => handleMakeMainImage(idx)}
+                        title="Hacer foto de portada (intercambia con la foto principal)"
+                        className="absolute bottom-1 inset-x-1 py-1 bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-bold rounded-lg flex items-center justify-center gap-1 shadow-xs cursor-pointer transition-colors"
+                      >
+                        <Star className="w-3 h-3 fill-white" />
+                        <span>Hacer portada</span>
                       </button>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center text-slate-400 text-xs">
+                  Sin fotos secundarias aún.
+                </div>
               )}
 
-              <div className="flex gap-1.5">
-                <input
-                  type="url"
-                  value={galleryUrlInput}
-                  onChange={(e) => setGalleryUrlInput(e.target.value)}
-                  placeholder="URL de foto adicional..."
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:bg-white focus:outline-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddGalleryUrl}
-                  disabled={!galleryUrlInput.trim()}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
-                >
-                  Añadir
-                </button>
+              {/* Añadir a la Galería (Archivo o URL) */}
+              <div className="space-y-2 pt-1 border-t border-slate-100">
+                <div className="flex gap-1.5">
+                  <input
+                    type="url"
+                    value={galleryUrlInput}
+                    onChange={(e) => setGalleryUrlInput(e.target.value)}
+                    placeholder="URL de foto adicional..."
+                    disabled={galleryUrls.length >= 7}
+                    className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:bg-white focus:outline-none disabled:opacity-50"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddGalleryUrl}
+                    disabled={!galleryUrlInput.trim() || galleryUrls.length >= 7}
+                    className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 disabled:opacity-40 text-slate-800 rounded-xl text-xs font-bold cursor-pointer transition-colors"
+                  >
+                    Añadir
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 cursor-pointer text-xs font-semibold shadow-2xs transition-colors">
+                    {uploadingGallery ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5 text-slate-500" />}
+                    <span>{uploadingGallery ? 'Subiendo...' : 'Subir archivo a galería'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleGalleryFileUpload}
+                      className="hidden"
+                      disabled={uploadingGallery || galleryUrls.length >= 7}
+                    />
+                  </label>
+                </div>
               </div>
             </div>
 

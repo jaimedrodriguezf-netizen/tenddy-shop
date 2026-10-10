@@ -59,10 +59,11 @@ export async function POST(request: Request) {
     }
 
     // Procesar y subir imagen a Supabase Storage (NUNCA base64 crudo en base de datos)
-    let finalImages: string[] = Array.isArray(images) && images.length > 0 ? images : [];
-    if (body.image_url && typeof body.image_url === 'string' && body.image_url.trim().startsWith('http')) {
-      finalImages = [body.image_url.trim()];
-    } else if (body.imageData && typeof body.imageData === 'string' && body.imageData.startsWith('data:image')) {
+    let finalImages: string[] = Array.isArray(images) && images.length > 0 
+      ? images.filter((img: string) => typeof img === 'string' && img.startsWith('http')) 
+      : [];
+
+    if (body.imageData && typeof body.imageData === 'string' && body.imageData.startsWith('data:image')) {
       try {
         const matches = body.imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
@@ -92,7 +93,8 @@ export async function POST(request: Request) {
                   .from('support-attachments')
                   .getPublicUrl(filePath);
                 if (pubData?.publicUrl) {
-                  finalImages = [pubData.publicUrl];
+                  // La foto recién subida se coloca como principal y preserva la galería (máximo 8)
+                  finalImages = [pubData.publicUrl, ...finalImages.filter((u) => u !== pubData.publicUrl && !u.startsWith('data:'))].slice(0, 8);
                 }
               }
             }
@@ -101,6 +103,8 @@ export async function POST(request: Request) {
       } catch (err) {
         console.error('Error subiendo imagen de producto a Storage:', err);
       }
+    } else if (finalImages.length === 0 && body.image_url && typeof body.image_url === 'string' && body.image_url.trim().startsWith('http')) {
+      finalImages = [body.image_url.trim()];
     }
 
     if (!finalImages) {
@@ -179,10 +183,11 @@ export async function PATCH(request: Request) {
     }
 
     // 2. Si viene enlace URL directo o nueva imagen en base64, procesar
-    let finalImages = Array.isArray(images) && images.length > 0 ? images : currentProduct.images || [];
-    if (image_url && typeof image_url === 'string' && image_url.trim().startsWith('http')) {
-      finalImages = [image_url.trim()];
-    } else if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
+    let finalImages: string[] = Array.isArray(images) && images.length > 0 
+      ? images.filter((img: string) => typeof img === 'string' && img.startsWith('http')) 
+      : (Array.isArray(currentProduct.images) ? currentProduct.images : []);
+
+    if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
       try {
         const matches = imageData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
@@ -209,7 +214,8 @@ export async function PATCH(request: Request) {
                   .from('support-attachments')
                   .getPublicUrl(filePath);
                 if (pubData?.publicUrl) {
-                  finalImages = [pubData.publicUrl];
+                  // La foto recién subida se coloca como principal y preserva la galería (máximo 8)
+                  finalImages = [pubData.publicUrl, ...finalImages.filter((u) => u !== pubData.publicUrl && !u.startsWith('data:'))].slice(0, 8);
                 }
               }
             }
@@ -218,6 +224,8 @@ export async function PATCH(request: Request) {
       } catch (err) {
         console.error('Error subiendo imagen al editar producto:', err);
       }
+    } else if (finalImages.length === 0 && image_url && typeof image_url === 'string' && image_url.trim().startsWith('http')) {
+      finalImages = [image_url.trim()];
     }
 
     // 3. Preparar campos a actualizar
