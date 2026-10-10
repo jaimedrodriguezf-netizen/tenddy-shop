@@ -13,19 +13,18 @@ import {
   FileSpreadsheet,
   ImageIcon,
   X,
-  ExternalLink,
   Plus,
   Loader2,
   RefreshCw,
   FolderOpen,
   ChevronLeft,
   ChevronRight,
-  Download,
   Edit3
 } from 'lucide-react';
 import { MediaAsset } from '@/app/api/admin/media/route';
 import { Tenant } from '@/lib/types';
 import { translateErrorMessage } from '@/lib/error-translator';
+import { compressImageToFile } from '@/lib/image-compressor';
 
 interface MediaLibraryViewProps {
   tenant: Tenant;
@@ -64,36 +63,50 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cargar medios desde la API
-  const fetchMedia = async () => {
+  const fetchMedia = () => {
     setLoading(true);
-    setErrorMsg(null);
-    try {
-      const res = await fetch(`/api/admin/media?tenant_id=${tenant.id}`);
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Error al cargar medios');
-      setMedia(data.media || []);
-    } catch (err: unknown) {
-      setErrorMsg(translateErrorMessage(err, 'Error al cargar biblioteca de medios'));
-    } finally {
-      setLoading(false);
-    }
+    fetch(`/api/admin/media?tenant_id=${tenant.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.media) setMedia(data.media);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setErrorMsg(translateErrorMessage(err, 'Error al cargar biblioteca de medios'));
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
-    fetchMedia();
+    let active = true;
+    fetch(`/api/admin/media?tenant_id=${tenant.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.media) setMedia(data.media);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setErrorMsg(translateErrorMessage(err, 'Error al cargar biblioteca de medios'));
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [tenant.id]);
 
-  // Al abrir el modal de detalles, inicializar campos
-  useEffect(() => {
-    if (activeMediaDetail) {
-      setMediaTitle(activeMediaDetail.name || '');
-      setAltText('');
-      setMediaCaption('');
-      setMediaDescription('');
-      setImageDimensions('Calculando...');
-      setCopiedUrl(false);
-    }
-  }, [activeMediaDetail?.id]);
+  // Manejador centralizado para abrir detalles de un medio (sin sincronización forzada en useEffect)
+  const openMediaDetail = (item: MediaAsset) => {
+    setActiveMediaDetail(item);
+    setMediaTitle(item.name || '');
+    setAltText('');
+    setMediaCaption('');
+    setMediaDescription('');
+    setImageDimensions('Calculando...');
+    setCopiedUrl(false);
+  };
 
   // Generar opciones de fecha dinámicas
   const dateOptions = useMemo(() => {
@@ -155,13 +168,13 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
 
   const handlePrevMedia = () => {
     if (currentIndex > 0) {
-      setActiveMediaDetail(filteredMedia[currentIndex - 1]);
+      openMediaDetail(filteredMedia[currentIndex - 1]);
     }
   };
 
   const handleNextMedia = () => {
     if (currentIndex < filteredMedia.length - 1 && currentIndex !== -1) {
-      setActiveMediaDetail(filteredMedia[currentIndex + 1]);
+      openMediaDetail(filteredMedia[currentIndex + 1]);
     }
   };
 
@@ -180,8 +193,13 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
       setUploadProgress(`Subiendo (${i + 1}/${files.length}): ${file.name}`);
 
       try {
+        // Optimización client-side: comprimir fotos de 5MB-15MB a WebP (~150KB-300KB) antes de transferir
+        const fileToUpload = file.type.startsWith('image/')
+          ? await compressImageToFile(file)
+          : file;
+
         const fd = new FormData();
-        fd.append('file', file);
+        fd.append('file', fileToUpload);
         fd.append('tenant_id', tenant.id);
         const isSheet = file.name.endsWith('.csv') || file.name.endsWith('.xlsx');
         fd.append('folder', isSheet ? 'imports' : 'products');
@@ -582,7 +600,7 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
                   if (isBulkSelectMode) {
                     toggleSelectMedia(item.id);
                   } else {
-                    setActiveMediaDetail(item);
+                    openMediaDetail(item);
                   }
                 }}
                 className={`group relative bg-white border rounded-xl overflow-hidden cursor-pointer transition-all hover:shadow-md ${
@@ -687,7 +705,7 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          setActiveMediaDetail(item);
+                          openMediaDetail(item);
                         }}
                         className="w-10 h-10 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200 cursor-pointer"
                       >
@@ -703,7 +721,7 @@ export default function MediaLibraryView({ tenant }: MediaLibraryViewProps) {
                     <td className="p-3 font-semibold text-slate-900 max-w-xs truncate">
                       <button
                         type="button"
-                        onClick={() => setActiveMediaDetail(item)}
+                        onClick={() => openMediaDetail(item)}
                         className="hover:text-sky-600 transition-colors cursor-pointer text-left truncate block w-full"
                         title={item.name}
                       >

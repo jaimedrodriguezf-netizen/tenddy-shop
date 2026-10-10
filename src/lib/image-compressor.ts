@@ -78,3 +78,54 @@ export async function compressImage(
     reader.readAsDataURL(file);
   });
 }
+
+/**
+ * Comprime un archivo File de imagen en el navegador y retorna un nuevo objeto File
+ * en formato WebP optimizado (~150KB-300KB). Si el archivo no es imagen o falla, retorna el original.
+ */
+export async function compressImageToFile(
+  file: File,
+  options: {
+    maxWidth?: number;
+    maxHeight?: number;
+    quality?: number;
+    outputFormat?: 'image/webp' | 'image/jpeg';
+  } = {}
+): Promise<File> {
+  if (!file.type.startsWith('image/')) {
+    return file;
+  }
+
+  try {
+    const dataUrl = await compressImage(file, {
+      maxWidth: 1600,
+      maxHeight: 1600,
+      quality: 0.85,
+      outputFormat: 'image/webp',
+      ...options,
+    });
+
+    const commaIndex = dataUrl.indexOf(',');
+    if (commaIndex === -1) return file;
+
+    const mimeMatch = dataUrl.substring(0, commaIndex).match(/data:([^;]+);base64/);
+    const mime = mimeMatch ? mimeMatch[1] : 'image/webp';
+    const base64Data = dataUrl.substring(commaIndex + 1);
+
+    const binaryString = atob(base64Data);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const ext = mime.includes('webp') ? 'webp' : 'jpg';
+    const baseName = file.name.replace(/\.[^/.]+$/, '').toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+    const newFileName = `${baseName || 'foto'}.${ext}`;
+
+    return new File([bytes], newFileName, { type: mime });
+  } catch (err) {
+    console.warn('Error comprimiendo imagen antes de subir, usando archivo original:', err);
+    return file;
+  }
+}

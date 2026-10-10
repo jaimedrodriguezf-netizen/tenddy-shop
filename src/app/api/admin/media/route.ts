@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export interface MediaAsset {
   id: string;
@@ -15,9 +16,77 @@ export interface MediaAsset {
   storagePath?: string;
 }
 
-// 1. GET: Listar todos los medios del tenant (Almacenamiento de Supabase + Medios de productos)
+// Validación de Magic Bytes binarios para prevenir MIME-spoofing y ejecución de scripts camuflados
+function isValidImageMagicBytes(buffer: Buffer, mimeType: string): boolean {
+  if (buffer.length < 12) return false;
+
+  // JPEG / JPG: FF D8 FF
+  if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+    return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A
+  if (mimeType === 'image/png') {
+    return (
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4E &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0D &&
+      buffer[5] === 0x0A &&
+      buffer[6] === 0x1A &&
+      buffer[7] === 0x0A
+    );
+  }
+
+  // WebP: RIFF en 0..3 y WEBP en 8..11
+  if (mimeType === 'image/webp') {
+    const isRiff =
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46;
+    const isWebp =
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50;
+    return isRiff && isWebp;
+  }
+
+  // GIF: GIF87a o GIF89a
+  if (mimeType === 'image/gif') {
+    return (
+      buffer[0] === 0x47 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x38 &&
+      (buffer[4] === 0x37 || buffer[4] === 0x39) &&
+      buffer[5] === 0x61
+    );
+  }
+
+  return true;
+}
+
+// 1. GET: Listar todos los medios del tenant de forma paralela y optimizada (Storage + Productos)
 export async function GET(request: Request) {
   try {
+    const clientIp = getClientIp(request);
+
+    // Rate limiting: máximo 60 consultas de catálogo de medios por minuto
+    const { isAllowed } = checkRateLimit(`media_get_${clientIp}`, {
+      windowMs: 60 * 1000,
+      maxRequests: 60,
+    });
+
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes. Por favor espera un momento.' },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get('tenant_id');
 
@@ -34,68 +103,87 @@ export async function GET(request: Request) {
     const mediaList: MediaAsset[] = [];
     const seenUrls = new Set<string>();
 
-    // A. Listar archivos físicos en Supabase Storage (carpetas: products, imports, logos)
     const storageFolders = ['products', 'imports', 'logos'];
 
-    for (const folder of storageFolders) {
-      try {
-        const { data: files } = await admin.storage
-          .from('support-attachments')
-          .list(`${folder}/${tenantId}`, {
-            limit: 200,
-            sortBy: { column: 'created_at', order: 'desc' },
-          });
-
-        if (files && files.length > 0) {
-          for (const file of files) {
-            // Ignorar directorios virtuales vacíos
-            if (!file.name || file.name === '.emptyFolderPlaceholder') continue;
-
-            const filePath = `${folder}/${tenantId}/${file.name}`;
-            const { data: pubData } = admin.storage
+    // Optimización de rendimiento: Consultar carpetas de Storage y catálogo de productos concurrentemente en paralelo
+    const [storageResults, productsRes] = await Promise.all([
+      Promise.all(
+        storageFolders.map(async (folder) => {
+          try {
+            const { data: files } = await admin.storage
               .from('support-attachments')
-              .getPublicUrl(filePath);
-
-            const fileUrl = pubData?.publicUrl || '';
-            if (fileUrl && !seenUrls.has(fileUrl)) {
-              seenUrls.add(fileUrl);
-
-              const lowerName = file.name.toLowerCase();
-              let type: MediaAsset['type'] = 'other';
-              if (lowerName.endsWith('.csv') || lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
-                type = 'spreadsheet';
-              } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg') || lowerName.endsWith('.png') || lowerName.endsWith('.webp') || lowerName.endsWith('.gif') || lowerName.endsWith('.svg')) {
-                type = 'image';
-              } else if (lowerName.endsWith('.pdf') || lowerName.endsWith('.txt') || lowerName.endsWith('.doc') || lowerName.endsWith('.docx')) {
-                type = 'document';
-              }
-
-              mediaList.push({
-                id: file.id || `storage-${filePath}`,
-                name: file.name,
-                url: fileUrl,
-                type,
-                mimeType: (file.metadata as any)?.mimetype || (type === 'image' ? 'image/jpeg' : 'application/octet-stream'),
-                size: (file.metadata as any)?.size || (file.metadata as any)?.contentLength || undefined,
-                created_at: file.created_at || new Date().toISOString(),
-                folder,
-                storagePath: filePath,
+              .list(`${folder}/${tenantId}`, {
+                limit: 300,
+                sortBy: { column: 'created_at', order: 'desc' },
               });
-            }
+            return { folder, files: files || [] };
+          } catch (fErr) {
+            console.warn(`Error listando carpeta ${folder}:`, fErr);
+            return { folder, files: [] };
           }
+        })
+      ),
+      admin
+        .from('products')
+        .select('id, name, sku, images, created_at')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false })
+        .limit(500),
+    ]);
+
+    // A. Procesar archivos físicos en Supabase Storage
+    for (const { folder, files } of storageResults) {
+      for (const file of files) {
+        if (!file.name || file.name === '.emptyFolderPlaceholder') continue;
+
+        const filePath = `${folder}/${tenantId}/${file.name}`;
+        const { data: pubData } = admin.storage
+          .from('support-attachments')
+          .getPublicUrl(filePath);
+
+        const fileUrl = pubData?.publicUrl || '';
+        if (fileUrl && !seenUrls.has(fileUrl)) {
+          seenUrls.add(fileUrl);
+
+          const lowerName = file.name.toLowerCase();
+          let type: MediaAsset['type'] = 'other';
+          if (lowerName.endsWith('.csv') || lowerName.endsWith('.xlsx') || lowerName.endsWith('.xls')) {
+            type = 'spreadsheet';
+          } else if (
+            lowerName.endsWith('.jpg') ||
+            lowerName.endsWith('.jpeg') ||
+            lowerName.endsWith('.png') ||
+            lowerName.endsWith('.webp') ||
+            lowerName.endsWith('.gif') ||
+            lowerName.endsWith('.svg')
+          ) {
+            type = 'image';
+          } else if (
+            lowerName.endsWith('.pdf') ||
+            lowerName.endsWith('.txt') ||
+            lowerName.endsWith('.doc') ||
+            lowerName.endsWith('.docx')
+          ) {
+            type = 'document';
+          }
+
+          mediaList.push({
+            id: file.id || `storage-${filePath}`,
+            name: file.name,
+            url: fileUrl,
+            type,
+            mimeType: (file.metadata as any)?.mimetype || (type === 'image' ? 'image/jpeg' : 'application/octet-stream'),
+            size: (file.metadata as any)?.size || (file.metadata as any)?.contentLength || undefined,
+            created_at: file.created_at || new Date().toISOString(),
+            folder,
+            storagePath: filePath,
+          });
         }
-      } catch (fErr) {
-        console.warn(`Error listando carpeta ${folder}:`, fErr);
       }
     }
 
-    // B. Obtener imágenes de productos de la base de datos para asegurar catálogo completo
-    const { data: products } = await admin
-      .from('products')
-      .select('id, name, sku, images, created_at')
-      .eq('tenant_id', tenantId)
-      .limit(300);
-
+    // B. Procesar imágenes de productos de la base de datos
+    const products = productsRes.data;
     if (products && products.length > 0) {
       for (const prod of products) {
         if (Array.isArray(prod.images)) {
@@ -103,7 +191,6 @@ export async function GET(request: Request) {
             if (typeof imgUrl === 'string' && imgUrl.startsWith('http') && !seenUrls.has(imgUrl)) {
               seenUrls.add(imgUrl);
 
-              // Extraer nombre amigable de la URL
               const urlParts = imgUrl.split('/');
               const lastPart = urlParts[urlParts.length - 1] || 'imagen.jpg';
               const cleanName = lastPart.split('?')[0] || `foto-${prod.sku || 'prod'}.jpg`;
@@ -135,7 +222,7 @@ export async function GET(request: Request) {
   } catch (err: unknown) {
     console.error('Error listando biblioteca de medios:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Error inesperado al cargar medios' },
+      { error: 'Error inesperado al cargar medios' },
       { status: 500 }
     );
   }
@@ -175,6 +262,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
+    const clientIp = getClientIp(request);
+    // Rate limiting defensivo contra saturación de almacenamiento (máximo 30 subidas por minuto por tienda/IP)
+    const { isAllowed } = checkRateLimit(`media_post_${tenantId}_${clientIp}`, {
+      windowMs: 60 * 1000,
+      maxRequests: 30,
+    });
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Has alcanzado el límite de subidas por minuto. Por favor espera un momento.' },
+        { status: 429 }
+      );
+    }
+
     // 1. Validar tipo MIME y extensión contra whitelist estricta (Previene Stored XSS y MIME-spoofing)
     const rawMimeType = (file.type || '').toLowerCase().trim();
     const mappedExt = ALLOWED_MEDIA_TYPES[rawMimeType];
@@ -212,6 +312,14 @@ export async function POST(request: Request) {
       const limitMb = isImage ? '15MB' : '35MB';
       return NextResponse.json(
         { error: `El archivo excede el tamaño máximo permitido de ${limitMb}` },
+        { status: 400 }
+      );
+    }
+
+    // 2.1 Validación binaria de Magic Bytes para neutralizar MIME-spoofing
+    if (isImage && !isValidImageMagicBytes(buffer, rawMimeType)) {
+      return NextResponse.json(
+        { error: 'La firma binaria del archivo no corresponde a una imagen válida.' },
         { status: 400 }
       );
     }
