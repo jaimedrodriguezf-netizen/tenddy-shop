@@ -252,8 +252,8 @@ export async function POST(request: Request) {
       .single();
 
     if (tenantError) {
-      console.error('Error insertando tenant:', tenantError);
-      return NextResponse.json({ error: tenantError.message }, { status: 500 });
+      console.error('Error insertando tenant en base de datos:', tenantError);
+      return NextResponse.json({ error: 'No se pudo registrar la tienda. Por favor verifica los datos o intenta con otro nombre.' }, { status: 500 });
     }
 
     // 4. Asignar Dominio Oficial

@@ -57,6 +57,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
+    // Blindaje de roles: restringir creación a roles operativos (previene usurpación del rol owner)
+    const allowedRoles = ['admin', 'sales', 'viewer'];
+    if (role === 'owner' && !auth.isSuperadmin) {
+      return NextResponse.json(
+        { error: 'El rol de propietario es exclusivo y no puede crearse desde este panel.' },
+        { status: 403 }
+      );
+    }
+    if (!allowedRoles.includes(role) && role !== 'owner') {
+      return NextResponse.json({ error: 'Rol de miembro inválido' }, { status: 400 });
+    }
+
     const admin = getAdminClient();
 
     const { data: member, error } = await admin
@@ -98,10 +110,10 @@ export async function DELETE(request: Request) {
 
     const admin = getAdminClient();
 
-    // 1. Obtener el tenant al que pertenece el miembro antes de borrarlo
+    // 1. Obtener el tenant y rol del miembro antes de borrarlo
     const { data: targetMember, error: fetchErr } = await admin
       .from('tenant_members')
-      .select('id, tenant_id')
+      .select('id, tenant_id, role')
       .eq('id', memberId)
       .single();
 
@@ -113,6 +125,14 @@ export async function DELETE(request: Request) {
     const auth = await verifyTenantAdmin({ tenantId: targetMember.tenant_id });
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
+    // Protección inmutable: el propietario (owner) de la tienda NUNCA puede ser eliminado
+    if (targetMember.role === 'owner' && !auth.isSuperadmin) {
+      return NextResponse.json(
+        { error: 'El propietario principal de la tienda no puede ser eliminado por políticas de seguridad.' },
+        { status: 403 }
+      );
     }
 
     const { error } = await admin.from('tenant_members').delete().eq('id', memberId);
@@ -145,6 +165,43 @@ export async function PATCH(request: Request) {
     }
 
     const admin = getAdminClient();
+
+    // 1. Obtener miembro actual para validar permisos de rol y pertenencia
+    const { data: currentTarget, error: fetchErr } = await admin
+      .from('tenant_members')
+      .select('id, tenant_id, role')
+      .eq('id', id)
+      .eq('tenant_id', tenant_id)
+      .single();
+
+    if (fetchErr || !currentTarget) {
+      return NextResponse.json({ error: 'Miembro no encontrado' }, { status: 404 });
+    }
+
+    // Prevenir auto-promoción o asignación no autorizada de rol 'owner'
+    if (role === 'owner' && currentTarget.role !== 'owner' && !auth.isSuperadmin) {
+      return NextResponse.json(
+        { error: 'No está permitido promover usuarios al rol de propietario.' },
+        { status: 403 }
+      );
+    }
+
+    // Prevenir revocación o desactivación del dueño principal
+    if (currentTarget.role === 'owner' && !auth.isSuperadmin) {
+      if (role && role !== 'owner') {
+        return NextResponse.json(
+          { error: 'El rol de propietario principal no puede ser modificado.' },
+          { status: 403 }
+        );
+      }
+      if (is_active === false) {
+        return NextResponse.json(
+          { error: 'El propietario principal de la tienda no puede ser desactivado.' },
+          { status: 403 }
+        );
+      }
+    }
+
     const updateData: Record<string, unknown> = {};
 
     if (full_name) updateData.full_name = full_name.trim();

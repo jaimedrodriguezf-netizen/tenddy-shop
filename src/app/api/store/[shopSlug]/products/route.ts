@@ -59,7 +59,7 @@ export async function GET(
       branches,
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en GET /api/store/[shopSlug]/products:', err);
+    return NextResponse.json({ error: 'No se pudo cargar el catálogo de la tienda' }, { status: 500 });
   }
 }
