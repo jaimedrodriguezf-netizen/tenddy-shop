@@ -162,12 +162,21 @@ export default function ProductEditorView({
 
   const normalizeImageUrl = (url: string): string => {
     if (!url) return '';
-    const clean = url.trim();
-    if (clean.includes('drive.google.com')) {
+    let clean = url.trim();
+    if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
       const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
-        return `https://lh3.googleusercontent.com/d/${match[1]}`;
+        return `https://lh3.googleusercontent.com/d/${match[1]}=w800`;
       }
+    }
+    if (clean.includes('lh3.googleusercontent.com/d/') && !clean.includes('=')) {
+      clean = `${clean}=w800`;
+    }
+    if (clean.includes('images.unsplash.com') && !clean.includes('auto=format')) {
+      clean = clean.includes('?') ? `${clean}&auto=format&q=80&w=800` : `${clean}?auto=format&q=80&w=800`;
+    }
+    if (clean.includes('dropbox.com')) {
+      clean = clean.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[?&]dl=0/, '');
     }
     return clean;
   };
@@ -256,9 +265,13 @@ export default function ProductEditorView({
     }
   };
 
-  // Añadir imagen a la galería secundaria
+  // Añadir imagen a la galería secundaria (máximo 8 imágenes en total)
   const handleAddGalleryUrl = () => {
     if (!galleryUrlInput.trim()) return;
+    if (galleryUrls.length >= 7) {
+      alert('Límite de imágenes: Cada producto puede tener hasta 8 imágenes en total (1 principal y 7 de galería).');
+      return;
+    }
     const clean = normalizeImageUrl(galleryUrlInput);
     if (!galleryUrls.includes(clean)) {
       setGalleryUrls([...galleryUrls, clean]);
@@ -323,7 +336,7 @@ export default function ProductEditorView({
         finalImages.push(primaryActive);
       }
       galleryUrls.forEach((url) => {
-        if (!finalImages.includes(url)) finalImages.push(url);
+        if (!finalImages.includes(url) && finalImages.length < 8) finalImages.push(url);
       });
 
       // Procesar tags

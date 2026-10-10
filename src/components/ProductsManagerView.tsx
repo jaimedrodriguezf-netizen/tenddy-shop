@@ -31,6 +31,18 @@ interface ProductsManagerViewProps {
   onEditProduct: (product: Product) => void;
 }
 
+// Optimizar URLs de miniaturas para carga ultrarrápida (reduce fotos de 10MB a miniaturas WebP de ~5KB)
+function getOptimizedThumbnail(url?: string | null): string {
+  if (!url) return '';
+  if (url.includes('lh3.googleusercontent.com/d/')) {
+    return url.split('=')[0] + '=w120-h120-c';
+  }
+  if (url.includes('images.unsplash.com')) {
+    return url.split('?')[0] + '?w=120&h=120&fit=crop&auto=format&q=75';
+  }
+  return url;
+}
+
 export default function ProductsManagerView({
   tenant,
   products,
@@ -836,9 +848,10 @@ export default function ProductsManagerView({
                           <div className="w-10 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto p-0.5 flex items-center justify-center shadow-2xs">
                             {p.images && p.images[0] && (!p.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics') ? (
                               <img
-                                src={p.images[0]}
+                                src={getOptimizedThumbnail(p.images[0])}
                                 alt={p.name}
                                 loading="lazy"
+                                decoding="async"
                                 className="w-full h-full object-cover rounded"
                               />
                             ) : (

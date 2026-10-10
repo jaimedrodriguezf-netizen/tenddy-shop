@@ -173,20 +173,30 @@ function normalizeImageUrl(url: string): string {
   if (!url) return '';
   let clean = url.trim();
 
-  // 1. Google Drive (enlaces de compartir /file/d/ID/view o ?id=ID)
+  // 1. Google Drive: transformar y optimizar compresión con CDN a 800px WebP (=w800)
   if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
     const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}=w800`;
     }
   }
 
-  // 2. Dropbox (enlace directo a imagen)
+  // 2. Si ya es una URL de Google lh3 sin tamaño, forzar compresión =w800
+  if (clean.includes('lh3.googleusercontent.com/d/') && !clean.includes('=')) {
+    clean = `${clean}=w800`;
+  }
+
+  // 3. Unsplash: forzar compresión y formato óptimo WebP
+  if (clean.includes('images.unsplash.com') && !clean.includes('auto=format')) {
+    clean = clean.includes('?') ? `${clean}&auto=format&q=80&w=800` : `${clean}?auto=format&q=80&w=800`;
+  }
+
+  // 4. Dropbox (enlace directo a imagen)
   if (clean.includes('dropbox.com')) {
     clean = clean.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[?&]dl=0/, '');
   }
 
-  // 3. Forzar HTTPS
+  // 5. Forzar HTTPS
   if (clean.startsWith('http://')) {
     clean = clean.replace('http://', 'https://');
   }
@@ -593,7 +603,7 @@ export default function BulkImportModal({
           }
         });
 
-        // Extraer y limpiar imágenes múltiples (separadas por coma, salto o punto y coma)
+        // Extraer y limpiar imágenes múltiples (máximo 8 por producto para optimizar rendimiento)
         const rawImages = item['images'] || item['image_url'] || null;
         let cleanImages: string[] = [];
         if (rawImages) {
@@ -601,7 +611,8 @@ export default function BulkImportModal({
             .split(/[\r\n,;]+/)
             .map((u) => normalizeImageUrl(u))
             .filter(Boolean)
-            .filter((u) => u.startsWith('https://') || u.startsWith('http://'));
+            .filter((u) => u.startsWith('https://') || u.startsWith('http://'))
+            .slice(0, 8); // Límite estricto de 8 imágenes por producto
         }
 
         return {

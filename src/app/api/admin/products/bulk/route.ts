@@ -24,20 +24,30 @@ function normalizeImageUrl(url: string): string {
   if (!url) return '';
   let clean = url.trim();
 
-  // 1. Google Drive (enlaces compartidos /file/d/ID/view o ?id=ID)
+  // 1. Google Drive: transformar y optimizar compresión con CDN a 800px WebP (=w800)
   if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
     const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     if (match && match[1]) {
-      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+      return `https://lh3.googleusercontent.com/d/${match[1]}=w800`;
     }
   }
 
-  // 2. Dropbox (transformar a enlace directo de imagen)
+  // 2. Si ya es una URL de Google lh3 sin tamaño, forzar compresión =w800
+  if (clean.includes('lh3.googleusercontent.com/d/') && !clean.includes('=')) {
+    clean = `${clean}=w800`;
+  }
+
+  // 3. Unsplash: forzar compresión y formato óptimo WebP
+  if (clean.includes('images.unsplash.com') && !clean.includes('auto=format')) {
+    clean = clean.includes('?') ? `${clean}&auto=format&q=80&w=800` : `${clean}?auto=format&q=80&w=800`;
+  }
+
+  // 4. Dropbox (transformar a enlace directo de imagen)
   if (clean.includes('dropbox.com')) {
     clean = clean.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[?&]dl=0/, '');
   }
 
-  // 3. Forzar HTTPS para evitar bloqueos por Mixed Content
+  // 5. Forzar HTTPS para evitar bloqueos por Mixed Content
   if (clean.startsWith('http://')) {
     clean = clean.replace('http://', 'https://');
   }
@@ -152,6 +162,7 @@ export async function POST(request: Request) {
         if (!rawVal) continue;
         const tokens = String(rawVal).split(/[\r\n,;]+/).map((t) => t.trim()).filter(Boolean);
         for (const token of tokens) {
+          if (imageArray.length >= 8) break; // Límite estricto: máximo 8 imágenes por producto
           const cleanUrl = normalizeImageUrl(token);
           if (cleanUrl.startsWith('https://') || cleanUrl.startsWith('http://')) {
             imageArray.push(cleanUrl);
