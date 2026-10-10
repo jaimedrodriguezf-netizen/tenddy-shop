@@ -13,4 +13,4 @@ Optimización integral de rendimiento, escalabilidad y seguridad en la bibliotec
 - [x] **Tarea 1**: Agregar helper `compressImageToFile` en `src/lib/image-compressor.ts` e integrarlo en `MediaLibraryView.tsx` para compresión previa a la subida.
 - [x] **Tarea 2**: Paralelizar consultas en `GET /api/admin/media`, agregar rate limiting y validación de Magic Bytes en `POST`.
 - [x] **Tarea 3**: Corregir llamadas sincrónicas de `setState` en efectos de `MediaLibraryView.tsx` para compatibilidad total con React 19 / ESLint 9.
-- [x] **Tarea 4**: Verificar compilación, ejecutar build de producción, revisión RDD, bump de versión y merge a `main`.
+- [x] **Tarea 4**: Verificar compilación, ejecutar build de producción, revisión RDD, bump de versión y merge a `main`. (Commit: `44060aa`, RDD `review-97a4cb72cf40c0cf` burned).
