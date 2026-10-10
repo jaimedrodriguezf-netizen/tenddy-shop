@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Lock, KeyRound, AlertCircle, Loader2, ArrowRight, LogOut } from 'lucide-react';
+import { Lock, KeyRound, AlertCircle, Loader2, ArrowRight, LogOut, Mail } from 'lucide-react';
 import GoogleSignInButton from './GoogleSignInButton';
 
 interface AdminLoginFormProps {
@@ -19,6 +19,7 @@ export default function AdminLoginForm({
   onSignOutGoogle,
   onSuccess,
 }: AdminLoginFormProps) {
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -32,12 +33,16 @@ export default function AdminLoginForm({
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, shopSlug }),
+        body: JSON.stringify({
+          password,
+          shopSlug,
+          email: email.trim() || undefined,
+        }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Clave de acceso incorrecta');
+        throw new Error(data.error || 'Credenciales de acceso incorrectas');
       }
 
       onSuccess();
@@ -110,14 +115,29 @@ export default function AdminLoginForm({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Clave de Acceso Master
+              Correo de miembro <span className="text-[10px] text-slate-400 font-normal">(Opcional)</span>
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="ejemplo@empresa.com"
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:outline-none transition-all"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+              Contraseña de Acceso
             </label>
             <div className="relative">
               <KeyRound className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
               <input
                 type="password"
                 required
-                autoFocus
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••••••"

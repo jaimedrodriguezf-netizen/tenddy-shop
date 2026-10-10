@@ -1,14 +1,7 @@
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
-
-// Función criptográfica estándar OWASP para hashing con salt (PBKDF2-SHA512)
-function hashPassword(password: string): string {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.pbkdf2Sync(password, salt, 100000, 64, 'sha512').toString('hex');
-  return `pbkdf2$100000$${salt}$${hash}`;
-}
+import { hashPassword } from '@/lib/passwords';
 
 // Listar miembros del equipo de la fábrica
 export async function GET(request: Request) {
@@ -128,6 +121,52 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
+    return NextResponse.json({ error: errorMsg }, { status: 500 });
+  }
+}
+
+// 4. Actualizar miembro del equipo (roles, sucursal, contraseña)
+export async function PATCH(request: Request) {
+  try {
+    const body = await request.json();
+    const { id, tenant_id, full_name, phone, role, password, is_active, branch_id } = body;
+
+    if (!id || !tenant_id) {
+      return NextResponse.json({ error: 'Falta id o tenant_id' }, { status: 400 });
+    }
+
+    const auth = await verifyTenantAdmin({ tenantId: tenant_id });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
+    const admin = getAdminClient();
+    const updateData: Record<string, unknown> = {};
+
+    if (full_name) updateData.full_name = full_name.trim();
+    if (phone !== undefined) updateData.phone = phone ? phone.trim() : null;
+    if (role) updateData.role = role;
+    if (branch_id !== undefined) updateData.branch_id = branch_id || null;
+    if (is_active !== undefined) updateData.is_active = Boolean(is_active);
+    if (password && typeof password === 'string' && password.trim().length >= 6) {
+      updateData.password_hash = hashPassword(password.trim());
+    }
+
+    const { data: updatedMember, error: updateErr } = await admin
+      .from('tenant_members')
+      .update(updateData)
+      .eq('id', id)
+      .eq('tenant_id', tenant_id)
+      .select('id, full_name, email, phone, role, is_active, branch_id')
+      .single();
+
+    if (updateErr) {
+      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, member: updatedMember });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
     return NextResponse.json({ error: errorMsg }, { status: 500 });
