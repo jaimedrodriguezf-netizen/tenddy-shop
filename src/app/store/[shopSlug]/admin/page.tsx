@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import { getAdminClient } from '@/lib/supabase';
+import { verifySuperadminToken, verifyTenantAdminToken, createTenantAdminToken } from '@/lib/session';
 import { QuoteRecord } from '@/components/AdminDashboardView';
 import { TenantMember } from '@/components/TeamTab';
 import AdminAuthWrapper from '@/components/AdminAuthWrapper';
@@ -24,10 +25,10 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
   const cookieStore = await cookies();
 
-  // 1. Verificación primaria: Cookie de sesión de tienda o Superadmin
+  // 1. Verificación primaria: Cookie de sesión de tienda o Superadmin (validación criptográfica)
   const sessionCookie = cookieStore.get(`admin_session_${tenant.slug}`);
-  const isSuperadmin = cookieStore.get('tenddy_superadmin_session')?.value === 'authenticated';
-  let isAuthenticated = sessionCookie?.value === 'authenticated' || isSuperadmin;
+  const isSuperadmin = verifySuperadminToken(cookieStore.get('tenddy_superadmin_session')?.value);
+  let isAuthenticated = verifyTenantAdminToken(sessionCookie?.value, tenant.slug) || isSuperadmin;
 
   // 2. Verificación Dual de Respaldo: Sesión persistente de Google / Supabase Auth
   // Si el usuario dio "Atrás" en el navegador o la cookie temporal se perdió, validamos su sesión de Google
@@ -68,8 +69,9 @@ export default async function AdminPage({ params }: AdminPageProps) {
 
         if (membership) {
           isAuthenticated = true;
-          // Reactivar la cookie por 30 días para que la sesión sea permanente
-          cookieStore.set(`admin_session_${tenant.slug}`, 'authenticated', {
+          // Reactivar la cookie con token firmado por 30 días para que la sesión sea permanente
+          const token = createTenantAdminToken(tenant.slug, tenant.id);
+          cookieStore.set(`admin_session_${tenant.slug}`, token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',

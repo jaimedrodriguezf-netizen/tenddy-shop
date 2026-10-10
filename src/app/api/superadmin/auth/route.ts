@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { createSuperadminToken } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -37,9 +38,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Clave maestra de plataforma inválida' }, { status: 401 });
     }
 
-    // Cookie segura de sesión exclusiva de plataforma (path: '/' para cubrir /superadmin y /api/superadmin/*)
+    // Cookie segura de sesión exclusiva de plataforma (firmada con HMAC-SHA256)
     const cookieStore = await cookies();
-    cookieStore.set('tenddy_superadmin_session', 'authenticated', {
+    const token = createSuperadminToken();
+    cookieStore.set('tenddy_superadmin_session', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { LayoutDashboard } from 'lucide-react';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
+import { verifySuperadminToken, verifyTenantAdminToken } from '@/lib/session';
 import TenantLandingView from '@/components/TenantLandingView';
 import TenantCatalogView from '@/components/TenantCatalogView';
 import ViewTracker from '@/components/ViewTracker';
@@ -22,11 +23,13 @@ export default async function ShopPage({ params }: ShopPageProps) {
     notFound();
   }
 
-  // Verificar si el visitante es el administrador o dueño de esta tienda
+  // Verificar si el visitante es el administrador o dueño de esta tienda (firma criptográfica)
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(`admin_session_${tenant.slug}`);
   const isSuperadminCookie = cookieStore.get('tenddy_superadmin_session');
-  const isAdmin = sessionCookie?.value === 'authenticated' || isSuperadminCookie?.value === 'authenticated';
+  const isAdmin =
+    verifyTenantAdminToken(sessionCookie?.value, tenant.slug) ||
+    verifySuperadminToken(isSuperadminCookie?.value);
 
   // Para AYME INDUSTRIAS PET y PLASTPET servimos su tema oficial y finalizado original en iframe 100% aislado
   if (tenant.slug === 'ayme-pet' || tenant.slug === 'plastpet') {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { createTenantAdminToken } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -46,9 +47,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // Cookie segura de sesión para todo el dominio / para que /api/admin/* pueda leerla
+    // Cookie segura de sesión firmada criptográficamente con HMAC-SHA256
     const cookieStore = await cookies();
-    cookieStore.set(`admin_session_${cleanSlug}`, 'authenticated', {
+    const token = createTenantAdminToken(cleanSlug);
+    cookieStore.set(`admin_session_${cleanSlug}`, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { createTenantAdminToken } from '@/lib/session';
 
 // Helper para formatear automáticamente teléfonos de Ecuador a formato internacional WhatsApp (+593)
 function normalizeEcuadorPhone(phone: string): string {
@@ -269,9 +270,10 @@ export async function POST(request: Request) {
         is_active: true,
       });
 
-      // 8. Iniciar sesión administrativa inmediatamente para el nuevo tenant
+      // 8. Iniciar sesión administrativa con token firmado para el nuevo tenant
       const cookieStore = await cookies();
-      cookieStore.set(`admin_session_${tenant.slug}`, 'authenticated', {
+      const token = createTenantAdminToken(tenant.slug, tenant.id);
+      cookieStore.set(`admin_session_${tenant.slug}`, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',

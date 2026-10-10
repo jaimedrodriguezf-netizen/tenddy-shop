@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { getAdminClient } from './supabase';
+import { verifySuperadminToken, verifyTenantAdminToken } from './session';
 
 export interface AuthGuardResult {
   authorized: boolean;
@@ -23,9 +24,9 @@ export async function verifyTenantAdmin(
 ): Promise<AuthGuardResult> {
   const cookieStore = await cookies();
 
-  // 1. Validar si es superadmin global
+  // 1. Validar si es superadmin global con token firmado criptográficamente
   const superadminCookie = cookieStore.get('tenddy_superadmin_session');
-  const isSuperadmin = superadminCookie?.value === 'authenticated';
+  const isSuperadmin = verifySuperadminToken(superadminCookie?.value);
 
   const { tenantId, shopSlug } = identifier;
   if (!tenantId && !shopSlug) {
@@ -60,9 +61,9 @@ export async function verifyTenantAdmin(
     return { authorized: true, isSuperadmin: true, tenant: targetTenant };
   }
 
-  // 2. Validar cookie administrativa vinculada EXCLUSIVAMENTE al slug de este tenant
+  // 2. Validar cookie administrativa vinculada EXCLUSIVAMENTE al slug de este tenant (con firma HMAC)
   const tenantCookie = cookieStore.get(`admin_session_${targetTenant.slug}`);
-  if (tenantCookie?.value === 'authenticated') {
+  if (verifyTenantAdminToken(tenantCookie?.value, targetTenant.slug)) {
     return { authorized: true, isSuperadmin: false, tenant: targetTenant };
   }
 

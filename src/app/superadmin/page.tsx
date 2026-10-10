@@ -1,5 +1,6 @@
 import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifySuperadminToken } from '@/lib/session';
 import SuperadminDashboardView, { SuperadminTenantSummary } from '@/components/SuperadminDashboardView';
 import SuperadminLoginForm from '@/components/SuperadminLoginForm';
 import { B2BAccount, TenantStaffMember } from '@/components/SuperadminUsersManager';
@@ -13,7 +14,7 @@ export const metadata = {
 export default async function SuperadminPage() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('tenddy_superadmin_session');
-  const isAuthenticated = sessionCookie?.value === 'authenticated';
+  const isAuthenticated = verifySuperadminToken(sessionCookie?.value);
 
   if (!isAuthenticated) {
     return <SuperadminLoginForm onSuccess={() => {}} />;

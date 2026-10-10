@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifySuperadminToken } from '@/lib/session';
 
-// Helper para validar sesión de superadmin
+// Helper para validar sesión de superadmin con firma criptográfica
 async function checkSuperadminAuth() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('tenddy_superadmin_session');
-  return sessionCookie?.value === 'authenticated';
+  return verifySuperadminToken(sessionCookie?.value);
 }
 
 // 1. OBTENER USUARIOS (Compradores B2B y Miembros de Fábricas)

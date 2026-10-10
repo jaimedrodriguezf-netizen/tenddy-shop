@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
+import { verifySuperadminToken } from '@/lib/session';
 
-// Helper autenticación superadmin
+// Helper autenticación superadmin criptográfica
 async function checkSuperadminAuth() {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get('tenddy_superadmin_session');
-  return sessionCookie?.value === 'authenticated';
+  return verifySuperadminToken(sessionCookie?.value);
 }
 
 // 1. Listar tickets para Superadmin

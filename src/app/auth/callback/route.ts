@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { getAdminClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
+import { createTenantAdminToken } from '@/lib/session';
 
 // Helper para calcular el origen público real detrás de proxies inversos (Hostinger, Nginx, Vercel)
 function getSafeOrigin(request: Request): string {
@@ -80,7 +81,8 @@ export async function GET(request: Request) {
           const targetStore = (userMemberships[0] as unknown as { tenants: { slug: string; name: string } })?.tenants;
           if (targetStore && targetStore.slug) {
             const redirectRes = NextResponse.redirect(`${safeOrigin}/store/${targetStore.slug}/admin`);
-            redirectRes.cookies.set(`admin_session_${targetStore.slug}`, 'authenticated', {
+            const token = createTenantAdminToken(targetStore.slug);
+            redirectRes.cookies.set(`admin_session_${targetStore.slug}`, token, {
               httpOnly: true,
               secure: process.env.NODE_ENV === 'production',
               sameSite: 'lax',
@@ -118,7 +120,8 @@ export async function GET(request: Request) {
 
             if (member) {
               const redirectRes = NextResponse.redirect(`${safeOrigin}${next}`);
-              redirectRes.cookies.set(`admin_session_${targetSlug}`, 'authenticated', {
+              const token = createTenantAdminToken(targetSlug, tenant.id);
+              redirectRes.cookies.set(`admin_session_${targetSlug}`, token, {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
                 sameSite: 'lax',
