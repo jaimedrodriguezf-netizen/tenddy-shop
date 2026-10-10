@@ -168,6 +168,32 @@ function detectFieldMapping(headerName: string): string {
   return 'do_not_import';
 }
 
+// Normalizar y transformar enlaces de almacenamiento en la nube (Google Drive, Dropbox, HTTP/S)
+function normalizeImageUrl(url: string): string {
+  if (!url) return '';
+  let clean = url.trim();
+
+  // 1. Google Drive (enlaces de compartir /file/d/ID/view o ?id=ID)
+  if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
+    const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+  }
+
+  // 2. Dropbox (enlace directo a imagen)
+  if (clean.includes('dropbox.com')) {
+    clean = clean.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[?&]dl=0/, '');
+  }
+
+  // 3. Forzar HTTPS
+  if (clean.startsWith('http://')) {
+    clean = clean.replace('http://', 'https://');
+  }
+
+  return clean;
+}
+
 export default function BulkImportModal({
   isOpen,
   onClose,
@@ -573,9 +599,8 @@ export default function BulkImportModal({
         if (rawImages) {
           cleanImages = String(rawImages)
             .split(/[\r\n,;]+/)
-            .map((u) => u.trim())
+            .map((u) => normalizeImageUrl(u))
             .filter(Boolean)
-            .map((u) => (u.startsWith('http://') ? u.replace('http://', 'https://') : u))
             .filter((u) => u.startsWith('https://') || u.startsWith('http://'));
         }
 

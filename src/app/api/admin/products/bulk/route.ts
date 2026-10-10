@@ -20,6 +20,31 @@ interface BulkProductRow {
   update_if_exists?: boolean;
 }
 
+function normalizeImageUrl(url: string): string {
+  if (!url) return '';
+  let clean = url.trim();
+
+  // 1. Google Drive (enlaces compartidos /file/d/ID/view o ?id=ID)
+  if (clean.includes('drive.google.com') || clean.includes('docs.google.com')) {
+    const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://lh3.googleusercontent.com/d/${match[1]}`;
+    }
+  }
+
+  // 2. Dropbox (transformar a enlace directo de imagen)
+  if (clean.includes('dropbox.com')) {
+    clean = clean.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace(/[?&]dl=0/, '');
+  }
+
+  // 3. Forzar HTTPS para evitar bloqueos por Mixed Content
+  if (clean.startsWith('http://')) {
+    clean = clean.replace('http://', 'https://');
+  }
+
+  return clean;
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -127,10 +152,7 @@ export async function POST(request: Request) {
         if (!rawVal) continue;
         const tokens = String(rawVal).split(/[\r\n,;]+/).map((t) => t.trim()).filter(Boolean);
         for (const token of tokens) {
-          let cleanUrl = token;
-          if (cleanUrl.startsWith('http://')) {
-            cleanUrl = cleanUrl.replace('http://', 'https://');
-          }
+          const cleanUrl = normalizeImageUrl(token);
           if (cleanUrl.startsWith('https://') || cleanUrl.startsWith('http://')) {
             imageArray.push(cleanUrl);
           }
