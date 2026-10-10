@@ -132,13 +132,13 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Error creando producto:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: 'No se pudo crear el producto en el catálogo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, product });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/products:', err);
+    return NextResponse.json({ error: 'Error del servidor al registrar el producto' }, { status: 500 });
   }
 }
 
@@ -263,13 +263,13 @@ export async function PATCH(request: Request) {
 
     if (updateErr) {
       console.error('Error actualizando producto:', updateErr);
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      return NextResponse.json({ error: 'No se pudo actualizar el producto' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, product: updatedProduct });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/products:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar el producto' }, { status: 500 });
   }
 }
 
@@ -305,12 +305,13 @@ export async function DELETE(request: Request) {
     const { error } = await admin.from('products').delete().eq('id', productId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error eliminando producto (DELETE):', error);
+      return NextResponse.json({ error: 'No se pudo eliminar el producto' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en DELETE /api/admin/products:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar el producto' }, { status: 500 });
   }
 }

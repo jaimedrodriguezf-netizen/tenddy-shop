@@ -301,6 +301,7 @@ export async function DELETE(request: Request) {
       .eq('id', tenantId);
 
     if (updateErr) {
+      console.error('Error en Supabase al eliminar valoración:', updateErr);
       return NextResponse.json({ error: 'Error al eliminar valoración' }, { status: 500 });
     }
 
@@ -309,7 +310,7 @@ export async function DELETE(request: Request) {
       reviews: existingReviews,
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en DELETE /api/admin/reviews:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar valoraciones' }, { status: 500 });
   }
 }

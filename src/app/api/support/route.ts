@@ -131,11 +131,24 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
+    // Validar que el tenant_id realmente exista en la base de datos (previene errores de foreign key o inyecciones)
+    let validTenantId: string | null = null;
+    if (tenant_id && typeof tenant_id === 'string' && tenant_id.trim()) {
+      const { data: tenantRecord } = await admin
+        .from('tenants')
+        .select('id')
+        .eq('id', tenant_id.trim())
+        .single();
+      if (tenantRecord) {
+        validTenantId = tenantRecord.id;
+      }
+    }
+
     const { data: ticket, error } = await admin
       .from('support_tickets')
       .insert({
         ticket_number,
-        tenant_id: tenant_id || null,
+        tenant_id: validTenantId,
         sender_name: sender_name.trim(),
         sender_phone: sender_phone.trim(),
         sender_email: sender_email ? sender_email.trim().toLowerCase() : null,

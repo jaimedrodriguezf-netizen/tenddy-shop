@@ -234,7 +234,8 @@ export async function POST(request: Request) {
       });
 
     if (uploadErr) {
-      return NextResponse.json({ error: `Error subiendo a Storage: ${uploadErr.message}` }, { status: 500 });
+      console.error('Error subiendo medio a Storage:', uploadErr);
+      return NextResponse.json({ error: 'No se pudo almacenar el archivo en Storage' }, { status: 500 });
     }
 
     const { data: pubData } = admin.storage
@@ -272,11 +273,12 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
-    // Seguridad: asegurarse de que cada ruta pertenezca estrictamente al tenant y no contenga traversal
+    // Seguridad: asegurarse de que cada ruta comience estrictamente en la carpeta autorizada del tenant
+    const allowedPrefixes = ['products/', 'imports/', 'logos/'].map((f) => `${f}${tenant_id}/`);
     const safePaths = filePaths.filter(
       (path: string) =>
         typeof path === 'string' &&
-        path.includes(`/${tenant_id}/`) &&
+        allowedPrefixes.some((pref) => path.startsWith(pref)) &&
         !path.includes('..') &&
         !path.includes('\0')
     );
@@ -291,7 +293,8 @@ export async function DELETE(request: Request) {
       .remove(safePaths);
 
     if (delError) {
-      return NextResponse.json({ error: `Error eliminando de Storage: ${delError.message}` }, { status: 500 });
+      console.error('Error eliminando archivos de Storage:', delError);
+      return NextResponse.json({ error: 'No se pudieron eliminar los archivos de Storage' }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -302,7 +305,7 @@ export async function DELETE(request: Request) {
   } catch (err: unknown) {
     console.error('Error eliminando medios:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Error al eliminar medios' },
+      { error: 'Error del servidor al eliminar medios' },
       { status: 500 }
     );
   }

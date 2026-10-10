@@ -26,7 +26,8 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: false });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error obteniendo tickets en admin/support:', error);
+      return NextResponse.json({ error: 'No se pudieron consultar los tickets' }, { status: 500 });
     }
 
     // Calcular total de notificaciones no leídas para el tenant
@@ -38,8 +39,8 @@ export async function GET(request: Request) {
       totalUnread,
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en GET /api/admin/support:', err);
+    return NextResponse.json({ error: 'Error del servidor al obtener tickets' }, { status: 500 });
   }
 }
 
@@ -66,12 +67,13 @@ export async function PATCH(request: Request) {
       .eq('tenant_id', tenantId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error actualizando contador no leído en admin/support:', error);
+      return NextResponse.json({ error: 'No se pudo actualizar el estado del ticket' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/support:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar el ticket' }, { status: 500 });
   }
 }

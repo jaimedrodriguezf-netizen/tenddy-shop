@@ -70,7 +70,7 @@ export async function POST(request: Request) {
     if (uploadError) {
       console.error('Error subiendo archivo de importación a Storage:', uploadError);
       return NextResponse.json(
-        { error: `Error en Storage: ${uploadError.message}` },
+        { error: 'No se pudo almacenar el archivo de catálogo en Storage' },
         { status: 500 }
       );
     }
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
   } catch (err: unknown) {
     console.error('Error procesando archivo de importación:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Error inesperado al subir archivo' },
+      { error: 'Error inesperado al procesar el archivo de importación' },
       { status: 500 }
     );
   }

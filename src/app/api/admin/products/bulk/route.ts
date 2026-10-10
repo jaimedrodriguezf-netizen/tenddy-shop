@@ -267,7 +267,7 @@ export async function POST(request: Request) {
         console.error(`Error en carga masiva lote ${Math.floor(i / CHUNK_SIZE) + 1}:`, insertError);
         return NextResponse.json(
           {
-            error: `Error en lote ${Math.floor(i / CHUNK_SIZE) + 1} (${insertError.message})`,
+            error: `Error procesando el lote ${Math.floor(i / CHUNK_SIZE) + 1} de la carga masiva`,
             insertedBeforeError: insertedProducts.length,
           },
           { status: 500 }
@@ -298,7 +298,7 @@ export async function POST(request: Request) {
   } catch (err: unknown) {
     console.error('Error procesando carga masiva de productos:', err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Error inesperado durante la carga masiva' },
+      { error: 'Error inesperado durante la carga masiva de productos' },
       { status: 500 }
     );
   }
