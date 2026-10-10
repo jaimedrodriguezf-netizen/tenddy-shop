@@ -16,4 +16,4 @@ Auditoría y mitigación integral de 6 vectores de seguridad identificados en la
 - [x] **Tarea 3**: Implementar comparación en tiempo constante (`crypto.timingSafeEqual`) en `superadmin/auth` y `admin/auth`, y blindar `src/lib/session.ts` ante ausencia de secretos en producción.
 - [x] **Tarea 4**: Sanitizar mensajes de error de base de datos en `views`, `auth/me`, `admin/quotes`, `admin/members`, `superadmin/support`, `superadmin/users`, `b2b/customers`.
 - [x] **Tarea 5**: Crear migración Supabase RLS `0016_harden_support_tickets_rls.sql` bloqueando `anon` en `support_tickets`.
-- [x] **Tarea 6**: Ejecutar chequeos (`tsc --noEmit`, build), actualizar versión e integrar a main.
+- [x] **Tarea 6**: Ejecutar chequeos (`tsc --noEmit`, build), actualizar versión e integrar a main. (Commit: `ad918e9`, RDD `review-a3342e6cec287dde` burned).
