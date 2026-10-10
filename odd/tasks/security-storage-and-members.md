@@ -11,4 +11,4 @@ Mitigación de 2 vulnerabilidades críticas/altas detectadas en la plataforma:
 - [x] **Tarea 1**: Blindar `src/app/api/admin/members/route.ts` contra eliminación y modificación no autorizada de roles `owner` y escalación de privilegios.
 - [x] **Tarea 2**: Crear migración `supabase/migrations/0017_harden_storage_objects_rls.sql`, eliminar la política permisiva de `storage.objects` y aplicarla vía MCP a la BD.
 - [x] **Tarea 3**: Sanitizar retornos de error en `tenants/register/route.ts` y `store/[shopSlug]/products/route.ts`.
-- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.98 y cerrar ciclo.
+- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.98 y cerrar ciclo. (Commit: `0cb1864`, RDD `review-7cadb36ececd1bfa` burned).
