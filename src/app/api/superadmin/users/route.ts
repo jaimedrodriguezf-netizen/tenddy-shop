@@ -36,11 +36,15 @@ export async function GET(request: Request) {
         .select('*, tenants(name, slug)')
         .order('created_at', { ascending: false });
 
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      if (error) {
+        console.error('Error listando usuarios en superadmin:', error);
+        return NextResponse.json({ error: 'No se pudieron consultar los usuarios' }, { status: 500 });
+      }
       return NextResponse.json({ success: true, users: staff || [] });
     }
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en GET /api/superadmin/users:', err);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
 
@@ -73,10 +77,14 @@ export async function POST(request: Request) {
       .select('*')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error creando usuario en superadmin:', error);
+      return NextResponse.json({ error: 'No se pudo crear el usuario' }, { status: 500 });
+    }
     return NextResponse.json({ success: true, user: newBuyer });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en POST /api/superadmin/users:', err);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
 
@@ -110,10 +118,14 @@ export async function PATCH(request: Request) {
       .select('*')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error actualizando usuario en superadmin:', error);
+      return NextResponse.json({ error: 'No se pudo actualizar el usuario' }, { status: 500 });
+    }
     return NextResponse.json({ success: true, user: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en PATCH /api/superadmin/users:', err);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
 
@@ -134,10 +146,14 @@ export async function DELETE(request: Request) {
     const table = type === 'staff' ? 'tenant_members' : 'b2b_accounts';
 
     const { error } = await admin.from(table).delete().eq('id', id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error eliminando usuario en superadmin:', error);
+      return NextResponse.json({ error: 'No se pudo eliminar el usuario' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en DELETE /api/superadmin/users:', err);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

@@ -28,11 +28,32 @@ function getSafeOrigin(request: Request): string {
   return `${proto}://${host}`;
 }
 
+// Helper defensivo para prevenir vulnerabilidades de Redirección Abierta (Open Redirect - CWE-601)
+function getSafeNextPath(rawNext: string | null): string {
+  if (!rawNext || typeof rawNext !== 'string') return '/';
+  const trimmed = rawNext.trim();
+
+  // Debe comenzar estrictamente con una sola barra diagonal y no contener esquemas ni saltos de host
+  // Rechaza: '//attacker.com', '/\attacker.com', '/@attacker.com', 'javascript:', 'https:'
+  if (
+    !trimmed.startsWith('/') ||
+    trimmed.startsWith('//') ||
+    trimmed.startsWith('/\\') ||
+    trimmed.includes('@') ||
+    trimmed.includes('\\') ||
+    trimmed.includes(':')
+  ) {
+    return '/';
+  }
+
+  return trimmed;
+}
+
 // Manejador del intercambio de código OAuth de Supabase (PKCE Flow)
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get('code');
-  const next = url.searchParams.get('next') || '/';
+  const next = getSafeNextPath(url.searchParams.get('next'));
 
   const safeOrigin = getSafeOrigin(request);
 

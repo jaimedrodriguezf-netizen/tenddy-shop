@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import { createTenantAdminToken } from '@/lib/session';
@@ -88,13 +89,41 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
-    // 0. Si viene email de Google, verificar si ya tiene registrada una tienda con el mismo nombre o slug
-    if (email) {
-      const cleanEmail = email.trim().toLowerCase();
+    // 0. Validar sesión autenticada real de Supabase Auth en el servidor (Previene suplantación de identidad)
+    const cookieStore = await cookies();
+    let verifiedOwnerEmail: string | null = null;
+    let verifiedOwnerName: string | null = null;
+
+    try {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+          cookies: {
+            getAll() {
+              return cookieStore.getAll();
+            },
+          },
+        }
+      );
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser?.email) {
+        verifiedOwnerEmail = authUser.email.trim().toLowerCase();
+        verifiedOwnerName = authUser.user_metadata?.full_name || null;
+      }
+    } catch (authCheckErr) {
+      console.warn('No se pudo verificar sesión de Supabase Auth en registro:', authCheckErr);
+    }
+
+    // El email del propietario solo se toma si está respaldado por la sesión del servidor
+    const effectiveEmail = verifiedOwnerEmail || (email && verifiedOwnerEmail === email.trim().toLowerCase() ? verifiedOwnerEmail : null);
+
+    // Si viene email verificado, comprobar si ya tiene registrada una tienda con el mismo nombre o slug
+    if (effectiveEmail) {
       const { data: existingMemberships } = await admin
         .from('tenant_members')
         .select('tenant_id, role, tenants(id, slug, name, is_active)')
-        .eq('email', cleanEmail)
+        .eq('email', effectiveEmail)
         .eq('role', 'owner');
 
       if (existingMemberships && existingMemberships.length > 0) {
@@ -106,7 +135,7 @@ export async function POST(request: Request) {
             if (normExisting === normNew || t.slug === cleanSlug) {
               return NextResponse.json(
                 {
-                  error: `Tu cuenta de Google ya tiene registrada la tienda "${t.name}". Puedes ingresar directamente a tu panel de administración.`,
+                  error: `Tu cuenta ya tiene registrada la tienda "${t.name}". Puedes ingresar directamente a tu panel de administración.`,
                   adminUrl: `/store/${t.slug}/admin`,
                   redirectUrl: `/store/${t.slug}`,
                   existingStore: {
@@ -258,12 +287,12 @@ export async function POST(request: Request) {
       },
     ]);
 
-    // 7. Si viene email del creador autenticado con Google, registrarlo como Dueño (Owner)
-    if (email) {
+    // 7. Si hay email verificado por sesión de Google, registrarlo como Dueño (Owner)
+    if (effectiveEmail) {
       await admin.from('tenant_members').insert({
         tenant_id: tenant.id,
-        full_name: creatorName || companyName.trim(),
-        email: email.trim().toLowerCase(),
+        full_name: creatorName || verifiedOwnerName || companyName.trim(),
+        email: effectiveEmail,
         phone: whatsapp || null,
         password_hash: 'google_oauth_managed',
         role: 'owner',
@@ -271,7 +300,6 @@ export async function POST(request: Request) {
       });
 
       // 8. Iniciar sesión administrativa con token firmado para el nuevo tenant
-      const cookieStore = await cookies();
       const token = createTenantAdminToken(tenant.slug, tenant.id);
       cookieStore.set(`admin_session_${tenant.slug}`, token, {
         httpOnly: true,
@@ -291,8 +319,11 @@ export async function POST(request: Request) {
       redirectUrl: `/store/${tenant.slug}`,
       adminUrl: `/store/${tenant.slug}/admin`,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error('Excepción en /api/tenants/register:', err);
-    return NextResponse.json({ error: err.message || 'Error del servidor' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Ocurrió un error al registrar la tienda. Por favor verifica los datos o intenta nuevamente.' },
+      { status: 500 }
+    );
   }
 }

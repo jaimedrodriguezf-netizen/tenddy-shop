@@ -28,11 +28,13 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error actualizando tenant en superadmin:', error);
+      return NextResponse.json({ error: 'No se pudo actualizar el estado de la tienda' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, tenant: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en /api/superadmin/tenants:', err);
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }

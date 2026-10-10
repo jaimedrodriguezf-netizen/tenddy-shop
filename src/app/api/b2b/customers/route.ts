@@ -101,7 +101,8 @@ export async function POST(request: Request) {
       account_id: accountId,
       message: 'Comprador B2B vinculado con éxito a la tienda',
     });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en POST /api/b2b/customers:', err);
+    return NextResponse.json({ error: 'Error procesando la solicitud del cliente' }, { status: 500 });
   }
 }
