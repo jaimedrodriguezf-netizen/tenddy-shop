@@ -75,6 +75,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Máximo 50 referencias por cotización' }, { status: 400 });
     }
 
+    // 6. Sanitización y validación defensiva de cada item de la cotización
+    const sanitizedItems = items.map((item: any) => ({
+      product_id: typeof item.product_id === 'string' ? item.product_id.trim() : undefined,
+      name: String(item.name || 'Producto').slice(0, 120).trim(),
+      sku: String(item.sku || '').slice(0, 50).trim(),
+      package_count: Math.max(1, Math.min(100000, Number(item.package_count) || 1)),
+      units_per_package: Math.max(1, Math.min(100000, Number(item.units_per_package) || 1)),
+      total_units: Math.max(1, Math.min(10000000, Number(item.total_units) || 1)),
+      selected_color: typeof item.selected_color === 'string' ? item.selected_color.slice(0, 40).trim() : undefined,
+      specs: typeof item.specs === 'object' && item.specs !== null ? item.specs : {},
+    }));
+
     const admin = getAdminClient();
 
     // Generar consecutivo amigable (e.g. COT-2026-XXXX)
@@ -95,7 +107,7 @@ export async function POST(request: Request) {
         delivery_city: delivery_city ? delivery_city.trim() : null,
         delivery_address: delivery_address ? delivery_address.trim() : null,
         notes: notes ? notes.trim() : null,
-        items,
+        items: sanitizedItems,
         status: 'pending',
       })
       .select('id, quote_number, created_at')

@@ -21,6 +21,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
+    // 1. Validar extensión permitida estrictamente para planillas de catálogo (Excel o CSV)
+    const ALLOWED_IMPORT_EXTENSIONS = new Set(['csv', 'xlsx', 'xls']);
+    const ext = file.name.split('.').pop()?.toLowerCase() || '';
+
+    if (!ALLOWED_IMPORT_EXTENSIONS.has(ext)) {
+      return NextResponse.json(
+        { error: 'Formato de archivo no permitido. Solo se aceptan archivos Excel (.xlsx, .xls) o CSV (.csv).' },
+        { status: 400 }
+      );
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
@@ -32,18 +43,27 @@ export async function POST(request: Request) {
       );
     }
 
-    const cleanFileName = file.name
-      .toLowerCase()
-      .replace(/[^a-z0-9._-]/g, '_')
-      .slice(0, 80);
+    const MIME_MAP: Record<string, string> = {
+      csv: 'text/csv',
+      xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      xls: 'application/vnd.ms-excel',
+    };
+    const contentType = MIME_MAP[ext] || 'text/csv';
 
-    const filePath = `imports/${tenantId}/${Date.now()}-${cleanFileName}`;
+    const baseName = file.name
+      .replace(/\.[^/.]+$/, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '_')
+      .slice(0, 50);
+
+    const safeFileName = `${Date.now()}-${baseName || 'catalogo'}.${ext}`;
+    const filePath = `imports/${tenantId}/${safeFileName}`;
     const admin = getAdminClient();
 
     const { error: uploadError } = await admin.storage
       .from('support-attachments')
       .upload(filePath, buffer, {
-        contentType: file.type || 'text/csv',
+        contentType,
         upsert: true,
       });
 
