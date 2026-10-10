@@ -4,26 +4,44 @@ import { getAdminClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
 import { createTenantAdminToken } from '@/lib/session';
 
-// Helper para calcular el origen público real detrás de proxies inversos (Hostinger, Nginx, Vercel)
+// Helper para calcular el origen público real detrás de proxies inversos con Whitelist estricta contra Host Header Injection (CWE-644)
 function getSafeOrigin(request: Request): string {
+  const rootDomain = (process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tenddy.shop').toLowerCase();
+  const defaultOrigin = process.env.NODE_ENV === 'production' 
+    ? `https://${rootDomain}` 
+    : 'http://localhost:3000';
+
   const forwardedHost = request.headers.get('x-forwarded-host');
   const forwardedProto = request.headers.get('x-forwarded-proto');
-  const host = forwardedHost || request.headers.get('host');
-  const proto = forwardedProto || (process.env.NODE_ENV === 'production' ? 'https' : 'http');
+  const host = (forwardedHost || request.headers.get('host') || '').trim().toLowerCase();
 
-  // Si el host interno reporta IP de bind local como 0.0.0.0 o 127.0.0.1
-  if (!host || host.includes('0.0.0.0') || host.includes('127.0.0.1')) {
-    const rootDomain = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'tenddy.shop';
-    if (process.env.NODE_ENV === 'production' || !host) {
-      return `https://${rootDomain}`;
-    }
-    return 'http://localhost:3000';
+  if (!host) {
+    return defaultOrigin;
   }
 
-  // En producción con dominios tenddy.shop o vercel siempre forzar HTTPS
-  if (host.includes('tenddy.shop') || host.includes('vercel.app')) {
-    return `https://${host}`;
+  // Whitelist estricta de dominios autorizados de la plataforma:
+  // 1. Dominio raíz y subdominios oficiales de producción (tenddy.shop / *.tenddy.shop)
+  // 2. Previews oficiales de Vercel (*.vercel.app)
+  // 3. Entornos de desarrollo local autorizados
+  const isAllowedHost =
+    host === rootDomain ||
+    host.endsWith(`.${rootDomain}`) ||
+    host === 'tenddy.shop' ||
+    host.endsWith('.tenddy.shop') ||
+    host.endsWith('.vercel.app') ||
+    host === 'localhost' ||
+    host.startsWith('localhost:') ||
+    host === '127.0.0.1' ||
+    host.startsWith('127.0.0.1:') ||
+    (process.env.NODE_ENV !== 'production' && (host.startsWith('100.') || host.startsWith('192.168.')));
+
+  if (!isAllowedHost) {
+    console.warn(`Host Header sospechoso o no autorizado rechazado en OAuth callback: ${host}`);
+    return defaultOrigin;
   }
+
+  const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const proto = forwardedProto || (process.env.NODE_ENV === 'production' || !isLocal ? 'https' : 'http');
 
   return `${proto}://${host}`;
 }

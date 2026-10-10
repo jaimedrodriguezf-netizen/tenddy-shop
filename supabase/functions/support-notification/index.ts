@@ -20,6 +20,24 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
+    // 1. Verificación obligatoria de autorización (Bloquea invocaciones anónimas o públicas no autorizadas)
+    const authHeader = req.headers.get("Authorization");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (serviceRoleKey) {
+      if (!authHeader || authHeader !== `Bearer ${serviceRoleKey}`) {
+        return new Response(
+          JSON.stringify({ error: "Unauthorized: Requiere autenticación de service_role" }),
+          { status: 401, headers: { "Content-Type": "application/json" } }
+        );
+      }
+    } else if (!authHeader || !authHeader.startsWith("Bearer ") || authHeader.length < 20) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized: Falta token de autorización válido" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
     const botToken = Deno.env.get("TELEGRAM_BOT_TOKEN");
     const chatId = Deno.env.get("TELEGRAM_CHAT_ID");
 
@@ -34,6 +52,13 @@ Deno.serve(async (req: Request) => {
     const payload = await req.json();
     const { ticket_number, sender_name, sender_phone, subject, message, category, image_url } = payload;
 
+    // Sanitizar y validar URL de adjunto para prevenir inyecciones HTML en Telegram
+    const cleanImageUrl =
+      typeof image_url === "string" &&
+      (image_url.startsWith("https://") || image_url.startsWith("http://"))
+        ? image_url.trim()
+        : null;
+
     const captionHtml = 
 `🚨 <b>NUEVO TICKET DE SOPORTE #${escapeHtml(ticket_number || "S/N")}</b>
 ━━━━━━━━━━━━━━━━━━
@@ -44,16 +69,16 @@ Deno.serve(async (req: Request) => {
 
 📝 <b>Comentario:</b>
 ${escapeHtml(message || "")}
-${image_url ? `\n📎 <b>Adjunto:</b>\n${image_url}` : ""}
+${cleanImageUrl ? `\n📎 <b>Adjunto:</b>\n${escapeHtml(cleanImageUrl)}` : ""}
 
 🌐 <i>Enviado vía Supabase Edge Function • tenddy.shop</i>`;
 
-    if (image_url && image_url.startsWith("http")) {
+    if (cleanImageUrl) {
       const formData = new FormData();
       formData.append("chat_id", chatId);
       formData.append("caption", captionHtml);
       formData.append("parse_mode", "HTML");
-      formData.append("photo", image_url);
+      formData.append("photo", cleanImageUrl);
 
       const res = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
         method: "POST",
