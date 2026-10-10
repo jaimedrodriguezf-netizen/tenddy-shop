@@ -1,6 +1,16 @@
 import { getAdminClient } from './supabase';
 import { Tenant, Branch, Category, Product } from './types';
 
+function sanitizeTenant(tenant: any): Tenant | null {
+  if (!tenant) return null;
+  const sanitized = { ...tenant };
+  if (sanitized.settings && typeof sanitized.settings === 'object') {
+    const { admin_password_hash, ...safeSettings } = sanitized.settings;
+    sanitized.settings = safeSettings;
+  }
+  return sanitized as Tenant;
+}
+
 export async function getTenantByHostOrSlug(hostOrSlug: string): Promise<Tenant | null> {
   const admin = getAdminClient();
   const clean = hostOrSlug.toLowerCase().trim();
@@ -12,7 +22,7 @@ export async function getTenantByHostOrSlug(hostOrSlug: string): Promise<Tenant 
     .eq('slug', clean)
     .single();
 
-  if (tenantBySlug) return tenantBySlug as Tenant;
+  if (tenantBySlug) return sanitizeTenant(tenantBySlug);
 
   // 2. Si no es slug directo, buscar en tenant_domains (ej: ayme.tenddy.shop o plastpet.localhost)
   const { data: domainRecord } = await admin
@@ -27,7 +37,7 @@ export async function getTenantByHostOrSlug(hostOrSlug: string): Promise<Tenant 
       .select('*')
       .eq('id', domainRecord.tenant_id)
       .single();
-    if (tenant) return tenant as Tenant;
+    if (tenant) return sanitizeTenant(tenant);
   }
 
   return null;
