@@ -10,4 +10,4 @@ Mitigación de 2 vectores de seguridad identificados:
 - [x] **Tarea 1**: Blindar `src/app/auth/callback/route.ts` validando `host` contra whitelist en `getSafeOrigin`.
 - [x] **Tarea 2**: Blindar `supabase/functions/support-notification/index.ts` con verificación de autorización y sanitización de `image_url`.
 - [x] **Tarea 3**: Desplegar la actualización de la Edge Function en Supabase y activar `verify_jwt: true` vía Management API.
-- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.99 y cerrar ciclo.
+- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.99 y cerrar ciclo. (Commit: `034234c`, RDD `review-aa0b9641be546d3d` burned).
