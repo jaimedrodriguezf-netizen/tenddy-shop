@@ -3,7 +3,7 @@ import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 import { ProductTag } from '@/lib/types';
 
-// 1. OBTENER ETIQUETAS (GET)
+// 1. OBTENER ETIQUETAS (GET - Requiere autenticación de administrador de tienda)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,6 +11,11 @@ export async function GET(request: Request) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Falta tenantId' }, { status: 400 });
+    }
+
+    const auth = await verifyTenantAdmin({ tenantId });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -27,8 +32,8 @@ export async function GET(request: Request) {
     const tags: ProductTag[] = tenant.settings?.tags || [];
     return NextResponse.json({ success: true, tags });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en GET /api/admin/tags:', err);
+    return NextResponse.json({ error: 'Error del servidor al obtener etiquetas' }, { status: 500 });
   }
 }
 
@@ -96,13 +101,14 @@ export async function POST(request: Request) {
       .eq('id', tenant_id);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings de etiquetas (POST):', updateErr);
+      return NextResponse.json({ error: 'Error al registrar la etiqueta' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, tag: newTag });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/tags:', err);
+    return NextResponse.json({ error: 'Error del servidor al procesar la etiqueta' }, { status: 500 });
   }
 }
 
@@ -162,13 +168,14 @@ export async function PATCH(request: Request) {
       .eq('id', tenant_id);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings de etiquetas (PATCH):', updateErr);
+      return NextResponse.json({ error: 'Error al actualizar la etiqueta' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, tag: updatedTag });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/tags:', err);
+    return NextResponse.json({ error: 'Error del servidor al editar la etiqueta' }, { status: 500 });
   }
 }
 
@@ -213,12 +220,13 @@ export async function DELETE(request: Request) {
       .eq('id', tenantId);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings tras eliminar etiqueta (DELETE):', updateErr);
+      return NextResponse.json({ error: 'Error al eliminar la etiqueta' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en DELETE /api/admin/tags:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar la etiqueta' }, { status: 500 });
   }
 }

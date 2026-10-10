@@ -74,7 +74,8 @@ export async function POST(request: Request) {
         .single();
 
       if (createAccErr) {
-        return NextResponse.json({ error: createAccErr.message }, { status: 500 });
+        console.error('Error creando cuenta B2B:', createAccErr);
+        return NextResponse.json({ error: 'No se pudo registrar la cuenta empresarial' }, { status: 500 });
       }
       accountId = newAccount.id;
     }

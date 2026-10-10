@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
-import { createTenantAdminToken } from '@/lib/session';
+import { createTenantAdminToken, constantTimeCompare } from '@/lib/session';
 import { verifyPassword } from '@/lib/passwords';
 
 export async function POST(request: Request) {
@@ -95,16 +95,16 @@ export async function POST(request: Request) {
         isAuthorized = verifyPassword(password, tenantSettings.admin_password_hash);
       }
 
-      // Camino D: Llave de soporte de la plataforma (Superadmin Master Key)
+      // Camino D: Llave de soporte de la plataforma (Superadmin Master Key - Comparación constante)
       const platformSuperadminKey = process.env.SUPERADMIN_SECRET_KEY;
-      if (!isAuthorized && platformSuperadminKey && password === platformSuperadminKey) {
+      if (!isAuthorized && platformSuperadminKey && constantTimeCompare(password, platformSuperadminKey)) {
         isAuthorized = true;
         authenticatedUserRole = 'superadmin';
       }
 
       // Camino E (Legacy sólo si ADMIN_SECRET_KEY está explícitamente en variables de entorno, sin fallback hardcodeado)
       const platformAdminKey = process.env.ADMIN_SECRET_KEY;
-      if (!isAuthorized && platformAdminKey && password === platformAdminKey) {
+      if (!isAuthorized && platformAdminKey && constantTimeCompare(password, platformAdminKey)) {
         isAuthorized = true;
       }
     }
@@ -129,8 +129,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, role: authenticatedUserRole });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/auth:', err);
+    return NextResponse.json({ error: 'Error del servidor al autenticar' }, { status: 500 });
   }
 }
 

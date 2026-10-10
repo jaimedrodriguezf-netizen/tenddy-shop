@@ -3,7 +3,7 @@ import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 import { Brand } from '@/lib/types';
 
-// Procesar foto de la marca y subir a Storage
+// Procesar foto de la marca y subir a Storage (NUNCA base64 en BD)
 async function processBrandImage(
   admin: any,
   tenantId: string,
@@ -11,8 +11,11 @@ async function processBrandImage(
   imageUrl?: string | null,
   imageData?: string | null
 ): Promise<string | null> {
-  if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim().startsWith('http')) {
-    return imageUrl.trim();
+  if (imageUrl && typeof imageUrl === 'string') {
+    const cleanUrl = imageUrl.trim();
+    if (cleanUrl.startsWith('https://') || cleanUrl.startsWith('http://')) {
+      return cleanUrl;
+    }
   }
   if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
     try {
@@ -52,7 +55,7 @@ async function processBrandImage(
   return null;
 }
 
-// 1. OBTENER MARCAS (GET)
+// 1. OBTENER MARCAS (GET - Requiere autenticación de administrador de tienda)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -60,6 +63,11 @@ export async function GET(request: Request) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Falta tenantId' }, { status: 400 });
+    }
+
+    const auth = await verifyTenantAdmin({ tenantId });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -76,8 +84,8 @@ export async function GET(request: Request) {
     const brands: Brand[] = tenant.settings?.brands || [];
     return NextResponse.json({ success: true, brands });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en GET /api/admin/brands:', err);
+    return NextResponse.json({ error: 'Error del servidor al obtener marcas' }, { status: 500 });
   }
 }
 
@@ -151,13 +159,14 @@ export async function POST(request: Request) {
       .eq('id', tenant_id);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings de marcas (POST):', updateErr);
+      return NextResponse.json({ error: 'Error al registrar la marca' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, brand: newBrand });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/brands:', err);
+    return NextResponse.json({ error: 'Error del servidor al procesar la marca' }, { status: 500 });
   }
 }
 
@@ -230,13 +239,14 @@ export async function PATCH(request: Request) {
       .eq('id', tenant_id);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings de marcas (PATCH):', updateErr);
+      return NextResponse.json({ error: 'Error al actualizar la marca' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, brand: updatedBrand });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/brands:', err);
+    return NextResponse.json({ error: 'Error del servidor al editar la marca' }, { status: 500 });
   }
 }
 
@@ -281,12 +291,13 @@ export async function DELETE(request: Request) {
       .eq('id', tenantId);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings tras eliminar marca (DELETE):', updateErr);
+      return NextResponse.json({ error: 'Error al eliminar la marca' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en DELETE /api/admin/brands:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar la marca' }, { status: 500 });
   }
 }

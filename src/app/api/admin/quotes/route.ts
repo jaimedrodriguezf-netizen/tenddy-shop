@@ -45,12 +45,13 @@ export async function PATCH(request: Request) {
       .single();
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error actualizando estado de cotización:', error);
+      return NextResponse.json({ error: 'No se pudo actualizar el estado de la cotización' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, quote: data });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/quotes:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar la cotización' }, { status: 500 });
   }
 }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
-import { createSuperadminToken } from '@/lib/session';
+import { createSuperadminToken, constantTimeCompare } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
     const effectiveSecret = platformSecret || 'tenddy_master_2026';
 
-    if (!secretKey || secretKey !== effectiveSecret) {
+    if (!secretKey || !constantTimeCompare(secretKey, effectiveSecret)) {
       return NextResponse.json({ error: 'Clave maestra de plataforma inválida' }, { status: 401 });
     }
 
@@ -51,8 +51,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/superadmin/auth:', err);
+    return NextResponse.json({ error: 'Error del servidor al procesar la autenticación' }, { status: 500 });
   }
 }
 

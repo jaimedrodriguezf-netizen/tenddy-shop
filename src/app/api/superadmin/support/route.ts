@@ -23,10 +23,14 @@ export async function GET() {
       .select('*, tenants(name, slug)')
       .order('created_at', { ascending: false });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error listando tickets para superadmin:', error);
+      return NextResponse.json({ error: 'No se pudieron consultar los tickets' }, { status: 500 });
+    }
     return NextResponse.json({ success: true, tickets: tickets || [] });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en GET /api/superadmin/support:', err);
+    return NextResponse.json({ error: 'Error del servidor al listar tickets' }, { status: 500 });
   }
 }
 
@@ -54,9 +58,13 @@ export async function PATCH(request: Request) {
       .select('*')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error actualizando ticket en superadmin:', error);
+      return NextResponse.json({ error: 'No se pudo actualizar el ticket' }, { status: 500 });
+    }
     return NextResponse.json({ success: true, ticket: updated });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    console.error('Excepción en PATCH /api/superadmin/support:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar ticket' }, { status: 500 });
   }
 }

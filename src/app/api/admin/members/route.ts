@@ -27,13 +27,14 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: true });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error consultando miembros de la tienda (GET):', error);
+      return NextResponse.json({ error: 'No se pudieron consultar los miembros del equipo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, members: members || [] });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en GET /api/admin/members:', err);
+    return NextResponse.json({ error: 'Error del servidor al obtener miembros' }, { status: 500 });
   }
 }
 
@@ -74,14 +75,14 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('Error insertando miembro:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error insertando miembro (POST):', error);
+      return NextResponse.json({ error: 'No se pudo agregar el miembro al equipo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, member });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/members:', err);
+    return NextResponse.json({ error: 'Error del servidor al registrar miembro' }, { status: 500 });
   }
 }
 
@@ -117,13 +118,14 @@ export async function DELETE(request: Request) {
     const { error } = await admin.from('tenant_members').delete().eq('id', memberId);
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      console.error('Error eliminando miembro (DELETE):', error);
+      return NextResponse.json({ error: 'No se pudo eliminar el miembro del equipo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en DELETE /api/admin/members:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar miembro' }, { status: 500 });
   }
 }
 
@@ -163,12 +165,13 @@ export async function PATCH(request: Request) {
       .single();
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando miembro (PATCH):', updateErr);
+      return NextResponse.json({ error: 'No se pudo actualizar el miembro del equipo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, member: updatedMember });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/members:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar miembro' }, { status: 500 });
   }
 }

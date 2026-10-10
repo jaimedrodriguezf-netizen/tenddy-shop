@@ -4,6 +4,17 @@ import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 import { verifySuperadminToken } from '@/lib/session';
 
+const ALLOWED_ATTACHMENT_MIMES: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-excel': 'xls',
+  'text/csv': 'csv',
+};
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -13,9 +24,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Faltan parámetros obligatorios' }, { status: 400 });
     }
 
+    if (message.trim().length > 5000) {
+      return NextResponse.json({ error: 'El mensaje excede el límite de 5000 caracteres' }, { status: 400 });
+    }
+
     const admin = getAdminClient();
 
-    // 1. Obtener ticket para verificar pertenencia
+    // 1. Obtener ticket de la BD para verificar pertenencia legítima
     const { data: ticket, error: ticketErr } = await admin
       .from('support_tickets')
       .select('id, tenant_id, unread_tenant_count, status')
@@ -26,52 +41,79 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
-    // 2. Validar autorización estricta
-    const targetTenantId = tenant_id || ticket.tenant_id;
-    if (targetTenantId) {
-      const auth = await verifyTenantAdmin({ tenantId: targetTenantId });
-      if (!auth.authorized) {
-        return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    // 2. Blindaje BOLA/IDOR: Validar autorización estricta contra el tenant real del ticket
+    const cookieStore = await cookies();
+    const isSuperadmin = verifySuperadminToken(cookieStore.get('tenddy_superadmin_session')?.value);
+
+    if (ticket.tenant_id) {
+      // Si el cliente suministró tenant_id en el payload, debe coincidir exactamente con el del ticket
+      if (tenant_id && tenant_id !== ticket.tenant_id) {
+        return NextResponse.json({ error: 'Identificador de tienda no coincide con el ticket' }, { status: 403 });
+      }
+
+      if (!isSuperadmin) {
+        const auth = await verifyTenantAdmin({ tenantId: ticket.tenant_id });
+        if (!auth.authorized) {
+          return NextResponse.json({ error: auth.error || 'No autorizado para este ticket' }, { status: 401 });
+        }
       }
     } else {
-      // Para tickets anónimos o globales sin tenant, solo el Superadmin de plataforma puede responder
-      const cookieStore = await cookies();
-      const isSuperadmin = verifySuperadminToken(cookieStore.get('tenddy_superadmin_session')?.value);
+      // Para tickets anónimos de plataforma sin tienda, solo Superadmin puede responder
       if (!isSuperadmin) {
-        return NextResponse.json({ error: 'No autorizado para responder tickets anónimos' }, { status: 401 });
+        return NextResponse.json({ error: 'Solo el Superadmin puede responder tickets anónimos' }, { status: 401 });
       }
     }
 
-    // 3. Procesar foto o adjunto si viene en la réplica
+    // 3. Procesar foto o adjunto si viene en la réplica (Subida obligatoria a Supabase Storage, NUNCA base64 en BD)
     const attachments: Array<{ url: string; type: string }> = [];
+
     if (body.image_data && typeof body.image_data === 'string' && body.image_data.startsWith('data:')) {
-      try {
-        const matches = body.image_data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const mimeType = matches[1];
-          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'webp';
-          const buffer = Buffer.from(matches[2], 'base64');
-          const filePath = `tickets/${ticket_id}/reply-${Date.now()}.${ext}`;
+      const commaIndex = body.image_data.indexOf(',');
+      if (commaIndex !== -1) {
+        const mimeMatch = body.image_data.substring(0, commaIndex).match(/data:([^;]+);base64/);
+        const rawMime = mimeMatch ? mimeMatch[1].toLowerCase().trim() : '';
+        const ext = ALLOWED_ATTACHMENT_MIMES[rawMime];
 
-          const { error: uploadErr } = await admin.storage
-            .from('support-attachments')
-            .upload(filePath, buffer, { contentType: mimeType, upsert: true });
-
-          if (!uploadErr) {
-            const { data: pubData } = admin.storage
-              .from('support-attachments')
-              .getPublicUrl(filePath);
-            if (pubData?.publicUrl) {
-              attachments.push({ url: pubData.publicUrl, type: 'image' });
-            }
-          }
+        if (!ext) {
+          return NextResponse.json(
+            { error: 'Tipo de archivo no permitido. Solo se aceptan imágenes (WebP, JPG, PNG) o documentos (PDF, Excel, CSV).' },
+            { status: 400 }
+          );
         }
-      } catch (err) {
-        console.error('Error subiendo adjunto de réplica a Storage:', err);
+
+        const base64Data = body.image_data.substring(commaIndex + 1);
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        // Límite de 5MB por adjunto
+        if (buffer.length > 5 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: 'El archivo adjunto excede el límite de 5MB' },
+            { status: 400 }
+          );
+        }
+
+        const filePath = `tickets/${ticket_id}/reply-${Date.now()}.${ext}`;
+        const { error: uploadErr } = await admin.storage
+          .from('support-attachments')
+          .upload(filePath, buffer, { contentType: rawMime, upsert: true });
+
+        if (uploadErr) {
+          console.error('Error subiendo adjunto a Storage en réplica:', uploadErr);
+          return NextResponse.json({ error: 'No se pudo almacenar el archivo adjunto' }, { status: 500 });
+        }
+
+        const { data: pubData } = admin.storage
+          .from('support-attachments')
+          .getPublicUrl(filePath);
+
+        if (pubData?.publicUrl) {
+          const isDoc = ext === 'pdf' || ext === 'xlsx' || ext === 'xls' || ext === 'csv';
+          attachments.push({ url: pubData.publicUrl, type: isDoc ? 'document' : 'image' });
+        }
       }
     }
 
-    // 4. Insertar comentario en el hilo
+    // 4. Insertar comentario en el hilo (con URLs públicas de Storage, nunca base64 crudo)
     const { data: comment, error: insertErr } = await admin
       .from('ticket_comments')
       .insert({
@@ -85,7 +127,8 @@ export async function POST(request: Request) {
       .single();
 
     if (insertErr) {
-      return NextResponse.json({ error: insertErr.message }, { status: 500 });
+      console.error('Error insertando comentario en ticket:', insertErr);
+      return NextResponse.json({ error: 'No se pudo registrar la respuesta en el ticket' }, { status: 500 });
     }
 
     // 5. Si el comentario viene del equipo de soporte, incrementar notificaciones no leídas para el tenant
@@ -112,7 +155,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, comment });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/support/comments:', err);
+    return NextResponse.json({ error: 'Error del servidor al procesar la respuesta' }, { status: 500 });
   }
 }

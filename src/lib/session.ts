@@ -12,9 +12,26 @@ function getSessionSecret(): string {
   const secret =
     process.env.SESSION_SECRET ||
     process.env.SUPERADMIN_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    'tenddy_fallback_cryptographic_secret_2026';
+    process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('CRITICAL: Ninguna clave secreta de sesión (SESSION_SECRET, SUPERADMIN_SECRET_KEY, SUPABASE_SERVICE_ROLE_KEY) está configurada en producción.');
+    }
+    return 'tenddy_dev_secret_only_local_fallback';
+  }
   return secret;
+}
+
+/**
+ * Comparación de strings en tiempo constante contra ataques de temporización (Timing Attacks - CWE-208).
+ * Normaliza mediante SHA-256 para garantizar buffers de longitud idéntica fija (32 bytes).
+ */
+export function constantTimeCompare(a: string, b: string): boolean {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const hashA = crypto.createHash('sha256').update(a).digest();
+  const hashB = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(hashA, hashB);
 }
 
 /**

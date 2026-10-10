@@ -57,7 +57,7 @@ export async function GET() {
       },
     });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error interno';
-    return NextResponse.json({ authenticated: false, error: errorMsg });
+    console.error('Error en GET /api/auth/me:', err);
+    return NextResponse.json({ authenticated: false, error: 'No se pudo verificar la sesión' });
   }
 }

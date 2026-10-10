@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, views: data });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en POST /api/views:', err);
+    return NextResponse.json({ error: 'Error del servidor al registrar visita' }, { status: 500 });
   }
 }

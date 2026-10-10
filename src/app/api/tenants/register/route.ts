@@ -168,29 +168,39 @@ export async function POST(request: Request) {
     const heroTitle = `Catálogo Mayorista de ${companyName}`;
     const heroSubtitle = `Fabricación y distribución B2B directa con entregas a nivel nacional e internacional.`;
 
-    // 2.1 Procesar y subir logotipo a Storage si se adjuntó
+    // 2.1 Procesar y subir logotipo a Storage si se adjuntó (Whitelist estricta, máximo 5MB)
     let finalLogoUrl: string | null = null;
     if (logoData && typeof logoData === 'string' && logoData.startsWith('data:image')) {
       try {
         const matches = logoData.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
         if (matches && matches.length === 3) {
-          const mimeType = matches[1];
-          const ext = mimeType.split('/')[1]?.replace('jpeg', 'jpg') || 'png';
-          const buffer = Buffer.from(matches[2], 'base64');
-          const filePath = `logos/${cleanSlug}-${Date.now()}.${ext}`;
+          const rawMime = matches[1].toLowerCase().trim();
+          const ALLOWED_LOGO_MIMES: Record<string, string> = {
+            'image/webp': 'webp',
+            'image/jpeg': 'jpg',
+            'image/jpg': 'jpg',
+            'image/png': 'png',
+          };
+          const ext = ALLOWED_LOGO_MIMES[rawMime];
+          if (ext) {
+            const buffer = Buffer.from(matches[2], 'base64');
+            if (buffer.length <= 5 * 1024 * 1024) {
+              const filePath = `logos/${cleanSlug}-${Date.now()}.${ext}`;
 
-          const { error: uploadErr } = await admin.storage
-            .from('support-attachments')
-            .upload(filePath, buffer, {
-              contentType: mimeType,
-              upsert: true,
-            });
+              const { error: uploadErr } = await admin.storage
+                .from('support-attachments')
+                .upload(filePath, buffer, {
+                  contentType: rawMime,
+                  upsert: true,
+                });
 
-          if (!uploadErr) {
-            const { data: pubData } = admin.storage
-              .from('support-attachments')
-              .getPublicUrl(filePath);
-            finalLogoUrl = pubData?.publicUrl || null;
+              if (!uploadErr) {
+                const { data: pubData } = admin.storage
+                  .from('support-attachments')
+                  .getPublicUrl(filePath);
+                finalLogoUrl = pubData?.publicUrl || null;
+              }
+            }
           }
         }
       } catch (err) {

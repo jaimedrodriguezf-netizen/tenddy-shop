@@ -2,6 +2,16 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 
+// Helper para sanitizar URLs de imagen (Garantiza que solo se guarden URLs HTTP/HTTPS de Storage y NUNCA base64 en BD)
+function sanitizeImageUrl(url: unknown): string | null {
+  if (typeof url !== 'string' || !url.trim()) return null;
+  const clean = url.trim();
+  if (clean.startsWith('https://') || clean.startsWith('http://')) {
+    return clean;
+  }
+  return null;
+}
+
 // Actualizar apariencia y configuración del Tenant
 export async function PATCH(request: Request) {
   try {
@@ -51,12 +61,16 @@ export async function PATCH(request: Request) {
       show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.theme_config?.show_featured_ratings ?? true),
     };
 
+    const sanitizedHeroImage = hero_image_url !== undefined 
+      ? sanitizeImageUrl(hero_image_url) 
+      : currentTenant.landing_config?.hero_image_url;
+
     const updatedLanding = {
       ...(currentTenant.landing_config || {}),
       hero_title: hero_title !== undefined ? hero_title : currentTenant.landing_config?.hero_title,
       hero_subtitle: hero_subtitle !== undefined ? hero_subtitle : currentTenant.landing_config?.hero_subtitle,
       hero_video_url: hero_video_url !== undefined ? hero_video_url : currentTenant.landing_config?.hero_video_url,
-      hero_image_url: hero_image_url !== undefined ? hero_image_url : currentTenant.landing_config?.hero_image_url,
+      hero_image_url: sanitizedHeroImage,
       show_services: show_services !== undefined ? show_services : currentTenant.landing_config?.show_services,
       show_branches: show_branches !== undefined ? show_branches : currentTenant.landing_config?.show_branches,
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.landing_config?.show_best_sellers ?? true),
@@ -70,7 +84,9 @@ export async function PATCH(request: Request) {
     };
 
     if (name) updatePayload.name = name.trim();
-    if (logo_url !== undefined) updatePayload.logo_url = logo_url;
+    if (logo_url !== undefined) {
+      updatePayload.logo_url = sanitizeImageUrl(logo_url);
+    }
 
     const { data: updated, error: updateErr } = await admin
       .from('tenants')
@@ -80,12 +96,13 @@ export async function PATCH(request: Request) {
       .single();
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando apariencia (PATCH):', updateErr);
+      return NextResponse.json({ error: 'No se pudo actualizar la configuración de la tienda' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, tenant: updated });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/appearance:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar apariencia' }, { status: 500 });
   }
 }

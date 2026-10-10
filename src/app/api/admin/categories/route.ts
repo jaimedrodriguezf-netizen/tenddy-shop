@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 
+// 1. OBTENER CATEGORÍAS (GET - Requiere autenticación de administrador de tienda)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -10,6 +11,11 @@ export async function GET(request: Request) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Falta tenantId' }, { status: 400 });
+    }
+
+    const auth = await verifyTenantAdmin({ tenantId });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -24,11 +30,14 @@ export async function GET(request: Request) {
 
     const { data: categories, error } = await query.order('sort_order', { ascending: true });
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error listando categorías:', error);
+      return NextResponse.json({ error: 'No se pudieron consultar las categorías' }, { status: 500 });
+    }
     return NextResponse.json({ success: true, categories: categories || [] });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en GET /api/admin/categories:', err);
+    return NextResponse.json({ error: 'Error del servidor al obtener categorías' }, { status: 500 });
   }
 }
 
@@ -39,8 +48,11 @@ async function processCategoryImage(
   imageUrl?: string | null,
   imageData?: string | null
 ): Promise<string | null> {
-  if (imageUrl && typeof imageUrl === 'string' && imageUrl.trim().startsWith('http')) {
-    return imageUrl.trim();
+  if (imageUrl && typeof imageUrl === 'string') {
+    const cleanUrl = imageUrl.trim();
+    if (cleanUrl.startsWith('https://') || cleanUrl.startsWith('http://')) {
+      return cleanUrl;
+    }
   }
   if (imageData && typeof imageData === 'string' && imageData.startsWith('data:image')) {
     try {
@@ -137,11 +149,14 @@ export async function POST(request: Request) {
       .select('*')
       .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error insertando categoría (POST):', error);
+      return NextResponse.json({ error: 'No se pudo crear la categoría' }, { status: 500 });
+    }
     return NextResponse.json({ success: true, category });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/categories:', err);
+    return NextResponse.json({ error: 'Error del servidor al crear categoría' }, { status: 500 });
   }
 }
 
@@ -232,13 +247,14 @@ export async function PATCH(request: Request) {
       .single();
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando categoría (PATCH):', updateErr);
+      return NextResponse.json({ error: 'No se pudo actualizar la categoría' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, category: updatedCategory });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/categories:', err);
+    return NextResponse.json({ error: 'Error del servidor al actualizar categoría' }, { status: 500 });
   }
 }
 
@@ -275,11 +291,14 @@ export async function DELETE(request: Request) {
       .eq('category_id', categoryId);
 
     const { error } = await admin.from('categories').delete().eq('id', categoryId);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) {
+      console.error('Error eliminando categoría (DELETE):', error);
+      return NextResponse.json({ error: 'No se pudo eliminar la categoría' }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en DELETE /api/admin/categories:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar categoría' }, { status: 500 });
   }
 }

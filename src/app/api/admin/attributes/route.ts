@@ -3,7 +3,7 @@ import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 import { ProductAttribute } from '@/lib/types';
 
-// 1. OBTENER ATRIBUTOS (GET)
+// 1. OBTENER ATRIBUTOS (GET - Requiere autenticación de administrador de tienda)
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -11,6 +11,11 @@ export async function GET(request: Request) {
 
     if (!tenantId) {
       return NextResponse.json({ error: 'Falta tenantId' }, { status: 400 });
+    }
+
+    const auth = await verifyTenantAdmin({ tenantId });
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
     const admin = getAdminClient();
@@ -27,8 +32,8 @@ export async function GET(request: Request) {
     const attributes: ProductAttribute[] = tenant.settings?.attributes || [];
     return NextResponse.json({ success: true, attributes });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Error en GET /api/admin/attributes:', err);
+    return NextResponse.json({ error: 'Error del servidor al obtener atributos' }, { status: 500 });
   }
 }
 
@@ -105,13 +110,14 @@ export async function POST(request: Request) {
       .eq('id', tenant_id);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings de atributos (POST):', updateErr);
+      return NextResponse.json({ error: 'Error al registrar el atributo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, attribute: newAttribute });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en POST /api/admin/attributes:', err);
+    return NextResponse.json({ error: 'Error del servidor al procesar el atributo' }, { status: 500 });
   }
 }
 
@@ -182,13 +188,14 @@ export async function PATCH(request: Request) {
       .eq('id', tenant_id);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings de atributos (PATCH):', updateErr);
+      return NextResponse.json({ error: 'Error al actualizar el atributo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, attribute: updatedAttribute });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en PATCH /api/admin/attributes:', err);
+    return NextResponse.json({ error: 'Error del servidor al editar el atributo' }, { status: 500 });
   }
 }
 
@@ -233,12 +240,13 @@ export async function DELETE(request: Request) {
       .eq('id', tenantId);
 
     if (updateErr) {
-      return NextResponse.json({ error: updateErr.message }, { status: 500 });
+      console.error('Error actualizando settings tras eliminar atributo (DELETE):', updateErr);
+      return NextResponse.json({ error: 'Error al eliminar el atributo' }, { status: 500 });
     }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    const errorMsg = err instanceof Error ? err.message : 'Error del servidor';
-    return NextResponse.json({ error: errorMsg }, { status: 500 });
+    console.error('Excepción en DELETE /api/admin/attributes:', err);
+    return NextResponse.json({ error: 'Error del servidor al eliminar el atributo' }, { status: 500 });
   }
 }
