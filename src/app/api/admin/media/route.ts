@@ -141,13 +141,30 @@ export async function GET(request: Request) {
   }
 }
 
+// Whitelist de tipos MIME y extensiones autorizadas (neutraliza Stored XSS y ejecución remota)
+const ALLOWED_MEDIA_TYPES: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'application/pdf': 'pdf',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'xlsx',
+  'application/vnd.ms-excel': 'xls',
+  'text/csv': 'csv',
+  'text/plain': 'txt',
+};
+
+const ALLOWED_FOLDERS = new Set(['products', 'imports', 'logos']);
+
 // 2. POST: Subir nuevos medios directamente a Supabase Storage
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const tenantId = formData.get('tenant_id') as string | null;
-    const folder = (formData.get('folder') as string) || 'products';
+    const requestedFolder = String(formData.get('folder') || 'products').trim().toLowerCase();
+    const folder = ALLOWED_FOLDERS.has(requestedFolder) ? requestedFolder : 'products';
 
     if (!file || !tenantId) {
       return NextResponse.json({ error: 'Archivo y tenant_id requeridos' }, { status: 400 });
@@ -158,21 +175,61 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
+    // 1. Validar tipo MIME y extensión contra whitelist estricta (Previene Stored XSS y MIME-spoofing)
+    const rawMimeType = (file.type || '').toLowerCase().trim();
+    const mappedExt = ALLOWED_MEDIA_TYPES[rawMimeType];
+    const rawExt = file.name.split('.').pop()?.toLowerCase() || '';
+
+    const FORBIDDEN_EXTENSIONS = new Set([
+      'html', 'htm', 'svg', 'xhtml', 'xml', 'js', 'mjs',
+      'php', 'sh', 'bash', 'exe', 'bat', 'cmd', 'ps1', 'cgi', 'pl',
+    ]);
+
+    if (FORBIDDEN_EXTENSIONS.has(rawExt)) {
+      return NextResponse.json(
+        { error: 'Extensión de archivo no permitida por políticas de seguridad.' },
+        { status: 400 }
+      );
+    }
+
+    if (!mappedExt) {
+      return NextResponse.json(
+        {
+          error:
+            'Tipo de archivo no permitido. Solo se admiten imágenes (WebP, JPG, PNG, GIF), documentos PDF y hojas de cálculo (Excel, CSV).',
+        },
+        { status: 400 }
+      );
+    }
+
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    if (buffer.length > 50 * 1024 * 1024) {
-      return NextResponse.json({ error: 'El archivo excede el límite de 50MB' }, { status: 400 });
+    // 2. Límites de tamaño según categoría
+    const isImage = rawMimeType.startsWith('image/');
+    const maxBytes = isImage ? 15 * 1024 * 1024 : 35 * 1024 * 1024; // 15MB fotos, 35MB hojas de cálculo
+    if (buffer.length > maxBytes) {
+      const limitMb = isImage ? '15MB' : '35MB';
+      return NextResponse.json(
+        { error: `El archivo excede el tamaño máximo permitido de ${limitMb}` },
+        { status: 400 }
+      );
     }
 
-    const cleanFileName = file.name.toLowerCase().replace(/[^a-z0-9._-]/g, '_');
-    const filePath = `${folder}/${tenantId}/${Date.now()}-${cleanFileName}`;
+    // 3. Sanitización estricta del nombre y extensión forzada
+    const baseName = file.name
+      .replace(/\.[^/.]+$/, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9_-]/g, '_')
+      .slice(0, 50);
+    const safeFileName = `${Date.now()}-${baseName || 'archivo'}.${mappedExt}`;
+    const filePath = `${folder}/${tenantId}/${safeFileName}`;
     const admin = getAdminClient();
 
     const { error: uploadErr } = await admin.storage
       .from('support-attachments')
       .upload(filePath, buffer, {
-        contentType: file.type || 'application/octet-stream',
+        contentType: rawMimeType,
         upsert: true,
       });
 
@@ -215,8 +272,14 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
-    // Seguridad: asegurarse de que cada ruta pertenezca estrictamente al tenant
-    const safePaths = filePaths.filter((path: string) => path.includes(`/${tenant_id}/`));
+    // Seguridad: asegurarse de que cada ruta pertenezca estrictamente al tenant y no contenga traversal
+    const safePaths = filePaths.filter(
+      (path: string) =>
+        typeof path === 'string' &&
+        path.includes(`/${tenant_id}/`) &&
+        !path.includes('..') &&
+        !path.includes('\0')
+    );
 
     if (safePaths.length === 0) {
       return NextResponse.json({ success: true, count: 0, message: 'No hay archivos válidos para eliminar' });

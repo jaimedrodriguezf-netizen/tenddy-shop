@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
+import { verifySuperadminToken } from '@/lib/session';
 
 export async function POST(request: Request) {
   try {
@@ -24,12 +26,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Ticket no encontrado' }, { status: 404 });
     }
 
-    // 2. Validar autorización
+    // 2. Validar autorización estricta
     const targetTenantId = tenant_id || ticket.tenant_id;
     if (targetTenantId) {
       const auth = await verifyTenantAdmin({ tenantId: targetTenantId });
       if (!auth.authorized) {
         return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+      }
+    } else {
+      // Para tickets anónimos o globales sin tenant, solo el Superadmin de plataforma puede responder
+      const cookieStore = await cookies();
+      const isSuperadmin = verifySuperadminToken(cookieStore.get('tenddy_superadmin_session')?.value);
+      if (!isSuperadmin) {
+        return NextResponse.json({ error: 'No autorizado para responder tickets anónimos' }, { status: 401 });
       }
     }
 
