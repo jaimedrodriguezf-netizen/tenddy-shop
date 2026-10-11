@@ -73,8 +73,8 @@ export default function TenantCatalogView({
 
   const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
 
-  const totalCartUnits = getTotalUnits();
-  const totalCartPackages = getTotalPackages();
+  const totalCartUnits = getTotalUnits(tenant.id);
+  const totalCartPackages = getTotalPackages(tenant.id);
   const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
   const mainWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default;
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);

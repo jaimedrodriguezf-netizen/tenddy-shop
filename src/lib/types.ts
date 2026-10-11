@@ -127,6 +127,7 @@ export interface ProductReview {
 
 export interface Product {
   id: string;
+  tenant_id?: string;
   slug: string;
   name: string;
   sku?: string;

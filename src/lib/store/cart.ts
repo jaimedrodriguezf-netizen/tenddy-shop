@@ -21,8 +21,10 @@ interface CartStore {
   updatePackageCount: (itemKeyOrProductId: string, packageCount: number) => void;
   removeItem: (itemKeyOrProductId: string) => void;
   clearCart: () => void;
-  getTotalUnits: () => number;
-  getTotalPackages: () => number;
+  clearTenantCart: (tenantId: string) => void;
+  getTenantItems: (tenantId: string) => CartItem[];
+  getTotalUnits: (tenantId?: string) => number;
+  getTotalPackages: (tenantId?: string) => number;
 }
 
 export const useCartStore = create<CartStore>()(
@@ -109,12 +111,28 @@ export const useCartStore = create<CartStore>()(
 
       clearCart: () => set({ items: [] }),
 
-      getTotalUnits: () => {
-        return get().items.reduce((sum, item) => sum + item.quantity, 0);
+      clearTenantCart: (tenantId: string) => {
+        set((state) => ({
+          items: state.items.filter((item) => item.product.tenant_id !== tenantId),
+        }));
       },
 
-      getTotalPackages: () => {
-        return get().items.reduce((sum, item) => sum + item.packageCount, 0);
+      getTenantItems: (tenantId: string) => {
+        return get().items.filter((item) => item.product.tenant_id === tenantId);
+      },
+
+      getTotalUnits: (tenantId?: string) => {
+        const items = tenantId
+          ? get().items.filter((item) => item.product.tenant_id === tenantId)
+          : get().items;
+        return items.reduce((sum, item) => sum + item.quantity, 0);
+      },
+
+      getTotalPackages: (tenantId?: string) => {
+        const items = tenantId
+          ? get().items.filter((item) => item.product.tenant_id === tenantId)
+          : get().items;
+        return items.reduce((sum, item) => sum + item.packageCount, 0);
       },
     }),
     {

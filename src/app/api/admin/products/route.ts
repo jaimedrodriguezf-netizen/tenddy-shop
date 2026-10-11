@@ -211,6 +211,7 @@ export async function PATCH(request: Request) {
       tenant_id,
       name,
       sku,
+      slug,
       category_id,
       description,
       min_order_qty,
@@ -334,8 +335,36 @@ export async function PATCH(request: Request) {
 
     if (name) updatePayload.name = name.trim();
     if (sku) updatePayload.sku = sku.trim().toUpperCase();
-    if (name || sku) {
-      const cleanName = (name || currentProduct.name)
+
+    // Manejo de Slug Estable: Preservar slug existente y evitar rotura de enlaces de WhatsApp / SEO
+    if (slug && typeof slug === 'string' && slug.trim()) {
+      let targetSlug = slug
+        .toLowerCase()
+        .trim()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60);
+
+      if (targetSlug && targetSlug !== currentProduct.slug) {
+        // Si el usuario editó explícitamente el slug, verificar que no colisione con otro producto del tenant
+        const { data: collision } = await admin
+          .from('products')
+          .select('id')
+          .eq('tenant_id', currentProduct.tenant_id)
+          .eq('slug', targetSlug)
+          .neq('id', id)
+          .single();
+
+        if (collision) {
+          targetSlug = `${targetSlug}-${Math.floor(10 + Math.random() * 90)}`;
+        }
+        updatePayload.slug = targetSlug;
+      }
+    } else if (!currentProduct.slug) {
+      // Solo si el producto no tenía slug previo, generar uno determinista
+      const cleanName = (name || currentProduct.name || 'producto')
         .toLowerCase()
         .trim()
         .normalize('NFD')
@@ -343,7 +372,7 @@ export async function PATCH(request: Request) {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
         .slice(0, 40);
-      const cleanSkuPart = (sku || currentProduct.sku).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
+      const cleanSkuPart = (sku || currentProduct.sku || 'sku').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
       updatePayload.slug = `${cleanName}-${cleanSkuPart}-${Math.floor(10 + Math.random() * 90)}`;
     }
     if (category_id !== undefined) updatePayload.category_id = category_id || null;

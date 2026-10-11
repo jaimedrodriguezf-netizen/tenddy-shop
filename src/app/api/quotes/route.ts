@@ -89,6 +89,29 @@ export async function POST(request: Request) {
 
     const admin = getAdminClient();
 
+    // 7. Validación multi-tenant estricta: asegurar que los productos pertenezcan exclusivamente a este tenant
+    const productIdsToCheck = sanitizedItems
+      .map((it: any) => it.product_id)
+      .filter((id: any) => typeof id === 'string' && id.length > 10);
+
+    if (productIdsToCheck.length > 0) {
+      const { data: dbProducts } = await admin
+        .from('products')
+        .select('id, tenant_id')
+        .in('id', productIdsToCheck)
+        .eq('tenant_id', tenant_id);
+
+      const validIds = new Set((dbProducts || []).map((p) => p.id));
+      const hasForeignProducts = productIdsToCheck.some((pid: string) => !validIds.has(pid));
+
+      if (hasForeignProducts) {
+        return NextResponse.json(
+          { error: 'La cotización contiene productos que no pertenecen al catálogo de esta tienda.' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Generar consecutivo amigable (e.g. COT-2026-XXXX)
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const quote_number = `COT-${new Date().getFullYear()}-${randomSuffix}`;

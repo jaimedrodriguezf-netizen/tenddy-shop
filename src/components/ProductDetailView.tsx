@@ -95,7 +95,7 @@ export default function ProductDetailView({
       msg += `Sucursal o despacho: ${currentBranch.name} (${currentBranch.city})\n`;
     }
     const url = `https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (

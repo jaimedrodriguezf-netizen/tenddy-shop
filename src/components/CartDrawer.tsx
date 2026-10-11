@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   X,
   Trash2,
@@ -40,9 +40,7 @@ export default function CartDrawer({
     closeCart,
     updatePackageCount,
     removeItem,
-    clearCart,
-    getTotalUnits,
-    getTotalPackages,
+    clearTenantCart,
   } = useCartStore();
 
   const [step, setStep] = useState<'items' | 'form' | 'success'>('items');
@@ -62,10 +60,19 @@ export default function CartDrawer({
     notes: '',
   });
 
-  if (!isOpen) return null;
-
-  const totalUnits = getTotalUnits();
-  const totalPackages = getTotalPackages();
+  // Aislamiento Multi-Tenant: solo renderizar y cotizar productos de esta tienda específica
+  const tenantItems = useMemo(
+    () => items.filter((item) => item.product.tenant_id === tenant.id),
+    [items, tenant.id]
+  );
+  const totalUnits = useMemo(
+    () => tenantItems.reduce((sum, item) => sum + item.quantity, 0),
+    [tenantItems]
+  );
+  const totalPackages = useMemo(
+    () => tenantItems.reduce((sum, item) => sum + item.packageCount, 0),
+    [tenantItems]
+  );
   const targetWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config.whatsapp_default;
 
   const handleSubmitQuote = async (e: React.FormEvent) => {
@@ -91,7 +98,7 @@ export default function CartDrawer({
         delivery_city: formData.deliveryCity,
         delivery_address: formData.deliveryAddress,
         notes: formData.notes,
-        items: items.map((item) => ({
+        items: tenantItems.map((item) => ({
           product_id: item.product.id,
           name: item.product.name,
           sku: item.product.sku,
@@ -127,7 +134,7 @@ export default function CartDrawer({
       if (selectedBranch) msg += `🏭 *Sucursal de Atención:* ${selectedBranch.name} (${selectedBranch.city})\n`;
       msg += `\n*DETALLE DE ENVASES SOLICITADOS:*\n`;
 
-      items.forEach((item, idx) => {
+      tenantItems.forEach((item, idx) => {
         msg += `\n${idx + 1}. *${item.product.name}*\n`;
         msg += `   • Cantidad: *${item.quantity.toLocaleString()} uds* (${item.packageCount} fardos/paquetes)\n`;
         if (item.selectedColor) msg += `   • Color: ${item.selectedColor}\n`;
@@ -142,10 +149,10 @@ export default function CartDrawer({
 
       msg += `\n_Generado automáticamente desde el catálogo B2B de ${tenant.name}_`;
 
-      // 3. Abrir WhatsApp
+      // 3. Abrir WhatsApp con parámetros de seguridad
       const waUrl = `https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(msg)}`;
-      window.open(waUrl, '_blank');
-      clearCart();
+      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      clearTenantCart(tenant.id);
     } catch (err: any) {
       setErrorMsg(err.message || 'Ocurrió un error inesperado');
     } finally {
@@ -208,7 +215,7 @@ export default function CartDrawer({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {step === 'items' && (
               <>
-                {items.length === 0 ? (
+                {tenantItems.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 space-y-3">
                     <div className="w-14 h-14 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500">
                       <Package className="w-7 h-7" />
@@ -228,7 +235,7 @@ export default function CartDrawer({
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {items.map((item, idx) => {
+                    {tenantItems.map((item, idx) => {
                       const itemKey = item.id || `${item.product.id}__${idx}`;
                       const packSize = item.product.units_per_package || 100;
                       const minQty = item.product.min_order_qty || packSize;
