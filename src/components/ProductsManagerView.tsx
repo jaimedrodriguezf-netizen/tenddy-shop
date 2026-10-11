@@ -339,60 +339,52 @@ export default function ProductsManagerView({
           return;
         }
 
-        for (const id of idsToProcess) {
-          await fetch(`/api/admin/products?productId=${id}`, { method: 'DELETE' });
-        }
+        // Eliminación por lote nativa en 1 sola petición al servidor
+        const res = await fetch('/api/admin/products', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant_id: tenant.id, productIds: idsToProcess }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al eliminar productos');
 
         const updated = products.filter((p) => !selectedIds.has(p.id));
         onProductsChanged(updated);
         setSelectedIds(new Set());
         setSuccessMsg(`${idsToProcess.length} productos eliminados`);
-      } else if (bulkAction === 'feature') {
-        for (const id of idsToProcess) {
-          const prod = products.find((p) => p.id === id);
-          if (prod) {
-            await fetch('/api/admin/products', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id,
-                attributes: { ...prod.attributes, featured: true, badge: '5 Estrellas' },
-              }),
-            });
-          }
-        }
+      } else if (bulkAction === 'feature' || bulkAction === 'unfeature') {
+        const isFeatured = bulkAction === 'feature';
+
+        // Actualización por lote nativa en 1 sola petición al servidor
+        const res = await fetch('/api/admin/products', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tenant_id: tenant.id,
+            product_ids: idsToProcess,
+            action: bulkAction,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al actualizar destacados');
 
         const updated = products.map((p) =>
           selectedIds.has(p.id)
-            ? { ...p, attributes: { ...p.attributes, featured: true, badge: '5 Estrellas' } }
+            ? {
+                ...p,
+                attributes: {
+                  ...p.attributes,
+                  featured: isFeatured,
+                  badge: isFeatured ? '5 Estrellas' : undefined,
+                },
+              }
             : p
         );
         onProductsChanged(updated);
         setSelectedIds(new Set());
-        setSuccessMsg(`${idsToProcess.length} productos marcados como destacados`);
-      } else if (bulkAction === 'unfeature') {
-        for (const id of idsToProcess) {
-          const prod = products.find((p) => p.id === id);
-          if (prod) {
-            await fetch('/api/admin/products', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                id,
-                attributes: { ...prod.attributes, featured: false, badge: null },
-              }),
-            });
-          }
-        }
-
-        const updated = products.map((p) =>
-          selectedIds.has(p.id)
-            ? { ...p, attributes: { ...p.attributes, featured: false, badge: undefined } }
-            : p
+        setSuccessMsg(
+          `${idsToProcess.length} productos ${isFeatured ? 'marcados como destacados' : 'desmarcados de destacados'}`
         );
-        onProductsChanged(updated);
-        setSelectedIds(new Set());
-        setSuccessMsg(`${idsToProcess.length} productos desmarcados`);
       }
 
       setBulkAction('');
@@ -499,7 +491,12 @@ export default function ProductsManagerView({
 
       // Descarga directa vía endpoint de servidor con fallback a cliente
       try {
-        window.location.href = '/api/admin/products/template?format=xlsx';
+        const dlLink = document.createElement('a');
+        dlLink.href = '/api/admin/products/template?format=xlsx';
+        dlLink.download = `plantilla_productos_${tenant.slug}.xlsx`;
+        document.body.appendChild(dlLink);
+        dlLink.click();
+        document.body.removeChild(dlLink);
         setSuccessMsg('Plantilla oficial de Excel descargada');
         setTimeout(() => setSuccessMsg(null), 3000);
         return;

@@ -266,7 +266,12 @@ export default function BulkImportModal({
   // Descargar archivo CSV de ejemplo
   const downloadSampleCsv = () => {
     try {
-      window.location.href = '/api/admin/products/template?format=csv';
+      const dlLink = document.createElement('a');
+      dlLink.href = '/api/admin/products/template?format=csv';
+      dlLink.download = 'plantilla_ejemplo_catalogo.csv';
+      document.body.appendChild(dlLink);
+      dlLink.click();
+      document.body.removeChild(dlLink);
       return;
     } catch {
       // Fallback a descarga de Blob en cliente
@@ -370,7 +375,12 @@ export default function BulkImportModal({
   // Descargar plantilla oficial en Excel (.xlsx)
   const downloadSampleXlsx = async () => {
     try {
-      window.location.href = '/api/admin/products/template?format=xlsx';
+      const dlLink = document.createElement('a');
+      dlLink.href = '/api/admin/products/template?format=xlsx';
+      dlLink.download = 'plantilla_ejemplo_catalogo.xlsx';
+      document.body.appendChild(dlLink);
+      dlLink.click();
+      document.body.removeChild(dlLink);
       return;
     } catch {
       // Fallback a generación en navegador

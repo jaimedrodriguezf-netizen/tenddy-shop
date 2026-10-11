@@ -1,6 +1,51 @@
 import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+
+// Validación de Magic Bytes binarios para prevenir MIME-spoofing en subidas de fotos
+function isValidImageMagicBytes(buffer: Buffer, mimeType: string): boolean {
+  if (buffer.length < 12) return false;
+
+  if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
+    return buffer[0] === 0xFF && buffer[1] === 0xD8 && buffer[2] === 0xFF;
+  }
+  if (mimeType === 'image/png') {
+    return (
+      buffer[0] === 0x89 &&
+      buffer[1] === 0x50 &&
+      buffer[2] === 0x4E &&
+      buffer[3] === 0x47 &&
+      buffer[4] === 0x0D &&
+      buffer[5] === 0x0A &&
+      buffer[6] === 0x1A &&
+      buffer[7] === 0x0A
+    );
+  }
+  if (mimeType === 'image/webp') {
+    return (
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46 &&
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50
+    );
+  }
+  if (mimeType === 'image/gif') {
+    return (
+      buffer[0] === 0x47 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x38 &&
+      (buffer[4] === 0x37 || buffer[4] === 0x39) &&
+      buffer[5] === 0x61
+    );
+  }
+  return true;
+}
 
 // 1. CREAR PRODUCTO (POST)
 export async function POST(request: Request) {
@@ -30,6 +75,19 @@ export async function POST(request: Request) {
     const auth = await verifyTenantAdmin({ tenantId: tenant_id });
     if (!auth.authorized) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+    }
+
+    const clientIp = getClientIp(request);
+    // Rate limiting: máximo 40 creaciones de productos por minuto por tienda/IP
+    const { isAllowed } = checkRateLimit(`prod_create_${tenant_id}_${clientIp}`, {
+      windowMs: 60 * 1000,
+      maxRequests: 40,
+    });
+    if (!isAllowed) {
+      return NextResponse.json(
+        { error: 'Demasiadas solicitudes de creación de producto. Por favor espera un momento.' },
+        { status: 429 }
+      );
     }
 
     // Generar slug base URL-friendly
@@ -77,8 +135,8 @@ export async function POST(request: Request) {
           const ext = ALLOWED_IMAGE_TYPES[mimeType];
           if (ext) {
             const buffer = Buffer.from(matches[2], 'base64');
-            // Límite estricto de 5MB por foto de producto
-            if (buffer.length <= 5 * 1024 * 1024) {
+            // Validar firma binaria Magic Bytes contra MIME spoofing y límite de 5MB
+            if (buffer.length <= 5 * 1024 * 1024 && isValidImageMagicBytes(buffer, mimeType)) {
               const filePath = `products/${tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
 
               const { error: uploadErr } = await admin.storage
@@ -142,12 +200,15 @@ export async function POST(request: Request) {
   }
 }
 
-// 2. ACTUALIZAR / EDITAR PRODUCTO (PATCH)
+// 2. ACTUALIZAR / EDITAR PRODUCTO O ACCIONES EN LOTE (PATCH)
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
     const {
       id,
+      product_ids,
+      action,
+      tenant_id,
       name,
       sku,
       category_id,
@@ -160,11 +221,48 @@ export async function PATCH(request: Request) {
       image_url,
     } = body;
 
+    const admin = getAdminClient();
+
+    // A. ACCIONES EN LOTE NATIVAS (Acelera actualizaciones masivas de 50 peticiones a 1 sola)
+    if (Array.isArray(product_ids) && product_ids.length > 0 && action && tenant_id) {
+      const auth = await verifyTenantAdmin({ tenantId: tenant_id });
+      if (!auth.authorized) {
+        return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+      }
+
+      if (action === 'feature' || action === 'unfeature') {
+        const isFeatured = action === 'feature';
+        const { data: targetProds } = await admin
+          .from('products')
+          .select('id, attributes')
+          .in('id', product_ids)
+          .eq('tenant_id', tenant_id);
+
+        if (targetProds && targetProds.length > 0) {
+          await Promise.all(
+            targetProds.map((p) =>
+              admin
+                .from('products')
+                .update({
+                  updated_at: new Date().toISOString(),
+                  attributes: {
+                    ...(p.attributes || {}),
+                    featured: isFeatured,
+                    badge: isFeatured ? '5 Estrellas' : (p.attributes?.badge === '5 Estrellas' ? null : p.attributes?.badge),
+                  },
+                })
+                .eq('id', p.id)
+            )
+          );
+        }
+
+        return NextResponse.json({ success: true, count: targetProds?.length || 0 });
+      }
+    }
+
     if (!id) {
       return NextResponse.json({ error: 'Falta id del producto' }, { status: 400 });
     }
-
-    const admin = getAdminClient();
 
     // 1. Obtener producto actual para validar tenant
     const { data: currentProduct, error: fetchErr } = await admin
@@ -201,7 +299,7 @@ export async function PATCH(request: Request) {
           const ext = ALLOWED_IMAGE_TYPES[mimeType];
           if (ext) {
             const buffer = Buffer.from(matches[2], 'base64');
-            if (buffer.length <= 5 * 1024 * 1024) {
+            if (buffer.length <= 5 * 1024 * 1024 && isValidImageMagicBytes(buffer, mimeType)) {
               const cleanSku = (sku || currentProduct.sku).toLowerCase().replace(/[^a-z0-9]/g, '');
               const filePath = `products/${currentProduct.tenant_id}/${cleanSku}-${Date.now()}.${ext}`;
 
@@ -273,17 +371,61 @@ export async function PATCH(request: Request) {
   }
 }
 
-// 3. ELIMINAR PRODUCTO (DELETE)
+// 3. ELIMINAR PRODUCTO INDIVIDUAL O EN LOTE (DELETE)
 export async function DELETE(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const productId = searchParams.get('productId');
+    let productId: string | null = null;
+    let productIds: string[] = [];
+    let tenantId: string | null = null;
 
-    if (!productId) {
-      return NextResponse.json({ error: 'Falta productId' }, { status: 400 });
+    // Soportar parámetros por URL o por body JSON para operaciones por lote
+    const { searchParams } = new URL(request.url);
+    productId = searchParams.get('productId');
+    const queryIds = searchParams.get('productIds');
+    if (queryIds) {
+      productIds = queryIds.split(',').map((s) => s.trim()).filter(Boolean);
+    }
+    tenantId = searchParams.get('tenantId');
+
+    // Si viene body JSON con productIds
+    if (!productId && productIds.length === 0) {
+      try {
+        const body = await request.json();
+        if (body.productId) productId = body.productId;
+        if (Array.isArray(body.productIds)) productIds = body.productIds;
+        if (body.tenant_id) tenantId = body.tenant_id;
+      } catch {
+        // Ignorar si no hay body
+      }
     }
 
     const admin = getAdminClient();
+
+    // A. ELIMINACIÓN POR LOTE EN 1 SOLA CONSULTA SQL
+    if (productIds.length > 0 && tenantId) {
+      const auth = await verifyTenantAdmin({ tenantId });
+      if (!auth.authorized) {
+        return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
+      }
+
+      const { error: batchErr } = await admin
+        .from('products')
+        .delete()
+        .in('id', productIds)
+        .eq('tenant_id', tenantId);
+
+      if (batchErr) {
+        console.error('Error eliminando productos en lote:', batchErr);
+        return NextResponse.json({ error: 'No se pudieron eliminar los productos en lote' }, { status: 500 });
+      }
+
+      return NextResponse.json({ success: true, count: productIds.length });
+    }
+
+    // B. ELIMINACIÓN INDIVIDUAL
+    if (!productId) {
+      return NextResponse.json({ error: 'Falta productId o productIds' }, { status: 400 });
+    }
 
     // 1. Obtener a qué tenant pertenece el producto antes de permitir borrarlo
     const { data: targetProduct, error: fetchErr } = await admin

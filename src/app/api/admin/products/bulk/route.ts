@@ -113,27 +113,33 @@ export async function POST(request: Request) {
       }
     });
 
-    for (const newCatName of uniqueCategoryNames) {
-      const catSlug = newCatName
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '') || `cat-${Date.now()}`;
+    // Crear categorías nuevas en un solo lote atómico
+    if (uniqueCategoryNames.size > 0) {
+      const categoriesPayload = Array.from(uniqueCategoryNames).map((newCatName) => {
+        const catSlug = newCatName
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '') || `cat-${Date.now()}`;
 
-      const { data: createdCat } = await admin
-        .from('categories')
-        .insert({
+        return {
           tenant_id,
           name: newCatName,
           slug: `${catSlug}-${Math.floor(10 + Math.random() * 90)}`,
           is_active: true,
-        })
-        .select('id, name')
-        .single();
+        };
+      });
 
-      if (createdCat) {
-        categoryMap.set(createdCat.name.toLowerCase().trim(), createdCat.id);
+      const { data: createdCats } = await admin
+        .from('categories')
+        .insert(categoriesPayload)
+        .select('id, name');
+
+      if (createdCats) {
+        for (const c of createdCats) {
+          categoryMap.set(c.name.toLowerCase().trim(), c.id);
+        }
       }
     }
 
@@ -239,16 +245,20 @@ export async function POST(request: Request) {
       });
     }
 
-    // Ejecutar actualizaciones si aplica
-    for (const up of productsToUpdate) {
-      const { id, ...dataToUpdate } = up;
-      const { error: updErr } = await admin
-        .from('products')
-        .update(dataToUpdate)
-        .eq('id', id);
-
-      if (!updErr) {
-        updatedProductsCount++;
+    // Ejecutar actualizaciones concurrentes en lotes de 25 para evitar bloqueos y timeouts en serverless
+    const UPDATE_CHUNK_SIZE = 25;
+    for (let i = 0; i < productsToUpdate.length; i += UPDATE_CHUNK_SIZE) {
+      const updateChunk = productsToUpdate.slice(i, i + UPDATE_CHUNK_SIZE);
+      const results = await Promise.allSettled(
+        updateChunk.map((up) => {
+          const { id, ...dataToUpdate } = up;
+          return admin.from('products').update(dataToUpdate).eq('id', id);
+        })
+      );
+      for (const res of results) {
+        if (res.status === 'fulfilled' && !res.value.error) {
+          updatedProductsCount++;
+        }
       }
     }
 
