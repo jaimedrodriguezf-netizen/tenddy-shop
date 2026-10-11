@@ -12,4 +12,4 @@ Mitigación de 3 problemas críticos de arquitectura, multi-tenant y SEO:
 - [x] **Tarea 1**: Aislar el carrito por tienda en `useCartStore`, `CartDrawer.tsx` y `TenantCatalogView.tsx`.
 - [x] **Tarea 2**: Validar pertenencia estricta de `product_id` al `tenant_id` en `src/app/api/quotes/route.ts`.
 - [x] **Tarea 3**: Preservar y respetar slugs existentes/personalizados en `PATCH /api/admin/products`, y añadir `noopener,noreferrer` en `ProductDetailView.tsx`.
-- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.104 y merge a `main`.
+- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.104 y merge a `main`. (Commit: `5ddd935`, RDD `review-83edf3d09fa29b32` burned).
