@@ -12,4 +12,4 @@ Mejoras de rendimiento, escalabilidad y seguridad en productos y carga masiva:
 - [x] **Tarea 1**: Habilitar operaciones por lote (`DELETE` y `PATCH`), rate limiting y Magic Bytes en `src/app/api/admin/products/route.ts`.
 - [x] **Tarea 2**: Optimizar creación de categorías en lote y paralelizar actualizaciones concurrentes en `src/app/api/admin/products/bulk/route.ts`.
 - [x] **Tarea 3**: Conectar acciones por lote instantáneas en `ProductsManagerView.tsx` y sanear descargas de plantillas.
-- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.103 y merge a `main`.
+- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.103 y merge a `main`. (Commit: `41ee629`, RDD `review-bb0f264bd40c3d8c` burned).
