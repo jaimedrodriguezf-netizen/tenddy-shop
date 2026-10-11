@@ -102,26 +102,46 @@ export default function ReviewsManagerView({
   }, [products]);
 
   // Cargar valoraciones desde la API al montar
-  const loadReviews = async () => {
-    try {
-      setLoading(true);
-      setErrorMsg(null);
-      const res = await fetch(`/api/admin/reviews?tenantId=${tenant.id}`);
-      const data = await res.json();
-      if (res.ok && data.allReviews) {
-        setReviews(data.allReviews);
-        onReviewsChanged?.(data.allReviews);
-      }
-    } catch (err: unknown) {
-      const msg = translateErrorMessage(err, 'No se pudieron cargar las valoraciones');
-      setErrorMsg(msg);
-    } finally {
-      setLoading(false);
-    }
+  const loadReviews = () => {
+    setLoading(true);
+    fetch(`/api/admin/reviews?tenantId=${tenant.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.allReviews) {
+          setReviews(data.allReviews);
+          onReviewsChanged?.(data.allReviews);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        const msg = translateErrorMessage(err, 'No se pudieron cargar las valoraciones');
+        setErrorMsg(msg);
+        setLoading(false);
+      });
   };
 
   useEffect(() => {
-    loadReviews();
+    let active = true;
+    fetch(`/api/admin/reviews?tenantId=${tenant.id}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!active) return;
+        if (data.allReviews) {
+          setReviews(data.allReviews);
+          onReviewsChanged?.(data.allReviews);
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        const msg = translateErrorMessage(err, 'No se pudieron cargar las valoraciones');
+        setErrorMsg(msg);
+        setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [tenant.id]);
 
   // Conteo de valoraciones por estado
@@ -1004,7 +1024,7 @@ export default function ReviewsManagerView({
                               <CornerDownRight className="w-3 h-3 text-slate-500" />
                               <span>Respuesta de {r.reply.author_name || tenant.name}:</span>
                             </div>
-                            <p className="text-slate-600 italic">"{r.reply.content}"</p>
+                            <p className="text-slate-600 italic">&ldquo;{r.reply.content}&rdquo;</p>
                           </div>
                         )}
 
@@ -1402,7 +1422,7 @@ export default function ReviewsManagerView({
                 <span>{replyingReview.author_name}</span>
                 <span className="text-amber-500">{'★'.repeat(replyingReview.rating || 5)}</span>
               </div>
-              <p className="text-slate-600 italic">"{replyingReview.content}"</p>
+              <p className="text-slate-600 italic">&ldquo;{replyingReview.content}&rdquo;</p>
             </div>
 
             <form onSubmit={handleSaveReply} className="space-y-3.5 text-xs">

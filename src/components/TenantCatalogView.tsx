@@ -111,7 +111,7 @@ export default function TenantCatalogView({
   }, [products]);
 
   // Helper recursivo para obtener todos los IDs de una categoría y sus subcategorías con protección de ciclos
-  const getCategoryAndDescendantIds = (catId: string): string[] => {
+  const getCategoryAndDescendantIds = React.useCallback((catId: string): string[] => {
     const ids = [catId];
     const visited = new Set<string>([catId]);
     const findChildren = (pid: string, depth = 0) => {
@@ -126,9 +126,17 @@ export default function TenantCatalogView({
     };
     findChildren(catId);
     return ids;
-  };
+  }, [categories]);
 
-  // Filtrado reactivo en vivo optimizado con useMemo
+  // Conjunto Set O(1) de IDs de la categoría seleccionada y sus subcategorías (calculado una sola vez con useMemo)
+  const selectedCategoryDescendantSet = useMemo(() => {
+    if (selectedCategory === 'all' || selectedCategory === 'best_sellers' || selectedCategory === 'five_stars') {
+      return null;
+    }
+    return new Set(getCategoryAndDescendantIds(selectedCategory));
+  }, [selectedCategory, getCategoryAndDescendantIds]);
+
+  // Filtrado reactivo en vivo optimizado con useMemo en O(P)
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return products.filter((p) => {
@@ -139,7 +147,9 @@ export default function TenantCatalogView({
           ? isBestSeller(p)
           : selectedCategory === 'five_stars'
           ? isFiveStar(p)
-          : getCategoryAndDescendantIds(selectedCategory).includes(p.category_id || '');
+          : selectedCategoryDescendantSet
+          ? selectedCategoryDescendantSet.has(p.category_id || '')
+          : false;
 
       if (!matchesCategory) return false;
 
@@ -151,7 +161,7 @@ export default function TenantCatalogView({
         (p.description && p.description.toLowerCase().includes(q))
       );
     });
-  }, [products, selectedCategory, searchQuery, categories]);
+  }, [products, selectedCategory, searchQuery, selectedCategoryDescendantSet]);
 
   // Identificar la categoría raíz activa con protección contra ciclos
   const activeRootCategory = useMemo(() => {
