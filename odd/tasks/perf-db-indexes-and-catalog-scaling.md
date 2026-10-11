@@ -11,4 +11,4 @@ Mejoras de rendimiento y escalabilidad de base de datos y renderizado frontend:
 - [x] **Tarea 1**: Crear migración `supabase/migrations/0018_performance_indexes.sql` sincronizada con la base de datos.
 - [x] **Tarea 2**: Optimizar el filtrado de productos en `TenantCatalogView.tsx` extrayendo el conjunto de categorías descendientes con `useMemo` a un `Set` O(1).
 - [x] **Tarea 3**: Corregir efecto de carga y entidades no escapadas en `ReviewsManagerView.tsx` para limpiar los errores de ESLint.
-- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.102 y merge a `main`.
+- [x] **Tarea 4**: Verificar compilación y build, ejecutar revisión RDD, bump a v1.0.102 y merge a `main`. (Commit: `f23218f`, RDD `review-8f1792643552c6b2` burned).
