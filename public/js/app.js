@@ -111,37 +111,62 @@ class App {
             container.innerHTML = featured.map(prod => window.productCatalog.generateCardHTML(prod)).join('');
         } else {
             const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []) || [];
-            container.innerHTML = featured.map(prod => `
-                <article class="product-card technical-b2b-card" data-id="${prod.id}">
+            container.innerHTML = featured.map(prod => {
+                const categoryName = prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General';
+                const specPill = prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : (prod.badge || 'Producto'));
+
+                return `
+                <article class="product-card technical-b2b-card" data-id="${escapeHtml(prod.id)}">
                     <div class="product-card-media">
-                        ${prod.badge ? `<span class="product-badge">${prod.badge}</span>` : ''}
-                        <button type="button" class="btn-quick-view" onclick="productCatalog.openQuickView('${prod.id}')" title="Ver Ficha Técnica">
+                        ${prod.badge ? `<span class="product-badge">${escapeHtml(prod.badge)}</span>` : ''}
+                        <button type="button" class="btn-quick-view" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" title="Ver Ficha Técnica">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                             Ficha Técnica & Plano
                         </button>
-                        <img src="${prod.image}" alt="${prod.name}" class="product-img" loading="lazy">
+                        <img src="${escapeHtml(prod.image)}" alt="${escapeHtml(prod.name)}" class="product-img" loading="lazy">
                     </div>
                     <div class="product-card-body">
                         <div class="product-meta">
-                            <span class="product-tag">${prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General'}</span>
+                            <span class="product-tag">${escapeHtml(categoryName)}</span>
                             <span class="product-tag tag-accent-pill">
-                                ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : (prod.badge || 'Producto'))}
+                                ${escapeHtml(specPill)}
                             </span>
                         </div>
-                        <h3 class="product-title" onclick="productCatalog.openQuickView('${prod.id}')" title="${prod.name}">
-                            ${prod.name}
+                        <h3 class="product-title" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" title="${escapeHtml(prod.name)}">
+                            ${escapeHtml(prod.name)}
                         </h3>
                         <div class="product-card-footer-technical" style="margin-top: auto; padding-top: 1rem;">
-                            <button type="button" class="btn btn-outline btn-block" onclick="productCatalog.openQuickView('${prod.id}')" style="font-size: 0.84rem; padding: 0.55rem;">
+                            <button type="button" class="btn btn-outline btn-block" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
                                 📋 Ver Plano Técnico
                             </button>
-                            <button type="button" class="btn btn-whatsapp btn-block" onclick="productCatalog.handleDirectWhatsApp('${prod.id}')" style="font-size: 0.84rem; padding: 0.55rem;">
+                            <button type="button" class="btn btn-whatsapp btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
                                 💬 Cotizar por WhatsApp
                             </button>
                         </div>
                     </div>
                 </article>
-            `).join('');
+            `;
+            }).join('');
+        }
+
+        if (!container.dataset.listenerAttached) {
+            container.dataset.listenerAttached = 'true';
+            container.addEventListener('click', (e) => {
+                const qvBtn = e.target.closest('[data-action="quick-view"]');
+                if (qvBtn) {
+                    const card = qvBtn.closest('.product-card');
+                    const pid = qvBtn.dataset.productId || card?.dataset.id;
+                    if (pid && window.productCatalog) window.productCatalog.openQuickView(pid);
+                    return;
+                }
+                const waBtn = e.target.closest('[data-action="direct-wa"]');
+                if (waBtn) {
+                    const card = waBtn.closest('.product-card');
+                    const pid = waBtn.dataset.productId || card?.dataset.id;
+                    if (pid && window.productCatalog) window.productCatalog.handleDirectWhatsApp(pid);
+                    return;
+                }
+            });
         }
     }
 
@@ -152,12 +177,12 @@ class App {
         container.innerHTML = TESTIMONIALS.map(t => `
             <div class="testimonial-card">
                 <div class="testimonial-stars">★★★★★</div>
-                <p class="testimonial-quote">"${t.text}"</p>
+                <p class="testimonial-quote">"${escapeHtml(t.text)}"</p>
                 <div class="testimonial-author">
-                    <img src="${t.avatar}" alt="${t.name}" class="author-avatar" loading="lazy">
+                    <img src="${escapeHtml(t.avatar)}" alt="${escapeHtml(t.name)}" class="author-avatar" loading="lazy">
                     <div class="author-info">
-                        <h4 class="author-name">${t.name}</h4>
-                        <span class="author-pet" style="color: var(--accent); font-weight: 600;">${t.pet}</span>
+                        <h4 class="author-name">${escapeHtml(t.name)}</h4>
+                        <span class="author-pet" style="color: var(--accent); font-weight: 600;">${escapeHtml(t.company || t.pet || '')}</span>
                     </div>
                 </div>
             </div>
@@ -171,11 +196,11 @@ class App {
         container.innerHTML = FAQS.map((faq, idx) => `
             <div class="faq-item ${idx === 0 ? 'active' : ''}">
                 <button type="button" class="faq-question">
-                    <span>${faq.q}</span>
+                    <span>${escapeHtml(faq.q)}</span>
                     <span class="faq-icon">${idx === 0 ? '−' : '+'}</span>
                 </button>
                 <div class="faq-answer" style="${idx === 0 ? 'max-height: 250px;' : 'max-height: 0;'}">
-                    <p>${faq.a}</p>
+                    <p>${escapeHtml(faq.a)}</p>
                 </div>
             </div>
         `).join('');

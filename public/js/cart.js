@@ -34,19 +34,22 @@ class CartManager {
     }
 
     addItem(productId, quantity = 1) {
-        const prod = PRODUCTS.find(p => p.id === productId);
+        const prodList = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []) || [];
+        const prod = prodList.find(p => p.id === productId || p.dbId === productId);
         if (!prod) return;
 
-        const existing = this.items.find(item => item.id === productId);
+        const existing = this.items.find(item => item.id === prod.id || (prod.dbId && item.dbId === prod.dbId));
         if (existing) {
             existing.quantity += quantity;
         } else {
             this.items.push({
                 id: prod.id,
+                dbId: prod.dbId || (typeof prod.id === 'string' && prod.id.length === 36 ? prod.id : undefined),
+                sku: prod.sku || prod.id,
                 name: prod.name,
                 image: prod.image,
-                packSize: prod.packSize,
-                specs: prod.specs,
+                packSize: prod.packSize || 100,
+                specs: prod.specs || {},
                 quantity: quantity
             });
         }
@@ -118,23 +121,23 @@ class CartManager {
         if (itemsCountVal) itemsCountVal.textContent = `${this.items.length} modelo(s)`;
 
         container.innerHTML = this.items.map(item => `
-            <div class="cart-item" data-id="${item.id}">
-                <img src="${item.image}" alt="${item.name}" class="cart-item-img">
+            <div class="cart-item" data-id="${escapeHtml(item.id)}">
+                <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.name)}" class="cart-item-img">
                 <div class="cart-item-info">
-                    <h4 class="cart-item-title">${item.name}</h4>
+                    <h4 class="cart-item-title">${escapeHtml(item.name)}</h4>
                     <div class="cart-item-unit-price">
-                        ${item.specs?.boca ? `Boca: ${item.specs.boca} | ` : ''}Fardo x ${item.packSize} u.
+                        ${item.specs?.boca ? `Boca: ${escapeHtml(item.specs.boca)} | ` : ''}Fardo x ${escapeHtml(item.packSize)} u.
                     </div>
                     <div class="cart-item-actions">
                         <div class="quantity-controller">
-                            <button type="button" class="btn-qty" onclick="cartManager.updateQuantity('${item.id}', ${item.quantity - 1})" title="Reducir paquetes">−</button>
-                            <span class="qty-display">${item.quantity} paq.</span>
-                            <button type="button" class="btn-qty" onclick="cartManager.updateQuantity('${item.id}', ${item.quantity + 1})" title="Aumentar paquetes">+</button>
+                            <button type="button" class="btn-qty" data-action="qty-minus" data-id="${escapeHtml(item.id)}" title="Reducir paquetes">−</button>
+                            <span class="qty-display">${escapeHtml(item.quantity)} paq.</span>
+                            <button type="button" class="btn-qty" data-action="qty-plus" data-id="${escapeHtml(item.id)}" title="Aumentar paquetes">+</button>
                         </div>
                         <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">
                             ${(item.quantity * item.packSize).toLocaleString()} u.
                         </div>
-                        <button type="button" class="btn-remove-item" onclick="cartManager.removeItem('${item.id}')" title="Eliminar referencia">
+                        <button type="button" class="btn-remove-item" data-action="remove-item" data-id="${escapeHtml(item.id)}" title="Eliminar referencia">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                         </button>
                     </div>
@@ -180,6 +183,36 @@ class CartManager {
         const overlay = document.getElementById('cart-overlay');
         if (overlay) {
             overlay.addEventListener('click', () => this.closeDrawer());
+        }
+
+        const itemsContainer = document.getElementById('cart-items-container');
+        if (itemsContainer) {
+            itemsContainer.addEventListener('click', (e) => {
+                const itemEl = e.target.closest('.cart-item');
+                const id = itemEl?.dataset.id;
+                if (!id) return;
+
+                const item = this.items.find(i => i.id === id);
+                if (!item) return;
+
+                const minusBtn = e.target.closest('[data-action="qty-minus"]');
+                if (minusBtn) {
+                    this.updateQuantity(id, item.quantity - 1);
+                    return;
+                }
+
+                const plusBtn = e.target.closest('[data-action="qty-plus"]');
+                if (plusBtn) {
+                    this.updateQuantity(id, item.quantity + 1);
+                    return;
+                }
+
+                const removeBtn = e.target.closest('[data-action="remove-item"]');
+                if (removeBtn) {
+                    this.removeItem(id);
+                    return;
+                }
+            });
         }
 
         const checkoutForm = document.getElementById('whatsapp-checkout-form');
@@ -236,9 +269,53 @@ class CartManager {
         msg += `📊 *Total de Envases Requeridos:* ~${totalUnits.toLocaleString()} unidades\n\n`;
         msg += `Agradecemos nos compartan disponibilidad y cotización formal por escala mayorista.`;
 
+        // Registrar cotización en Supabase para trazabilidad en el backoffice de AYME PET
+        const tenantId = window.TENANT_ID || 'c2f7cdd7-d590-4a73-a8e8-0c3f120a7dbe';
+        const quotePayload = {
+            tenant_id: tenantId,
+            customer_name: name,
+            company_name: company || null,
+            customer_phone: phone,
+            delivery_city: city || null,
+            notes: [
+                color ? `Preferencia de color: ${color}` : '',
+                notes ? `Notas: ${notes}` : ''
+            ].filter(Boolean).join(' | ') || null,
+            items: this.items.map(item => ({
+                product_id: item.dbId || (typeof item.id === 'string' && item.id.length === 36 ? item.id : undefined),
+                name: item.name,
+                sku: item.sku || item.id,
+                package_count: item.quantity,
+                units_per_package: item.packSize || 100,
+                total_units: item.quantity * (item.packSize || 100),
+                selected_color: color || undefined,
+                specs: item.specs || {}
+            })),
+            _form_rendered_at: Date.now() - 3000,
+        };
+
+        try {
+            fetch('/api/quotes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(quotePayload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data && data.success) {
+                    console.log('Cotización registrada en sistema con consecutivo:', data.quote?.quote_number);
+                }
+            })
+            .catch(err => {
+                console.warn('Registro de cotización offline/silencioso:', err);
+            });
+        } catch (e) {
+            // Ignorar errores de red para no interrumpir el flujo del usuario hacia WhatsApp
+        }
+
         const waUrl = `https://wa.me/${CONFIG.whatsappNumber}?text=${encodeURIComponent(msg)}`;
         window.open(waUrl, '_blank');
-        this.showToast('¡Redirigiendo a WhatsApp para enviar tu cotización!', 'success');
+        this.showToast('¡Cotización registrada y redirigiendo a WhatsApp!', 'success');
         this.closeDrawer();
     }
 
@@ -257,7 +334,7 @@ class CartManager {
         if (type === 'success') icon = '✅';
         if (type === 'error') icon = '⚠️';
 
-        toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+        toast.innerHTML = `<span>${icon}</span> <span>${escapeHtml(message)}</span>`;
         container.appendChild(toast);
 
         setTimeout(() => toast.classList.add('show'), 10);

@@ -1,81 +1,51 @@
 ﻿/**
- * AYME INDUSTRIAS PET - Scroll-Driven Image Sequence Engine
- * Renderizado de 144 fotogramas en Canvas 60fps con precarga ultrarrápida
+ * AYME INDUSTRIAS PET - Scroll-Driven Experience & Telemetry Engine
+ * Optimizado para alto rendimiento: control de telemetría y fases de soplado sobre video continuo.
+ * Elimina la precarga ociosa de 32MB de imágenes JPEG y el bucle continuo innecesario de 60fps.
  */
 
 class ScrollSequenceManager {
     constructor() {
         this.track = document.getElementById('scroll-sequence-track');
-        this.canvas = document.getElementById('sequence-canvas');
         this.stepIntro = document.getElementById('sequence-step-intro');
         this.step1 = document.getElementById('sequence-step-1');
         this.step2 = document.getElementById('sequence-step-2');
         this.progressFill = document.getElementById('sequence-progress-bar');
         this.telemetryProgress = document.getElementById('telemetry-progress-val');
         this.telemetryFrame = document.getElementById('telemetry-frame-val');
-        this.ctx = this.canvas ? this.canvas.getContext('2d') : null;
         
         this.totalFrames = 144;
-        this.images = [];
-        this.loadedCount = 0;
         this.targetProgress = 0;
         this.currentProgress = 0;
         this.currentFrameIndex = 1;
-        this.isReady = false;
+        this.ticking = false;
 
         this.init();
     }
 
     init() {
-        if (!this.track || !this.canvas) return;
+        if (!this.track) return;
 
-        this.preloadFrames();
-        this.setupResize();
         this.setupScrollListener();
-        this.startRenderLoop();
-    }
-
-    preloadFrames() {
-        for (let i = 1; i <= this.totalFrames; i++) {
-            const img = new Image();
-            const frameNumber = String(i).padStart(4, '0');
-            img.src = `/assets/sequence/frame_${frameNumber}.jpg`;
-            
-            img.onload = () => {
-                this.loadedCount++;
-                if (i === 1) {
-                    this.isReady = true;
-                    this.drawFrame(1);
-                }
-            };
-            this.images[i] = img;
-        }
-    }
-
-    setupResize() {
-        const resize = () => {
-            if (!this.canvas) return;
-            const rect = this.canvas.getBoundingClientRect();
-            const dpr = Math.min(window.devicePixelRatio || 1, 2);
-
-            this.canvas.width = (rect.width || window.innerWidth) * dpr;
-            this.canvas.height = (rect.height || window.innerHeight) * dpr;
-
-            if (this.ctx) {
-                this.ctx.imageSmoothingEnabled = true;
-                this.ctx.imageSmoothingQuality = 'high';
-            }
-            this.drawFrame(this.currentFrameIndex);
-        };
-
-        resize();
-        window.addEventListener('resize', resize);
+        this.calculateProgress();
+        this.updateUI(0, 1);
     }
 
     setupScrollListener() {
-        const update = () => this.calculateProgress();
-        window.addEventListener('scroll', update, { passive: true });
-        update();
+        const onScroll = () => {
+            this.calculateProgress();
+            if (!this.ticking) {
+                this.ticking = true;
+                requestAnimationFrame(() => {
+                    this.tick();
+                    this.ticking = false;
+                });
+            }
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        onScroll();
     }
 
     calculateProgress() {
@@ -93,50 +63,24 @@ class ScrollSequenceManager {
         this.targetProgress = progress;
     }
 
-    startRenderLoop() {
-        const render = () => {
-            // Suavizado dinámico (lerp) para responder al scroll hacia arriba y abajo
-            this.currentProgress += (this.targetProgress - this.currentProgress) * 0.32;
+    tick() {
+        // Suavizado dinámico (lerp)
+        const diff = this.targetProgress - this.currentProgress;
+        if (Math.abs(diff) < 0.001) {
+            this.currentProgress = this.targetProgress;
+        } else {
+            this.currentProgress += diff * 0.35;
+            // Si aún no converge, continuar animando
+            requestAnimationFrame(() => this.tick());
+        }
 
-            // Calcular índice exacto de fotograma (1 a 144)
-            const frameIndex = Math.min(
-                this.totalFrames,
-                Math.max(1, Math.floor(this.currentProgress * (this.totalFrames - 1)) + 1)
-            );
+        const frameIndex = Math.min(
+            this.totalFrames,
+            Math.max(1, Math.floor(this.currentProgress * (this.totalFrames - 1)) + 1)
+        );
 
-            if (frameIndex !== this.currentFrameIndex) {
-                this.currentFrameIndex = frameIndex;
-                this.drawFrame(frameIndex);
-            }
-
-            this.updateUI(this.currentProgress, frameIndex);
-
-            requestAnimationFrame(render);
-        };
-
-        requestAnimationFrame(render);
-    }
-
-    drawFrame(index) {
-        if (!this.ctx || !this.images[index]) return;
-
-        const img = this.images[index];
-        if (!img.complete || img.naturalWidth === 0) return;
-
-        const cw = this.canvas.width;
-        const ch = this.canvas.height;
-        const iw = img.naturalWidth;
-        const ih = img.naturalHeight;
-
-        // Cover fit para llenar la pantalla manteniendo proporción
-        const scale = Math.max(cw / iw, ch / ih);
-        const nw = iw * scale;
-        const nh = ih * scale;
-        const ox = (cw - nw) / 2;
-        const oy = (ch - nh) / 2;
-
-        this.ctx.clearRect(0, 0, cw, ch);
-        this.ctx.drawImage(img, ox, oy, nw, nh);
+        this.currentFrameIndex = frameIndex;
+        this.updateUI(this.currentProgress, frameIndex);
     }
 
     updateUI(progress, frameIndex) {

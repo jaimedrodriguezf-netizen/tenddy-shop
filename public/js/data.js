@@ -3,6 +3,18 @@
  * Catálogo Oficial B2B con Especificaciones Técnicas y Medidas Exactas
  */
 
+// Utilidad defensiva contra XSS para sanitizar contenido dinámico
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+window.escapeHtml = escapeHtml;
+
 const CONFIG = {
     businessName: "AYME INDUSTRIAS PET",
     subtitle: "Solutions in Packaging",

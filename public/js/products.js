@@ -28,6 +28,9 @@ class ProductCatalog {
             if (!res.ok) return;
             const data = await res.json();
             if (data && data.success) {
+                if (data.tenant && data.tenant.id) {
+                    window.TENANT_ID = data.tenant.id;
+                }
                 // Sincronizar categorías si vienen de Supabase
                 if (Array.isArray(data.categories)) {
                     const iconMap = {
@@ -53,7 +56,7 @@ class ProductCatalog {
                     if (contactSelect && mappedCats.length > 0) {
                         contactSelect.innerHTML = `
                             <option value="Cotización General de Envases">📦 Cotización General de Envases</option>
-                            ${mappedCats.map(c => `<option value="${c.name}">${c.icon} Línea ${c.name}</option>`).join('')}
+                            ${mappedCats.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.icon)} Línea ${escapeHtml(c.name)}</option>`).join('')}
                             <option value="Fabricación de Molde Personalizado">📐 Fabricación de Molde Personalizado 3D</option>
                         `;
                     }
@@ -62,7 +65,7 @@ class ProductCatalog {
                     const footerList = document.getElementById('footer-categories-list');
                     if (footerList && mappedCats.length > 0) {
                         footerList.innerHTML = mappedCats.map(c => `
-                            <li><a href="#productos" data-nav-target="productos" onclick="if(window.productCatalog){window.productCatalog.currentCategory='${c.id}'; window.productCatalog.renderCategoryPills(); window.productCatalog.renderProducts();}">${c.name}</a></li>
+                            <li><a href="#productos" data-nav-target="productos" data-cat-id="${escapeHtml(c.id)}" class="footer-cat-filter">${escapeHtml(c.name)}</a></li>
                         `).join('');
                     }
                 }
@@ -78,6 +81,8 @@ class ProductCatalog {
 
                         return {
                             id: p.sku ? p.sku.toLowerCase() : p.id,
+                            dbId: p.id,
+                            sku: p.sku || '',
                             name: p.name,
                             category: catSlug,
                             categoryName: catName,
@@ -127,8 +132,8 @@ class ProductCatalog {
 
         container.style.display = 'flex';
         container.innerHTML = SECTOR_TYPES.map(s => `
-            <button type="button" class="pet-tab ${this.currentSector === s.id ? 'active' : ''}" data-sector="${s.id}">
-                ${s.name}
+            <button type="button" class="pet-tab ${this.currentSector === s.id ? 'active' : ''}" data-sector="${escapeHtml(s.id)}">
+                ${escapeHtml(s.name)}
             </button>
         `).join('');
     }
@@ -139,9 +144,9 @@ class ProductCatalog {
 
         const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []);
         container.innerHTML = cats.map(cat => `
-            <button type="button" class="filter-pill ${this.currentCategory === cat.id ? 'active' : ''}" data-category="${cat.id}">
-                <span>${cat.icon}</span>
-                <span>${cat.name}</span>
+            <button type="button" class="filter-pill ${this.currentCategory === cat.id ? 'active' : ''}" data-category="${escapeHtml(cat.id)}">
+                <span>${escapeHtml(cat.icon)}</span>
+                <span>${escapeHtml(cat.name)}</span>
             </button>
         `).join('');
     }
@@ -205,33 +210,36 @@ class ProductCatalog {
     }
 
     generateCardHTML(prod) {
+        const categoryName = prod.categoryName || (window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : [])).find(c => c && c.id === prod.category)?.name || 'Catálogo General';
+        const specPill = prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : 'Accesorio');
+
         return `
-            <article class="product-card technical-b2b-card" data-id="${prod.id}">
+            <article class="product-card technical-b2b-card" data-id="${escapeHtml(prod.id)}">
                 <div class="product-card-media">
-                    ${prod.badge ? `<span class="product-badge">${prod.badge}</span>` : ''}
-                    <button type="button" class="btn-quick-view" onclick="productCatalog.openQuickView('${prod.id}')" title="Ver Plano y Ficha Técnica">
+                    ${prod.badge ? `<span class="product-badge">${escapeHtml(prod.badge)}</span>` : ''}
+                    <button type="button" class="btn-quick-view" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" title="Ver Plano y Ficha Técnica">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                         Ficha Técnica & Plano
                     </button>
-                    <img src="${prod.image}" alt="${prod.name}" class="product-img" loading="lazy">
+                    <img src="${escapeHtml(prod.image)}" alt="${escapeHtml(prod.name)}" class="product-img" loading="lazy">
                 </div>
                 <div class="product-card-body">
                     <div class="product-meta">
-                        <span class="product-tag">${prod.categoryName || (window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : [])).find(c => c && c.id === prod.category)?.name || 'Catálogo General'}</span>
+                        <span class="product-tag">${escapeHtml(categoryName)}</span>
                         <span class="product-tag tag-accent-pill">
-                            ${prod.specs?.boca ? `Boca: ${prod.specs.boca}` : (prod.specs?.ancho ? `Medida: ${prod.specs.ancho}` : 'Accesorio')}
+                            ${escapeHtml(specPill)}
                         </span>
                     </div>
 
-                    <h3 class="product-title" onclick="productCatalog.openQuickView('${prod.id}')" title="${prod.name}">
-                        ${prod.name}
+                    <h3 class="product-title" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" title="${escapeHtml(prod.name)}">
+                        ${escapeHtml(prod.name)}
                     </h3>
                     
                     <div class="product-card-footer-technical" style="margin-top: auto; padding-top: 1rem;">
-                        <button type="button" class="btn btn-outline btn-block" onclick="productCatalog.openQuickView('${prod.id}')" style="font-size: 0.84rem; padding: 0.55rem;">
+                        <button type="button" class="btn btn-outline btn-block" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
                             📋 Ver Plano Técnico
                         </button>
-                        <button type="button" class="btn btn-whatsapp btn-block" onclick="productCatalog.handleDirectWhatsApp('${prod.id}')" style="font-size: 0.84rem; padding: 0.55rem;">
+                        <button type="button" class="btn btn-whatsapp btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/></svg>
                             <span>Cotizar por WhatsApp</span>
                         </button>
@@ -254,50 +262,70 @@ class ProductCatalog {
         if (!modal || !container) return;
 
         const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []) || [];
+        const categoryName = prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General';
+        const badgeTag = prod.badge 
+            ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${escapeHtml(prod.badge)}</span>` 
+            : (prod.specs?.material ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${escapeHtml(prod.specs.material)}</span>` : '');
+
+        const dimText = prod.specs?.capacidad 
+            ? `Capacidad: ${escapeHtml(prod.specs.capacidad)}` 
+            : (prod.specs?.ancho ? `Dimensiones: ${escapeHtml(prod.specs.ancho)} x ${escapeHtml(prod.specs.alto || '')}` : 'Especificación de Fábrica');
+
+        const packText = prod.specs?.empaque 
+            ? escapeHtml(prod.specs.empaque) 
+            : `Fardo x ${escapeHtml(prod.packSize)} unidades`;
+
         container.innerHTML = `
             <div class="product-modal-grid">
                 <div class="product-modal-gallery">
-                    <img src="${prod.image}" alt="${prod.name}" class="product-modal-img">
-                    ${prod.badge ? `<span class="product-modal-badge">${prod.badge}</span>` : ''}
+                    <img src="${escapeHtml(prod.image)}" alt="${escapeHtml(prod.name)}" class="product-modal-img">
+                    ${prod.badge ? `<span class="product-modal-badge">${escapeHtml(prod.badge)}</span>` : ''}
                 </div>
                 <div class="product-modal-info">
                     <div class="product-modal-tags">
-                        <span class="product-tag">${prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General'}</span>
-                        ${prod.badge ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${prod.badge}</span>` : (prod.specs?.material ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${prod.specs.material}</span>` : '')}
+                        <span class="product-tag">${escapeHtml(categoryName)}</span>
+                        ${badgeTag}
                     </div>
 
-                    <h2 class="product-modal-title">${prod.name}</h2>
+                    <h2 class="product-modal-title">${escapeHtml(prod.name)}</h2>
 
                     <div style="background: var(--bg-soft); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; border-left: 4px solid var(--accent);">
                         <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.2rem;">
-                            ${prod.specs?.capacidad ? `Capacidad: ${prod.specs.capacidad}` : (prod.specs?.ancho ? `Dimensiones: ${prod.specs.ancho} x ${prod.specs.alto || ''}` : 'Especificación de Fábrica')}
+                            ${dimText}
                         </div>
                         <div style="font-size: 0.82rem; color: var(--text-muted);">
-                            Presentación: ${prod.specs?.empaque || `Fardo x ${prod.packSize} unidades`}
+                            Presentación: ${packText}
                         </div>
                     </div>
 
-                    <p class="product-modal-desc">${prod.description}</p>
+                    <p class="product-modal-desc">${escapeHtml(prod.description)}</p>
 
                     <div class="product-modal-features">
                         <h4>📐 Plano Técnico & Dimensiones de Fábrica:</h4>
                         <table style="width: 100%; font-size: 0.86rem; border-collapse: collapse; margin-top: 0.65rem;">
                             ${Object.entries(prod.specs || {}).map(([key, val]) => `
                                 <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.4rem 0; font-weight: 700; color: var(--primary); text-transform: capitalize;">${key}:</td>
-                                    <td style="padding: 0.4rem 0; color: var(--text-dark); font-weight: 600; text-align: right;">${val}</td>
+                                    <td style="padding: 0.4rem 0; font-weight: 700; color: var(--primary); text-transform: capitalize;">${escapeHtml(key)}:</td>
+                                    <td style="padding: 0.4rem 0; color: var(--text-dark); font-weight: 600; text-align: right;">${escapeHtml(val)}</td>
                                 </tr>
                             `).join('')}
                         </table>
                     </div>
 
-                    <div class="product-modal-stock">
+                    <div class="product-modal-features" style="margin-top: 1rem;">
+                        <h4>✅ Normas de Inocuidad y Resistencia:</h4>
+                        <ul class="modal-feature-list" style="margin-top: 0.5rem; padding-left: 1.2rem; font-size: 0.86rem; color: var(--text-muted);">
+                            ${(prod.features || []).map(f => `<li style="margin-bottom: 0.25rem;">${escapeHtml(f)}</li>`).join('')}
+                        </ul>
+                    </div>
+
+                    <div class="product-modal-stock" style="margin-top: 1.25rem; font-size: 0.85rem; color: var(--primary); font-weight: 600;">
                         <span class="stock-dot"></span>
                         <span>Fabricación y stock continuo en planta</span>
                     </div>
 
                     <div class="product-modal-cta" style="margin-top: 1.25rem;">
-                        <button type="button" class="btn btn-whatsapp btn-lg btn-block" onclick="productCatalog.handleDirectWhatsApp('${prod.id}')">
+                        <button type="button" class="btn btn-whatsapp btn-lg btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/></svg>
                             <span>Solicitar Cotización por WhatsApp</span>
                         </button>
@@ -384,6 +412,47 @@ class ProductCatalog {
         if (modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) this.closeQuickView();
+                const waBtn = e.target.closest('[data-action="direct-wa"]');
+                if (waBtn) {
+                    const pid = waBtn.dataset.productId;
+                    if (pid) this.handleDirectWhatsApp(pid);
+                }
+            });
+        }
+
+        // Delegación de eventos para la grilla de productos
+        const grid = document.getElementById('products-grid');
+        if (grid) {
+            grid.addEventListener('click', (e) => {
+                const qvBtn = e.target.closest('[data-action="quick-view"]');
+                if (qvBtn) {
+                    const card = qvBtn.closest('.product-card');
+                    const pid = qvBtn.dataset.productId || card?.dataset.id;
+                    if (pid) this.openQuickView(pid);
+                    return;
+                }
+                const waBtn = e.target.closest('[data-action="direct-wa"]');
+                if (waBtn) {
+                    const card = waBtn.closest('.product-card');
+                    const pid = waBtn.dataset.productId || card?.dataset.id;
+                    if (pid) this.handleDirectWhatsApp(pid);
+                    return;
+                }
+            });
+        }
+
+        // Delegación de eventos para categorías en el footer
+        const footerList = document.getElementById('footer-categories-list');
+        if (footerList) {
+            footerList.addEventListener('click', (e) => {
+                const link = e.target.closest('.footer-cat-filter');
+                if (!link) return;
+                const catId = link.dataset.catId;
+                if (catId) {
+                    this.currentCategory = catId;
+                    this.renderCategoryPills();
+                    this.renderProducts();
+                }
             });
         }
     }
