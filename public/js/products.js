@@ -261,87 +261,303 @@ class ProductCatalog {
 
         if (!modal || !container) return;
 
+        const modalContainer = modal.querySelector('.pet-modal-container');
+        if (modalContainer) modalContainer.classList.add('marketplace-modal');
+
         const cats = window.CATEGORIES || (typeof CATEGORIES !== 'undefined' ? CATEGORIES : []) || [];
         const categoryName = prod.categoryName || cats.find(c => c && c.id === prod.category)?.name || 'Catálogo General';
-        const badgeTag = prod.badge 
-            ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${escapeHtml(prod.badge)}</span>` 
-            : (prod.specs?.material ? `<span class="product-tag" style="background: var(--accent-light); color: var(--accent); font-weight: 700;">${escapeHtml(prod.specs.material)}</span>` : '');
+        const specs = prod.specs || {};
 
-        const dimText = prod.specs?.capacidad 
-            ? `Capacidad: ${escapeHtml(prod.specs.capacidad)}` 
-            : (prod.specs?.ancho ? `Dimensiones: ${escapeHtml(prod.specs.ancho)} x ${escapeHtml(prod.specs.alto || '')}` : 'Especificación de Fábrica');
+        // Variantes y opciones
+        const packOptions = ['Paquete de 15', 'Paquete de 10', 'Paquete de 5'];
+        const colorOptions = ['Tapas Negras', 'Tapas Blancas'];
+        this.modalSelectedPack = packOptions[0];
+        this.modalSelectedColor = colorOptions[0];
+        this.modalQty = 1;
 
-        const packText = prod.specs?.empaque 
-            ? escapeHtml(prod.specs.empaque) 
-            : `Fardo x ${escapeHtml(prod.packSize)} unidades`;
+        // Imágenes de galería
+        const galleryImages = [
+            prod.image,
+            '/assets/products/ayme-002.svg',
+            '/assets/products/ayme-003.svg',
+            '/assets/products/ayme-004.svg'
+        ];
+
+        // Reseñas de compras verificadas solicitadas
+        const reviews = [
+            {
+                user: '98***28',
+                date: 'el 24 abr 2026',
+                stars: 5,
+                headline: 'Excelente',
+                comment: 'bonitos botes, frasco un tanto delicado pero muy chéveres'
+            },
+            {
+                user: 'Lissett',
+                date: 'el 2 abr 2026',
+                stars: 5,
+                headline: 'Excelente',
+                comment: 'Están muy bonitos eficientes para guardar juguitos'
+            },
+            {
+                user: 'ruben alvarez',
+                date: 'el 22 ene 2026',
+                stars: 5,
+                headline: 'Excelente',
+                comment: 'llego muy bien gracias'
+            },
+            {
+                user: 'Ndeer Hp',
+                date: 'el 29 abr 2026',
+                stars: 4,
+                headline: 'Bueno',
+                comment: 'JAJAJA otra vez pensé q sería más grandesito pero por su precio está bastante bien, cumple su función.'
+            }
+        ];
 
         container.innerHTML = `
-            <div class="product-modal-grid">
-                <div class="product-modal-gallery">
-                    <img src="${escapeHtml(prod.image)}" alt="${escapeHtml(prod.name)}" class="product-modal-img">
-                    ${prod.badge ? `<span class="product-modal-badge">${escapeHtml(prod.badge)}</span>` : ''}
+            <!-- BREADCRUMB JERÁRQUICO TEMU / MARKETPLACE -->
+            <nav class="marketplace-breadcrumb">
+                <span>Inicio</span> <span class="bc-sep">›</span>
+                <span>${escapeHtml(categoryName || 'Hogar y cocina')}</span> <span class="bc-sep">›</span>
+                <span>${escapeHtml(specs.subcategoria || specs.sector || 'Cristalería y copas')}</span> <span class="bc-sep">›</span>
+                <span class="bc-active">${escapeHtml(prod.name.slice(0, 32))}...</span>
+            </nav>
+
+            <div class="marketplace-pdp-layout">
+                <!-- COLUMNA IZQUIERDA: GALERÍA MULTI-ÁNGULO -->
+                <div class="marketplace-gallery-card">
+                    <div class="marketplace-main-img-box">
+                        <span class="marketplace-deal-tag">🔥 Oferta de temporada</span>
+                        <img id="modal-active-img" src="${escapeHtml(prod.image)}" alt="${escapeHtml(prod.name)}">
+                    </div>
+                    <div class="marketplace-thumbs-row">
+                        ${galleryImages.map((imgUrl, idx) => `
+                            <button type="button" class="marketplace-thumb-btn ${idx === 0 ? 'active' : ''}" data-thumb-src="${escapeHtml(imgUrl)}">
+                                <img src="${escapeHtml(imgUrl)}" alt="thumb ${idx}">
+                            </button>
+                        `).join('')}
+                    </div>
                 </div>
-                <div class="product-modal-info">
-                    <div class="product-modal-tags">
-                        <span class="product-tag">${escapeHtml(categoryName)}</span>
-                        ${badgeTag}
+
+                <!-- COLUMNA DERECHA: PRECIOS, URGENCIA, VARIANTES Y COMPRA -->
+                <div class="marketplace-info-card">
+                    <h1 class="marketplace-title-h1">${escapeHtml(prod.name)}</h1>
+
+                    <!-- BARRA DE REPUTACIÓN Y PRUEBA SOCIAL -->
+                    <div class="marketplace-social-bar">
+                        <span class="marketplace-rating-badge">★ 4,8</span>
+                        <strong style="color: #0f172a;">843 reseñas</strong>
+                        <span>•</span>
+                        <strong style="color: #0f172a;">14K+ ventas</strong>
+                        <span>•</span>
+                        <span class="marketplace-verified-badge">✓ Compras verificadas</span>
                     </div>
 
-                    <h2 class="product-modal-title">${escapeHtml(prod.name)}</h2>
-
-                    <div style="background: var(--bg-soft); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.25rem; border-left: 4px solid var(--accent);">
-                        <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary); margin-bottom: 0.2rem;">
-                            ${dimText}
+                    <!-- BLOQUE DE PRECIOS & DESCUENTO TIEMPO LIMITADO -->
+                    <div class="marketplace-pricing-box">
+                        <div class="marketplace-prices-row">
+                            <span class="marketplace-current-price">$3.14</span>
+                            <span class="marketplace-orig-price">$5.99</span>
+                            <span class="marketplace-discount-pill">47% DE DESCUENTO tiempo limitado</span>
                         </div>
-                        <div style="font-size: 0.82rem; color: var(--text-muted);">
-                            Presentación: ${packText}
+                        <div class="marketplace-stock-row">
+                            <span class="marketplace-almost-gone">🔥 CASI AGOTADO(S)</span>
+                            <span style="font-size: 0.75rem; color: #64748b;">${prod.id ? `Ref: ${escapeHtml(prod.id.toUpperCase())}` : ''}</span>
+                        </div>
+                        <div class="marketplace-countdown-strip">
+                            <span>⏱️ Oferta de temporada</span>
+                            <span class="marketplace-timer-digits" id="modal-countdown">18:06:33:22</span>
+                        </div>
+                        <div style="font-size: 0.72rem; color: #64748b; text-align: right;">
+                            Termina el 31 oct a las 11:59 pm
                         </div>
                     </div>
 
-                    <p class="product-modal-desc">${escapeHtml(prod.description)}</p>
+                    <!-- SELECTOR DE VARIANTES -->
+                    <div class="marketplace-variants-block">
+                        <div class="marketplace-var-group">
+                            <label>
+                                <span>Presentación:</span>
+                                <strong id="modal-pack-label" style="color: #ea580c;">Paquete de 15</strong>
+                            </label>
+                            <div class="marketplace-pills-wrap" id="modal-pack-pills">
+                                ${packOptions.map((po, idx) => `
+                                    <button type="button" class="marketplace-pill-opt ${idx === 0 ? 'active' : ''}" data-variant-type="pack" data-val="${escapeHtml(po)}">${escapeHtml(po)}</button>
+                                `).join('')}
+                            </div>
+                        </div>
 
-                    <div class="product-modal-features">
-                        <h4>📐 Plano Técnico & Dimensiones de Fábrica:</h4>
-                        <table style="width: 100%; font-size: 0.86rem; border-collapse: collapse; margin-top: 0.65rem;">
-                            ${Object.entries(prod.specs || {}).map(([key, val]) => `
-                                <tr style="border-bottom: 1px solid var(--border);">
-                                    <td style="padding: 0.4rem 0; font-weight: 700; color: var(--primary); text-transform: capitalize;">${escapeHtml(key)}:</td>
-                                    <td style="padding: 0.4rem 0; color: var(--text-dark); font-weight: 600; text-align: right;">${escapeHtml(val)}</td>
-                                </tr>
-                            `).join('')}
-                        </table>
+                        <div class="marketplace-var-group">
+                            <label>
+                                <span>Color de Tapas:</span>
+                                <strong id="modal-color-label" style="color: #ea580c;">Tapas Negras</strong>
+                            </label>
+                            <div class="marketplace-pills-wrap" id="modal-color-pills">
+                                ${colorOptions.map((co, idx) => `
+                                    <button type="button" class="marketplace-pill-opt ${idx === 0 ? 'active' : ''}" data-variant-type="color" data-val="${escapeHtml(co)}">${escapeHtml(co)}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 0.25rem;">
+                            <span style="font-size: 0.8rem; font-weight: 700; color: #1e293b;">Cantidad:</span>
+                            <div class="marketplace-qty-control">
+                                <button type="button" class="marketplace-qty-btn" id="modal-btn-qty-minus">−</button>
+                                <span class="marketplace-qty-val" id="modal-qty-display">1</span>
+                                <button type="button" class="marketplace-qty-btn" id="modal-btn-qty-plus">+</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="product-modal-features" style="margin-top: 1rem;">
-                        <h4>✅ Normas de Inocuidad y Resistencia:</h4>
-                        <ul class="modal-feature-list" style="margin-top: 0.5rem; padding-left: 1.2rem; font-size: 0.86rem; color: var(--text-muted);">
-                            ${(prod.features || []).map(f => `<li style="margin-bottom: 0.25rem;">${escapeHtml(f)}</li>`).join('')}
-                        </ul>
-                    </div>
-
-                    <div class="product-modal-stock" style="margin-top: 1.25rem; font-size: 0.85rem; color: var(--primary); font-weight: 600;">
-                        <span class="stock-dot"></span>
-                        <span>Fabricación y stock continuo en planta</span>
-                    </div>
-
-                    <div class="product-modal-cta" style="margin-top: 1.25rem;">
-                        <button type="button" class="btn btn-whatsapp btn-lg btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/></svg>
-                            <span>Solicitar Cotización por WhatsApp</span>
+                    <!-- BOTONES DE ACCIÓN -->
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; padding-top: 0.25rem;">
+                        <button type="button" class="btn btn-accent btn-block" data-action="modal-add-cart" style="background: #ea580c; border-color: #ea580c; font-weight: 800; padding: 0.75rem;">
+                            🛒 Agregar al Carrito (<span id="modal-btn-qty-label">1 paquete</span>)
                         </button>
+                        <button type="button" class="btn btn-whatsapp btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}" style="padding: 0.7rem; font-weight: 700;">
+                            💬 Cotizar por WhatsApp
+                        </button>
+                    </div>
+
+                    <!-- TARJETA DE LOGÍSTICA & ENVÍO A DOMICILIO -->
+                    <div class="marketplace-logistics-box">
+                        <div class="marketplace-delivery-head">
+                            <span>🚚 A domicilio</span>
+                            <span class="marketplace-free-tag">Envío gratis para este artículo</span>
+                        </div>
+                        <div style="color: #64748b;">
+                            Entrega estimada: <strong style="color: #0f172a;">27 oct - 25 nov</strong>
+                        </div>
+                        <div>
+                            <span style="font-size: 0.72rem; color: #64748b; font-weight: 700; display: block; margin-bottom: 0.3rem;">Transportistas autorizados:</span>
+                            <div class="marketplace-couriers-row">
+                                <span class="marketplace-courier-chip">FAR International</span>
+                                <span class="marketplace-courier-chip">LAARCOURIER</span>
+                                <span class="marketplace-courier-chip">URBANO ENVÍOS</span>
+                            </div>
+                        </div>
+                        <div class="marketplace-trust-grid">
+                            <div class="marketplace-trust-item">🔒 Pagos seguros</div>
+                            <div class="marketplace-trust-item">🛡️ Privacidad segura</div>
+                            <div class="marketplace-trust-item">📦 Garantía de pedidos</div>
+                        </div>
+                    </div>
+
+                    <!-- TARJETA DEL FABRICANTE / VENDEDOR -->
+                    <div class="marketplace-vendor-strip">
+                        <div>
+                            <div class="marketplace-vendor-name">WL damai • AYME INDUSTRIAS PET</div>
+                            <div class="marketplace-vendor-stats">
+                                <span><strong>66</strong> Seguidores</span>
+                                <span>•</span>
+                                <span><strong>83K+</strong> Vendidos</span>
+                                <span>•</span>
+                                <span style="color: #f59e0b; font-weight: 800;">★ 4.8</span>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 600;">
+                            Comenzó hace 1 año
+                        </div>
+                    </div>
+
+                    <!-- FICHA TÉCNICA & DETALLES DEL PRODUCTO -->
+                    <div style="border-top: 1px solid #f1f5f9; padding-top: 0.75rem;">
+                        <div style="font-size: 0.85rem; font-weight: 800; color: #0f172a; margin-bottom: 0.5rem;">
+                            Detalles del producto
+                        </div>
+                        <table class="marketplace-specs-table">
+                            <tr>
+                                <td>Material:</td>
+                                <td>${escapeHtml(specs.material || 'Plástico (PET / PP)')}</td>
+                            </tr>
+                            <tr>
+                                <td>Reutilizable:</td>
+                                <td>${escapeHtml(specs.reutilizable || 'Reutilizable 100%')}</td>
+                            </tr>
+                            <tr>
+                                <td>Forma:</td>
+                                <td>${escapeHtml(specs.forma || 'Redondo / Cilíndrico')}</td>
+                            </tr>
+                            <tr>
+                                <td>Capacidad:</td>
+                                <td>${escapeHtml(specs.capacidad || '2 Oz (60 ml)')}</td>
+                            </tr>
+                            <tr>
+                                <td>Boca / Tapa:</td>
+                                <td>${escapeHtml(specs.boca || 'Con Tapas Negras/Blancas')}</td>
+                            </tr>
+                            <tr>
+                                <td>Uso Recomendado:</td>
+                                <td>Jengibre, Muestras, Jugos, Farma, Whisky</td>
+                            </tr>
+                        </table>
                     </div>
                 </div>
             </div>
+
+            <!-- MURO DE RESEÑAS DE CLIENTES VERIFICADAS -->
+            <div class="marketplace-reviews-section">
+                <div class="marketplace-reviews-header">
+                    <div>
+                        <strong style="font-size: 0.95rem; color: #0f172a;">843 reseñas • ★ 4,8</strong>
+                        <div style="font-size: 0.72rem; color: #15803d; font-weight: 700; margin-top: 2px;">
+                            Todas las reseñas son de compras verificadas
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+                    ${reviews.map(r => `
+                        <div class="marketplace-review-card">
+                            <div class="marketplace-review-user">
+                                <span>${escapeHtml(r.user)} <span class="marketplace-verified-badge" style="font-size: 0.65rem; margin-left: 4px;">Compra verificada</span></span>
+                                <span style="font-size: 0.72rem; color: #94a3b8;">${escapeHtml(r.date)}</span>
+                            </div>
+                            <div class="marketplace-review-stars">
+                                ${'★'.repeat(r.stars)} <strong style="color: #0f172a; font-size: 0.8rem; margin-left: 4px;">${escapeHtml(r.headline)}</strong>
+                            </div>
+                            <div class="marketplace-review-text">
+                                ${escapeHtml(r.comment)}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
         `;
+
+        // Iniciar temporizador regresivo de oferta en vivo (18:06:33:22)
+        if (this.modalTimer) clearInterval(this.modalTimer);
+        let secondsTotal = 18 * 86400 + 6 * 3600 + 33 * 60 + 22;
+        const countdownEl = document.getElementById('modal-countdown');
+        this.modalTimer = setInterval(() => {
+            secondsTotal--;
+            if (secondsTotal <= 0) {
+                clearInterval(this.modalTimer);
+                return;
+            }
+            const d = Math.floor(secondsTotal / 86400);
+            const h = Math.floor((secondsTotal % 86400) / 3600);
+            const m = Math.floor((secondsTotal % 3600) / 60);
+            const s = secondsTotal % 60;
+            const pad = n => String(n).padStart(2, '0');
+            if (countdownEl) countdownEl.textContent = `${pad(d)}:${pad(h)}:${pad(m)}:${pad(s)}`;
+        }, 1000);
 
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 
     closeQuickView() {
+        if (this.modalTimer) {
+            clearInterval(this.modalTimer);
+            this.modalTimer = null;
+        }
         const modal = document.getElementById('product-modal');
         if (modal) {
             modal.classList.remove('active');
+            const modalContainer = modal.querySelector('.pet-modal-container');
+            if (modalContainer) modalContainer.classList.remove('marketplace-modal');
             document.body.style.overflow = '';
         }
         this.selectedProduct = null;
@@ -412,6 +628,68 @@ class ProductCatalog {
         if (modal) {
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) this.closeQuickView();
+
+                // Cambiar miniatura activa
+                const thumbBtn = e.target.closest('[data-thumb-src]');
+                if (thumbBtn) {
+                    const src = thumbBtn.dataset.thumbSrc;
+                    const activeImg = document.getElementById('modal-active-img');
+                    if (activeImg && src) activeImg.src = src;
+                    thumbBtn.parentElement?.querySelectorAll('.marketplace-thumb-btn').forEach(b => b.classList.remove('active'));
+                    thumbBtn.classList.add('active');
+                    return;
+                }
+
+                // Selección de variante
+                const pillBtn = e.target.closest('[data-variant-type]');
+                if (pillBtn) {
+                    const type = pillBtn.dataset.variantType;
+                    const val = pillBtn.dataset.val;
+                    if (type === 'pack') {
+                        this.modalSelectedPack = val;
+                        const lbl = document.getElementById('modal-pack-label');
+                        if (lbl) lbl.textContent = val;
+                    } else if (type === 'color') {
+                        this.modalSelectedColor = val;
+                        const lbl = document.getElementById('modal-color-label');
+                        if (lbl) lbl.textContent = val;
+                    }
+                    pillBtn.parentElement?.querySelectorAll('.marketplace-pill-opt').forEach(b => b.classList.remove('active'));
+                    pillBtn.classList.add('active');
+                    return;
+                }
+
+                // Control de cantidad
+                const minusBtn = e.target.closest('#modal-btn-qty-minus');
+                if (minusBtn) {
+                    this.modalQty = Math.max(1, (this.modalQty || 1) - 1);
+                    const disp = document.getElementById('modal-qty-display');
+                    const btnLbl = document.getElementById('modal-btn-qty-label');
+                    if (disp) disp.textContent = String(this.modalQty);
+                    if (btnLbl) btnLbl.textContent = `${this.modalQty} ${this.modalQty === 1 ? 'paquete' : 'paquetes'}`;
+                    return;
+                }
+                const plusBtn = e.target.closest('#modal-btn-qty-plus');
+                if (plusBtn) {
+                    this.modalQty = (this.modalQty || 1) + 1;
+                    const disp = document.getElementById('modal-qty-display');
+                    const btnLbl = document.getElementById('modal-btn-qty-label');
+                    if (disp) disp.textContent = String(this.modalQty);
+                    if (btnLbl) btnLbl.textContent = `${this.modalQty} paquetes`;
+                    return;
+                }
+
+                // Agregar al carrito
+                const addCartBtn = e.target.closest('[data-action="modal-add-cart"]');
+                if (addCartBtn && this.selectedProduct) {
+                    if (window.cartManager) {
+                        window.cartManager.addItem(this.selectedProduct.id, this.modalQty || 1);
+                        window.cartManager.openDrawer();
+                        this.closeQuickView();
+                    }
+                    return;
+                }
+
                 const waBtn = e.target.closest('[data-action="direct-wa"]');
                 if (waBtn) {
                     const pid = waBtn.dataset.productId;
