@@ -21,3 +21,4 @@ Refactorización de seguridad, rendimiento y escalabilidad en AYME INDUSTRIAS PE
 - **Tests**: Suite específica `tests/ayme-perf-and-security.test.js` ejecutada con 100% de éxito (5/5). Suite E2E de Puppeteer superada en las vistas de AYME PET.
 - **Build & Lint**: `npx tsc --noEmit` limpio, `eslint` 0 errores, `next build` exitoso (35 rutas). Bump a v1.0.105.
 - **RDD**: Revisión aprobada y recibo quemado (`review-f2548fa756b28f2e`).
+- **Commit**: `736daaf` en branch `perf/ayme-pet-perf-and-security`.
