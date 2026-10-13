@@ -21,3 +21,5 @@ Modernización integral de `ProductDetailView.tsx` adaptada a la especificación
 - **Vendedor & Atributos**: Tarjeta de vendedor (Seguidores, Ventas, Calificación) y ficha técnica con acordeón de especificaciones técnicas.
 - **Muro de Reseñas**: Reseñas verificadas con compradores (`98***28`, `Lissett`, `ruben alvarez`, `Ndeer Hp`), calificaciones de estrellas, fechas y testimonios.
 - **Tests & Compilación**: `tests/marketplace-product-detail.test.js` 100% superado (6/6), `tsc` y `eslint` sin errores, `next build` exitoso en 35 rutas. Versionado v1.0.106.
+- **RDD**: Revisión aprobada y recibo quemado (`review-8954b524f581d5c3`).
+- **Commit**: `91307e1` en branch `feat/marketplace-product-detail-view`.
