@@ -25,3 +25,5 @@ El usuario esperaba que al hacer clic en "Ver Ficha Técnica" / "Ver Plano Técn
   - Muro de reseñas de clientes verificadas (`98***28`, `Lissett`, `ruben alvarez`, `Ndeer Hp`).
 - **Tests Automatizados**: `tests/ayme-modal-marketplace.test.js` superado al 100% (6/6). Todos los tests previos pasan sin regresiones.
 - **Compilación & Linter**: TypeScript limpio, 0 errores ESLint. Versión v1.0.107.
+- **RDD**: Revisión aprobada y recibo quemado (`review-32d74e9e5eb7d609`).
+- **Commit**: `2381932` en branch `feat/ayme-standalone-marketplace-view`.
