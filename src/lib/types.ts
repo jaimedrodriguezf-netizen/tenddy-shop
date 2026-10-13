@@ -143,4 +143,5 @@ export interface Product {
   min_order_qty: number;
   units_per_package: number;
   category_id?: string;
+  price_tiers?: { min_qty: number; price: number }[];
 }
