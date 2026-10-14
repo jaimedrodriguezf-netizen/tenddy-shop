@@ -52,6 +52,7 @@ export default function TenantLandingView({
   const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
 
   const { landing_config: landing, theme_config: theme } = tenant;
+  const logoHeight = (theme as any)?.logo_height || 38;
   const rawWhatsapp = selectedBranch?.phone_whatsapp || landing.whatsapp_default || '';
   const mainWhatsapp = rawWhatsapp.replace(/\D/g, '') || '593998722324';
 
@@ -162,7 +163,10 @@ export default function TenantLandingView({
             {tenant.logo_url ? (
               <Link
                 href={`/store/${tenant.slug}`}
-                className="inline-flex items-center bg-white px-3.5 py-1.5 rounded-xl border border-white/80 shadow-md shrink-0 hover:shadow-lg transition-all group"
+                className="inline-flex items-center bg-white rounded-xl border border-white/80 shadow-md shrink-0 hover:shadow-lg transition-all group"
+                style={{
+                  padding: `${Math.max(4, Math.round(logoHeight * 0.12))}px ${Math.max(8, Math.round(logoHeight * 0.25))}px`,
+                }}
                 title={tenant.name}
               >
                 <img
@@ -170,7 +174,8 @@ export default function TenantLandingView({
                   alt={tenant.name}
                   loading="eager"
                   decoding="async"
-                  className="h-10 sm:h-12 w-auto object-contain block transition-transform group-hover:scale-102"
+                  style={{ height: `${logoHeight}px` }}
+                  className="w-auto object-contain block transition-transform group-hover:scale-102"
                 />
               </Link>
             ) : (

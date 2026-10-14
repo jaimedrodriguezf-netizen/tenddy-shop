@@ -26,6 +26,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [name, setName] = useState(tenant.name || '');
   const [primaryColor, setPrimaryColor] = useState(tenant.theme_config?.primary_color || '#0284c7');
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
+  const [logoHeight, setLogoHeight] = useState<number>((tenant.theme_config as any)?.logo_height || 38);
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
   const [showManualUrl, setShowManualUrl] = useState(false);
@@ -115,6 +116,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           primary_color: primaryColor,
           store_template: storeTemplate,
           logo_url: logoUrl || null,
+          logo_height: logoHeight,
           hero_title: heroTitle,
           hero_subtitle: heroSubtitle,
           hero_video_url: heroVideoUrl || null,
@@ -295,13 +297,14 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
               />
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
-                {/* Preview del Logo con fondo transparente punteado */}
-                <div className="w-24 h-24 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 flex items-center justify-center p-2 relative overflow-hidden shrink-0 group">
+                {/* Preview del Logo con fondo transparente punteado y escala en vivo */}
+                <div className="w-48 h-20 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 flex items-center justify-center p-2 relative overflow-hidden shrink-0 group">
                   {logoUrl ? (
                     <img
                       src={logoUrl}
                       alt="Logo preview"
-                      className="max-h-full max-w-full object-contain filter drop-shadow-2xs"
+                      style={{ height: `${logoHeight}px` }}
+                      className="w-auto max-w-full object-contain filter drop-shadow-2xs transition-all"
                     />
                   ) : (
                     <div className="text-center text-slate-400">
@@ -318,7 +321,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                 </div>
 
                 {/* Botones de Carga */}
-                <div className="flex-1 space-y-2">
+                <div className="flex-1 space-y-2.5">
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       type="button"
@@ -351,8 +354,37 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                     </button>
                   </div>
 
+                  {/* Barra Deslizante de Tamaño de Logo (Estilo Control de Volumen) */}
+                  {logoUrl && (
+                    <div className="pt-2 border-t border-slate-100 space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                          <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                          Tamaño en cabecera:
+                        </span>
+                        <span className="font-mono font-bold text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-200 text-xs">
+                          {logoHeight} px
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2.5">
+                        <span className="text-[10px] text-slate-400 font-medium">Compacto (24px)</span>
+                        <input
+                          type="range"
+                          min="24"
+                          max="56"
+                          step="2"
+                          value={logoHeight}
+                          onChange={(e) => setLogoHeight(Number(e.target.value))}
+                          className="flex-1 accent-sky-600 cursor-pointer h-2 bg-slate-200 rounded-lg"
+                        />
+                        <span className="text-[10px] text-slate-400 font-medium">Grande (56px)</span>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-[11px] text-slate-500">
-                    Formatos admitidos: <strong>PNG transparente, WebP o JPG</strong> (máx. 2 MB). Se almacena de forma segura en Supabase Storage.
+                    Formatos admitidos: <strong>PNG transparente, WebP o JPG</strong> (máx. 2 MB). Ajusta la barra para calibrar la proporción exacta.
                   </p>
 
                   {showManualUrl && (

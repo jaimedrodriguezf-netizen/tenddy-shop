@@ -25,7 +25,7 @@ console.log('✅ 2. Backend: sanitizeImageUrl blindado para soportar rutas absol
 const landingContent = fs.readFileSync(path.join(__dirname, '../src/components/TenantLandingView.tsx'), 'utf8');
 assert(landingContent.includes('tenant.logo_url ?'), 'FAIL: Debe evaluar tenant.logo_url en la cabecera');
 assert(landingContent.includes('loading="eager"'), 'FAIL: Debe usar loading="eager" para prevenir parpadeo');
-assert(landingContent.includes('max-w-[160px]'), 'FAIL: Debe tener contenedor con dimensiones acotadas');
+assert(landingContent.includes('logoHeight') && landingContent.includes('style={{ height: `${logoHeight}px` }}'), 'FAIL: Debe tener contenedor con dimensiones dinámicas controladas');
 console.log('✅ 3. Storefront: Cabecera con logo real y carga prioritaria verificada.');
 
 console.log('\n🎉 TODAS LAS VERIFICACIONES DE LOGO UPLOADER PASARON EXITOSAMENTE (100%)');

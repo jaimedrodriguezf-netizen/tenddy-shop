@@ -53,10 +53,16 @@ export async function PATCH(request: Request) {
     }
 
     // Fusionar configs
+    const logoHeightRaw = Number(body.logo_height);
+    const validLogoHeight = !isNaN(logoHeightRaw) && logoHeightRaw >= 20 && logoHeightRaw <= 72
+      ? Math.round(logoHeightRaw)
+      : (currentTenant.theme_config?.logo_height || 38);
+
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),
       primary_color: primary_color || currentTenant.theme_config?.primary_color || '#0284c7',
       store_template: body.store_template || currentTenant.theme_config?.store_template || 'temu',
+      logo_height: validLogoHeight,
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.theme_config?.show_best_sellers ?? true),
       show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.theme_config?.show_featured_ratings ?? true),
     };

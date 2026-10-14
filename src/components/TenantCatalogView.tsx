@@ -78,6 +78,7 @@ export default function TenantCatalogView({
   const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
   const rawWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default || '';
   const mainWhatsapp = rawWhatsapp.replace(/\D/g, '');
+  const logoHeight = (tenant.theme_config as any)?.logo_height || 36;
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
   const showBestSellers =
     tenant.landing_config?.show_best_sellers ??
@@ -255,8 +256,19 @@ export default function TenantCatalogView({
           {/* Logo y Nombre */}
           <div className="flex items-center gap-2.5 min-w-0">
             {tenant.logo_url ? (
-              <div className="h-9 w-auto max-w-[130px] rounded-xl overflow-hidden border border-slate-200 bg-white p-1 shrink-0 flex items-center justify-center">
-                <img src={tenant.logo_url} alt={tenant.name} className="max-h-7 w-auto object-contain" />
+              <div
+                className="w-auto rounded-xl overflow-hidden border border-slate-200 bg-white shrink-0 flex items-center justify-center shadow-2xs"
+                style={{
+                  height: `${logoHeight + 8}px`,
+                  padding: '4px 8px',
+                }}
+              >
+                <img
+                  src={tenant.logo_url}
+                  alt={tenant.name}
+                  style={{ height: `${logoHeight}px` }}
+                  className="w-auto object-contain"
+                />
               </div>
             ) : (
               <div
