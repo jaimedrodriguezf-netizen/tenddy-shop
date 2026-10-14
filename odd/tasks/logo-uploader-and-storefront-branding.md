@@ -20,3 +20,5 @@ Implementación de la experiencia completa de subida y visualización de logo co
 - **Header con Logo y Cero Parpadeo (`TenantLandingView.tsx`)**: Se conectó `tenant.logo_url` en un contenedor rígido (`h-10 w-auto max-w-[160px] shrink-0`) con `loading="eager"` para evitar Layout Shift (CLS = 0) y renderizado inmediato vía SSR. Se incluye fallback a monograma estilizado con iniciales cuando no hay logo.
 - **Tests Automatizados**: `tests/logo-uploader.test.js` superado al 100%. Verificación con Puppeteer confirmó la presencia del logo oficial en el header.
 - **Compilación**: TypeScript limpio, 0 errores de ESLint, `next build` exitoso en 35 rutas. Versionado v1.0.112.
+- **RDD**: Revisión aprobada y recibo quemado (`review-40b0731bbceca113`).
+- **Commit**: `d829d5a` en branch `feat/logo-uploader-and-storefront-branding`.
