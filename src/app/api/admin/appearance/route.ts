@@ -2,11 +2,11 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 
-// Helper para sanitizar URLs de imagen (Garantiza que solo se guarden URLs HTTP/HTTPS de Storage y NUNCA base64 en BD)
+// Helper para sanitizar URLs de imagen (Permite URLs HTTPS/HTTP de Storage y rutas relativas locales seguras /...)
 function sanitizeImageUrl(url: unknown): string | null {
   if (typeof url !== 'string' || !url.trim()) return null;
   const clean = url.trim();
-  if (clean.startsWith('https://') || clean.startsWith('http://')) {
+  if (clean.startsWith('https://') || clean.startsWith('http://') || (clean.startsWith('/') && !clean.startsWith('//'))) {
     return clean;
   }
   return null;

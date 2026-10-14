@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Palette,
   Image as ImageIcon,
@@ -11,7 +11,9 @@ import {
   Loader2,
   Sliders,
   Sparkles,
-  LayoutDashboard
+  LayoutDashboard,
+  Upload,
+  Trash2
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
 
@@ -24,6 +26,10 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [name, setName] = useState(tenant.name || '');
   const [primaryColor, setPrimaryColor] = useState(tenant.theme_config?.primary_color || '#0284c7');
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+  const [showManualUrl, setShowManualUrl] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [heroTitle, setHeroTitle] = useState(tenant.landing_config?.hero_title || '');
   const [heroSubtitle, setHeroSubtitle] = useState(tenant.landing_config?.hero_subtitle || '');
   const [heroVideoUrl, setHeroVideoUrl] = useState(tenant.landing_config?.hero_video_url || '');
@@ -39,6 +45,49 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleLogoFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setLogoUploadError('El archivo de logo excede el límite de 2 MB. Por favor elige una imagen más ligera.');
+      return;
+    }
+
+    const allowed = ['image/png', 'image/webp', 'image/jpeg', 'image/jpg'];
+    if (!allowed.includes(file.type.toLowerCase())) {
+      setLogoUploadError('Formato no permitido. Solo se admiten archivos PNG transparente, WebP o JPG.');
+      return;
+    }
+
+    setUploadingLogo(true);
+    setLogoUploadError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('tenant_id', tenant.id);
+      fd.append('folder', 'logos');
+
+      const res = await fetch('/api/admin/media', {
+        method: 'POST',
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'No se pudo subir el archivo de logo');
+      }
+
+      setLogoUrl(data.url);
+    } catch (err: any) {
+      setLogoUploadError(err.message || 'Error al subir el logo');
+    } finally {
+      setUploadingLogo(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const predefinedColors = [
     { label: 'Azul Marino', hex: '#1e3a8a' },
@@ -210,7 +259,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 gap-4 pt-2">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Nombre de la Empresa
@@ -224,17 +273,101 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                URL del Logotipo (PNG / SVG transparente)
+            {/* Selector Visual y Subida de Logo */}
+            <div className="space-y-2 pt-1">
+              <label className="block text-xs font-semibold text-slate-700">
+                Logotipo Oficial de la Empresa
               </label>
+
+              {logoUploadError && (
+                <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 rounded-xl text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                  <span>{logoUploadError}</span>
+                </div>
+              )}
+
               <input
-                type="text"
-                value={logoUrl}
-                onChange={(e) => setLogoUrl(e.target.value)}
-                placeholder="/assets/logo.png"
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all"
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/webp,image/jpeg"
+                onChange={handleLogoFileSelect}
+                className="hidden"
               />
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
+                {/* Preview del Logo con fondo transparente punteado */}
+                <div className="w-24 h-24 rounded-xl border border-dashed border-slate-300 bg-slate-50/80 flex items-center justify-center p-2 relative overflow-hidden shrink-0 group">
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt="Logo preview"
+                      className="max-h-full max-w-full object-contain filter drop-shadow-2xs"
+                    />
+                  ) : (
+                    <div className="text-center text-slate-400">
+                      <Upload className="w-6 h-6 mx-auto mb-1 text-slate-300" />
+                      <span className="text-[10px] block font-medium">Sin logo</span>
+                    </div>
+                  )}
+
+                  {uploadingLogo && (
+                    <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-2xs flex items-center justify-center text-white">
+                      <Loader2 className="w-6 h-6 animate-spin text-sky-400" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Botones de Carga */}
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingLogo}
+                      className="bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 shadow-xs cursor-pointer transition-all"
+                    >
+                      <Upload className="w-3.5 h-3.5 text-sky-400" />
+                      <span>{uploadingLogo ? 'Subiendo imagen...' : logoUrl ? 'Cambiar Logotipo' : 'Subir Logotipo'}</span>
+                    </button>
+
+                    {logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setLogoUrl('')}
+                        disabled={uploadingLogo}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs px-3 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                        <span>Quitar</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setShowManualUrl(!showManualUrl)}
+                      className="text-xs text-slate-500 hover:text-slate-800 font-medium px-2 py-1 transition-colors cursor-pointer"
+                    >
+                      {showManualUrl ? 'Ocultar URL' : 'O pegar enlace web'}
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500">
+                    Formatos admitidos: <strong>PNG transparente, WebP o JPG</strong> (máx. 2 MB). Se almacena de forma segura en Supabase Storage.
+                  </p>
+
+                  {showManualUrl && (
+                    <div className="pt-1">
+                      <input
+                        type="text"
+                        value={logoUrl}
+                        onChange={(e) => setLogoUrl(e.target.value)}
+                        placeholder="https://... o /assets/logo.png"
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 font-mono focus:border-slate-900 focus:outline-none transition-all"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
