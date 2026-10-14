@@ -1240,6 +1240,7 @@ export default function TenantCatalogView({
               const minQty = p.min_order_qty || packSize;
               const hasValidImage = p.images && p.images.length > 0 && p.images[0] && (!p.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics');
               const imageSrc = hasValidImage ? p.images[0] : '/assets/placeholder-product.svg';
+              const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(p.slug || p.sku?.toLowerCase() || p.id)}`;
 
               return (
                 <div
@@ -1247,9 +1248,9 @@ export default function TenantCatalogView({
                   className="bg-white border border-slate-200/80 rounded-2xl overflow-hidden flex flex-col justify-between hover:shadow-md hover:border-slate-300 transition-all group"
                 >
                   {/* Foto con Badges y Logo de Tienda */}
-                  <div
-                    onClick={() => setModalProduct(p)}
-                    className={`relative bg-slate-50 flex items-center justify-center p-2 cursor-pointer overflow-hidden ${
+                  <Link
+                    href={productHref}
+                    className={`relative bg-slate-50 flex items-center justify-center p-2 cursor-pointer overflow-hidden block ${
                       p.attributes?.aspect_ratio === 'square' ? 'aspect-square' : 'aspect-[3/4]'
                     }`}
                   >
@@ -1286,17 +1287,18 @@ export default function TenantCatalogView({
                         CÓD: {p.sku}
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   {/* Datos del Producto */}
                   <div className="p-2.5 sm:p-3 space-y-2 flex-1 flex flex-col justify-between">
                     <div className="space-y-1.5">
                       <h3
-                        onClick={() => setModalProduct(p)}
                         className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2 hover:text-sky-600 cursor-pointer"
                         title={p.name}
                       >
-                        {p.name}
+                        <Link href={productHref} className="hover:underline">
+                          {p.name}
+                        </Link>
                       </h3>
 
                       {/* Tallas y Colores en la Tarjeta */}

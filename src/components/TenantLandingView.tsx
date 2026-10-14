@@ -29,7 +29,6 @@ import Link from 'next/link';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
-import ProductDetailModal from '@/components/ProductDetailModal';
 
 interface TenantLandingViewProps {
   tenant: Tenant;
@@ -49,7 +48,6 @@ export default function TenantLandingView({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
   const [activeTab, setActiveTab] = useState<'catalog' | 'services' | 'branches'>('catalog');
-  const [modalProduct, setModalProduct] = useState<Product | null>(null);
 
   const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
 
@@ -89,15 +87,6 @@ export default function TenantLandingView({
         branches={branches}
         selectedBranch={selectedBranch}
         onSelectBranch={setSelectedBranch}
-      />
-
-      {/* Modal Detallado de Producto */}
-      <ProductDetailModal
-        product={modalProduct}
-        onClose={() => setModalProduct(null)}
-        tenant={tenant}
-        selectedBranch={selectedBranch}
-        branches={branches}
       />
 
       {/* Top Bar Corporativo */}
@@ -424,6 +413,7 @@ export default function TenantLandingView({
             const specs = product.attributes?.specs || {};
             const badge = product.attributes?.badge;
             const packSize = product.units_per_package || 1;
+            const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(product.slug || product.sku?.toLowerCase() || product.id)}`;
 
             return (
               <div
@@ -435,9 +425,9 @@ export default function TenantLandingView({
                 }`}
               >
                 {/* Visual del Producto */}
-                <div
-                  onClick={() => setModalProduct(product)}
-                  className="relative h-56 bg-slate-950/80 flex items-center justify-center p-6 border-b border-slate-800/80 cursor-pointer"
+                <Link
+                  href={productHref}
+                  className="relative h-56 bg-slate-950/80 flex items-center justify-center p-6 border-b border-slate-800/80 cursor-pointer block"
                 >
                   {badge && (
                     <span
@@ -454,9 +444,17 @@ export default function TenantLandingView({
                     {product.sku}
                   </span>
 
-                  <div className="text-5xl group-hover:scale-110 transition-transform duration-300">
-                    {isConfectionery ? '🍬' : '♳'}
-                  </div>
+                  {product.images && product.images.length > 0 && product.images[0] ? (
+                    <img
+                      src={product.images[0]}
+                      alt={product.name}
+                      className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
+                    />
+                  ) : (
+                    <div className="text-5xl group-hover:scale-110 transition-transform duration-300">
+                      {isConfectionery ? '🍬' : '♳'}
+                    </div>
+                  )}
 
                   <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[1px]">
                     <span
@@ -465,27 +463,26 @@ export default function TenantLandingView({
                       }`}
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      Ficha Técnica
+                      Ver Ficha Técnica
                     </span>
                   </div>
-                </div>
+                </Link>
 
                 {/* Info */}
                 <div className="p-5 flex-1 flex flex-col">
-                  <h4
-                    onClick={() => setModalProduct(product)}
-                    className="font-bold text-white text-base line-clamp-2 mb-2 hover:text-slate-300 transition-colors cursor-pointer"
-                  >
-                    {product.name}
+                  <h4 className="font-bold text-white text-base line-clamp-2 mb-2 hover:text-sky-300 transition-colors">
+                    <Link href={productHref} className="hover:underline">
+                      {product.name}
+                    </Link>
                   </h4>
                   <p className="text-slate-400 text-xs line-clamp-2 mb-4">
                     {product.description}
                   </p>
 
                   {/* Tabla de Specs Rápidas */}
-                  <div
-                    onClick={() => setModalProduct(product)}
-                    className="bg-slate-950/60 rounded-lg p-3 text-xs space-y-1.5 border border-slate-800/50 mb-4 font-mono cursor-pointer hover:border-slate-700 transition-colors"
+                  <Link
+                    href={productHref}
+                    className="bg-slate-950/60 rounded-lg p-3 text-xs space-y-1.5 border border-slate-800/50 mb-4 font-mono block hover:border-slate-700 transition-colors"
                   >
                     {Object.entries(specs)
                       .slice(0, 3)
@@ -497,7 +494,7 @@ export default function TenantLandingView({
                           </span>
                         </div>
                       ))}
-                  </div>
+                  </Link>
 
                   <div className="mt-auto pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
                     <div>
@@ -510,6 +507,14 @@ export default function TenantLandingView({
                     </div>
 
                     <div className="flex items-center gap-1.5">
+                      <Link
+                        href={productHref}
+                        className="bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-700 transition-colors"
+                        title="Ver Ficha Técnica Completa"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Ficha</span>
+                      </Link>
                       <button
                         onClick={() => addItem(product)}
                         className={`text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-md ${
