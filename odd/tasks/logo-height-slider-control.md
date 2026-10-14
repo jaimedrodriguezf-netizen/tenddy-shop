@@ -20,3 +20,5 @@ El usuario consideró que el logo a 48px resultaba demasiado grande para su gust
 - **Renderizado Dinámico SSR (`TenantLandingView` y `TenantCatalogView`)**: Ambos encabezados leen la altura configurada y la aplican en línea con proporciones fluidas, garantizando nitidez sin distorsión ni saltos de maquetación (CLS = 0).
 - **Tests Automatizados**: `tests/logo-height-slider.test.js` superado al 100% (3/3). Todos los tests de suites previas verificados sin regresiones.
 - **Compilación**: TypeScript limpio, 0 errores ESLint, `next build` exitoso en 35 rutas. Versionado a v1.0.116.
+- **RDD**: Revisión aprobada y recibo quemado (`review-a2d26a9d46600a74`).
+- **Commit**: `5568ee3` en branch `feat/logo-height-slider-control`.
