@@ -1,13 +1,13 @@
 {
   "name": "tenddy-shop",
-  "version": "1.0.110",
+  "version": "1.0.111",
   "private": true,
   "scripts": {
     "prebuild": "node scripts/generate-version.js",
     "predev": "node scripts/generate-version.js",
     "bump": "node scripts/bump-version.js",
     "dev": "next dev",
-    "build": "next build --webpack",
+    "build": "next build --webpack && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "next start",
     "lint": "eslint",
     "test:e2e": "node tests/e2e-suite.js"

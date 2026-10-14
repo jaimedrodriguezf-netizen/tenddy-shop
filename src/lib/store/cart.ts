@@ -137,6 +137,7 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'tenddy-b2b-cart',
+      partialize: (state) => ({ items: state.items }),
     }
   )
 );

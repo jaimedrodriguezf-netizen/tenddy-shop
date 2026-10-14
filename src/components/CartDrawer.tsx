@@ -47,6 +47,11 @@ export default function CartDrawer({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdQuoteNumber, setCreatedQuoteNumber] = useState<string | null>(null);
+  const isMounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   // Formulario B2B
   const [formData, setFormData] = useState({
@@ -160,7 +165,7 @@ export default function CartDrawer({
     }
   };
 
-  if (!isOpen) return null;
+  if (!isMounted || !isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -229,7 +234,11 @@ export default function CartDrawer({
                       Explora el catálogo y agrega los envases o tapas que necesites en bultos de fábrica.
                     </p>
                     <button
-                      onClick={closeCart}
+                      onClick={() => {
+                        closeCart();
+                        const cat = document.getElementById('catalog-section');
+                        if (cat) cat.scrollIntoView({ behavior: 'smooth' });
+                      }}
                       className="mt-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer transition-colors"
                     >
                       Ver Catálogo
