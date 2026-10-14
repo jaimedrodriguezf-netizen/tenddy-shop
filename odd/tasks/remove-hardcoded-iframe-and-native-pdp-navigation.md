@@ -18,3 +18,5 @@ Eliminación del iframe estático hardcodeado para `ayme-pet` y `plastpet` en `s
 - **Experiencia Marketplace**: Al entrar a cualquier producto, se despliega a pantalla completa la interfaz Marketplace (breadcrumb jerárquico, precio $3.14 con 47% de descuento, temporizador de temporada en vivo, transportistas oficiales FAR International / LAARCOURIER / URBANO, garantías y muro de reseñas verificadas).
 - **Pruebas Automatizadas con Puppeteer**: Navegación de extremo a extremo comprobada con éxito: de `/store/ayme-pet` navega directamente a `/store/ayme-pet/producto/[slug]` sin iframe y sin modal.
 - **Compilación y Build**: 0 errores en TypeScript, 0 errores en ESLint, Next.js build exitoso en 35 rutas. Versionado a v1.0.109.
+- **RDD**: Revisión aprobada y recibo quemado (`review-f8e980a932832950`).
+- **Commit**: `30810d8` en branch `feat/remove-hardcoded-iframe-and-native-pdp-navigation`.
