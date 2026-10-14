@@ -18,3 +18,5 @@ Refuerzo de seguridad, aislamiento de datos y rendimiento en las plantillas de t
 - **Rendimiento LCP & DOM**: El elemento `<video>` del Hero en la Landing incorpora `preload="metadata"` para no saturar el ancho de banda inicial. La grilla de productos implementa paginación progresiva (24 referencias iniciales + botón *"Ver más referencias"*), preservando el scroll fluido a 60 FPS.
 - **Tests Automatizados**: `tests/storefront-hardening.test.js` superado al 100% (4/4). Todos los tests previos del proyecto se ejecutaron sin regresiones.
 - **Compilación**: TypeScript limpio, 0 errores ESLint, `next build` exitoso en 35 rutas. Versionado a v1.0.113.
+- **RDD**: Revisión aprobada y recibo quemado (`review-3295dd4c0a0c7c29`).
+- **Commit**: `39ad409` en branch `perf/storefront-modes-security-and-perf-hardening`.
