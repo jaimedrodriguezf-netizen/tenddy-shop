@@ -19,3 +19,5 @@ El navegador arrojaba `GET https://tenddy.shop/assets/logo-header.png 404 (Not F
 - **Base de Datos Sincronizada**: Tenant `ayme-pet` actualizado con la URL permanente de Supabase Storage.
 - **Tests Automatizados**: `tests/logo-header-resolution.test.js` superado al 100%.
 - **Compilación**: TypeScript limpio, ESLint sin errores, Next.js build exitoso en 35 rutas. Versionado a v1.0.114.
+- **RDD**: Revisión aprobada y recibo quemado (`review-a7f5c097adfe3058`).
+- **Commit**: `729f25a` en branch `main`.
