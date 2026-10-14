@@ -137,7 +137,7 @@ class App {
                         </h3>
                         <div class="product-card-footer-technical" style="margin-top: auto; padding-top: 1rem;">
                             <button type="button" class="btn btn-outline btn-block" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
-                                📋 Ver Plano Técnico
+                                📋 Ver Ficha Técnica
                             </button>
                             <button type="button" class="btn btn-whatsapp btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
                                 💬 Cotizar por WhatsApp

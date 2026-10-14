@@ -82,6 +82,7 @@ class ProductCatalog {
                         return {
                             id: p.sku ? p.sku.toLowerCase() : p.id,
                             dbId: p.id,
+                            slug: p.slug || (p.sku ? p.sku.toLowerCase() : p.id),
                             sku: p.sku || '',
                             name: p.name,
                             category: catSlug,
@@ -217,7 +218,7 @@ class ProductCatalog {
             <article class="product-card technical-b2b-card" data-id="${escapeHtml(prod.id)}">
                 <div class="product-card-media">
                     ${prod.badge ? `<span class="product-badge">${escapeHtml(prod.badge)}</span>` : ''}
-                    <button type="button" class="btn-quick-view" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" title="Ver Plano y Ficha Técnica">
+                    <a href="/store/ayme-pet/producto/${encodeURIComponent(prod.slug || (prod.sku ? prod.sku.toLowerCase() : prod.id))}" target="_top" class="btn-quick-view" title="Ver Ficha Técnica">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
                         Ficha Técnica & Plano
                     </button>
@@ -231,14 +232,14 @@ class ProductCatalog {
                         </span>
                     </div>
 
-                    <h3 class="product-title" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" title="${escapeHtml(prod.name)}">
-                        ${escapeHtml(prod.name)}
+                    <h3 class="product-title" title="${escapeHtml(prod.name)}">
+                        <a href="/store/ayme-pet/producto/${encodeURIComponent(prod.slug || (prod.sku ? prod.sku.toLowerCase() : prod.id))}" target="_top" style="color: inherit; text-decoration: none;">${escapeHtml(prod.name)}</a>
                     </h3>
                     
                     <div class="product-card-footer-technical" style="margin-top: auto; padding-top: 1rem;">
-                        <button type="button" class="btn btn-outline btn-block" data-action="quick-view" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
-                            📋 Ver Plano Técnico
-                        </button>
+                        <a href="/store/ayme-pet/producto/${encodeURIComponent(prod.slug || (prod.sku ? prod.sku.toLowerCase() : prod.id))}" target="_top" class="btn btn-outline btn-block" style="font-size: 0.84rem; padding: 0.55rem; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                            📋 Ver Ficha Técnica
+                        </a>
                         <button type="button" class="btn btn-whatsapp btn-block" data-action="direct-wa" data-product-id="${escapeHtml(prod.id)}" style="font-size: 0.84rem; padding: 0.55rem;">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/></svg>
                             <span>Cotizar por WhatsApp</span>
@@ -251,10 +252,23 @@ class ProductCatalog {
 
     openQuickView(productId) {
         const sourceList = window.PRODUCTS || (typeof PRODUCTS !== 'undefined' ? PRODUCTS : []) || [];
-        const prod = sourceList.find(p => p.id === productId);
+        const prod = sourceList.find(p => p.id === productId || p.dbId === productId);
         if (!prod) return;
 
-        this.selectedProduct = prod;
+        const slug = prod.slug || (prod.sku ? prod.sku.toLowerCase() : (prod.dbId || prod.id));
+        const targetUrl = `/store/ayme-pet/producto/${encodeURIComponent(slug)}`;
+
+        // Navegar a la página completa del producto en la ventana principal
+        try {
+            if (window.top && window.top !== window) {
+                window.top.location.href = targetUrl;
+                return;
+            }
+        } catch (e) {
+            // Fallback
+        }
+        window.location.href = targetUrl;
+        return;
 
         const modal = document.getElementById('product-modal');
         const container = document.getElementById('product-modal-details');
