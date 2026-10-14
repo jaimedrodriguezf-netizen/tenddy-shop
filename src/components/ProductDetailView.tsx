@@ -314,9 +314,8 @@ export default function ProductDetailView({
 
               {/* Marca de agua / Logo del Fabricante */}
               {tenant.logo_url && (
-                <div className="absolute bottom-3 right-3 bg-white/95 px-2.5 py-1 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-1.5">
-                  <img src={tenant.logo_url} alt={tenant.name} className="h-4 w-auto object-contain" />
-                  <span className="text-[10px] font-bold text-slate-700">{tenant.name}</span>
+                <div className="absolute bottom-3 right-3 bg-white/95 px-3 py-1.5 rounded-lg border border-slate-200 shadow-2xs flex items-center gap-1.5">
+                  <img src={tenant.logo_url} alt={tenant.name} className="h-5 sm:h-6 w-auto object-contain" />
                 </div>
               )}
             </div>
@@ -563,9 +562,15 @@ export default function ProductDetailView({
             <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-10 h-10 rounded-full bg-slate-900 text-white font-extrabold flex items-center justify-center text-xs">
-                    {tenant.name.slice(0, 2).toUpperCase()}
-                  </div>
+                  {tenant.logo_url ? (
+                    <div className="h-10 w-16 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shrink-0 shadow-2xs">
+                      <img src={tenant.logo_url} alt={tenant.name} className="max-h-8 max-w-full object-contain" />
+                    </div>
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-slate-900 text-white font-extrabold flex items-center justify-center text-xs">
+                      {tenant.name.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
                   <div>
                     <h3 className="font-bold text-xs text-slate-900 flex items-center gap-1">
                       <span>{specs.vendedor || tenant.name}</span>

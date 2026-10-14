@@ -158,16 +158,21 @@ export default function TenantLandingView({
       {/* Header Principal */}
       <header className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-8 z-40">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
             {tenant.logo_url ? (
-              <div className="h-10 w-auto max-w-[160px] rounded-lg overflow-hidden flex items-center justify-center p-1 bg-white/95 border border-slate-700 shadow-md shrink-0">
+              <Link
+                href={`/store/${tenant.slug}`}
+                className="inline-flex items-center bg-white px-3.5 py-1.5 rounded-xl border border-white/80 shadow-md shrink-0 hover:shadow-lg transition-all group"
+                title={tenant.name}
+              >
                 <img
                   src={tenant.logo_url}
                   alt={tenant.name}
                   loading="eager"
-                  className="max-h-8 w-auto object-contain"
+                  decoding="async"
+                  className="h-10 sm:h-12 w-auto object-contain block transition-transform group-hover:scale-102"
                 />
-              </div>
+              </Link>
             ) : (
               <div
                 className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white shadow-lg text-sm shrink-0 uppercase font-mono ${
@@ -179,12 +184,12 @@ export default function TenantLandingView({
                 {tenant.name.slice(0, 2).toUpperCase()}
               </div>
             )}
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            <div className="hidden sm:block">
+              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2 leading-tight">
                 {tenant.name}
               </h1>
               <p
-                className={`text-xs font-medium uppercase tracking-wider ${
+                className={`text-[11px] font-medium uppercase tracking-wider ${
                   isConfectionery ? 'text-rose-400' : 'text-sky-400'
                 }`}
               >

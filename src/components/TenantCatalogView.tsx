@@ -255,8 +255,8 @@ export default function TenantCatalogView({
           {/* Logo y Nombre */}
           <div className="flex items-center gap-2.5 min-w-0">
             {tenant.logo_url ? (
-              <div className="w-9 h-9 rounded-xl overflow-hidden border border-slate-200 bg-white p-0.5 shrink-0 flex items-center justify-center">
-                <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
+              <div className="h-9 w-auto max-w-[130px] rounded-xl overflow-hidden border border-slate-200 bg-white p-1 shrink-0 flex items-center justify-center">
+                <img src={tenant.logo_url} alt={tenant.name} className="max-h-7 w-auto object-contain" />
               </div>
             ) : (
               <div
