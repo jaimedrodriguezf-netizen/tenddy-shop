@@ -76,7 +76,8 @@ export default function TenantCatalogView({
   const totalCartUnits = getTotalUnits(tenant.id);
   const totalCartPackages = getTotalPackages(tenant.id);
   const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
-  const mainWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default;
+  const rawWhatsapp = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default || '';
+  const mainWhatsapp = rawWhatsapp.replace(/\D/g, '');
   const activeCategoryObj = categories.find((c) => c.id === selectedCategory);
   const showBestSellers =
     tenant.landing_config?.show_best_sellers ??

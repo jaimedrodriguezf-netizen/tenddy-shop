@@ -52,18 +52,27 @@ export default function TenantLandingView({
   const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
 
   const { landing_config: landing, theme_config: theme } = tenant;
-  const mainWhatsapp = selectedBranch?.phone_whatsapp || landing.whatsapp_default;
+  const rawWhatsapp = selectedBranch?.phone_whatsapp || landing.whatsapp_default || '';
+  const mainWhatsapp = rawWhatsapp.replace(/\D/g, '') || '593998722324';
 
-  const totalCartUnits = getTotalUnits();
-  const totalCartPackages = getTotalPackages();
+  const totalCartUnits = getTotalUnits(tenant.id);
+  const totalCartPackages = getTotalPackages(tenant.id);
 
   const isPlastics = tenant.industry_type === 'plastics';
   const isConfectionery = tenant.industry_type === 'confectionery';
 
-  // Filtrar productos
+  // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
+  const [visibleCount, setVisibleCount] = useState<number>(24);
+  const [prevCategory, setPrevCategory] = useState<string>(selectedCategory);
+  if (prevCategory !== selectedCategory) {
+    setPrevCategory(selectedCategory);
+    setVisibleCount(24);
+  }
+
   const filteredProducts = selectedCategory === 'all'
     ? products
     : products.filter((p) => p.category_id === selectedCategory);
+  const displayedProducts = filteredProducts.slice(0, visibleCount);
 
   const handleWhatsAppQuote = (productName?: string) => {
     let msg = `Hola ${tenant.name}, vengo desde su portal web.\n`;
@@ -76,7 +85,7 @@ export default function TenantLandingView({
       msg += `Sucursal / Centro de distribución de interés: ${selectedBranch.name} (${selectedBranch.city}).`;
     }
     const url = `https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(msg)}`;
-    window.open(url, '_blank');
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -263,6 +272,7 @@ export default function TenantLandingView({
               muted
               loop
               playsInline
+              preload="metadata"
               className="w-full h-full object-cover"
             >
               <source src={landing.hero_video_url} type="video/mp4" />
@@ -420,7 +430,7 @@ export default function TenantLandingView({
 
         {/* Grid de Productos */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredProducts.map((product) => {
+          {displayedProducts.map((product) => {
             const specs = product.attributes?.specs || {};
             const badge = product.attributes?.badge;
             const packSize = product.units_per_package || 1;
@@ -552,6 +562,20 @@ export default function TenantLandingView({
             );
           })}
         </div>
+
+        {/* Paginación progresiva para catálogos extensos */}
+        {visibleCount < filteredProducts.length && (
+          <div className="mt-10 text-center">
+            <button
+              type="button"
+              onClick={() => setVisibleCount((prev) => prev + 24)}
+              className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-6 py-3 rounded-xl border border-slate-700 shadow-lg hover:border-slate-500 transition-all cursor-pointer inline-flex items-center gap-2"
+            >
+              <span>Ver más referencias ({filteredProducts.length - visibleCount} restantes)</span>
+              <ChevronRight className="w-4 h-4 text-sky-400 rotate-90" />
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Red de Sucursales y Centros de Despacho */}
