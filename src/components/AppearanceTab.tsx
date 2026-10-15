@@ -35,10 +35,10 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   );
   const [extractedPalette, setExtractedPalette] = useState<string[]>([]);
   const [extractedPrimary, setExtractedPrimary] = useState<string>(
-    tenant.slug === 'ayme-pet' ? '#1F2E4D' : ''
+    tenant.slug === 'ayme-pet' ? '#A61C2E' : ''
   );
   const [extractedSecondary, setExtractedSecondary] = useState<string>(
-    tenant.slug === 'ayme-pet' ? '#A61C2E' : ''
+    tenant.slug === 'ayme-pet' ? '#8C1625' : ''
   );
   const [isExtractingColors, setIsExtractingColors] = useState(false);
   const [colorExtractionFeedback, setColorExtractionFeedback] = useState<string | null>(null);
@@ -143,14 +143,14 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
       console.warn('Error al extraer colores:', err);
       // Si la carga remota de canvas falla por CORS, usar los colores corporativos oficiales garantizados
       if (tenant.slug === 'ayme-pet') {
-        setExtractedPrimary('#1F2E4D');
-        setExtractedSecondary('#A61C2E');
+        setExtractedPrimary('#A61C2E');
+        setExtractedSecondary('#8C1625');
         if (autoApply) {
-          setPrimaryColor('#1F2E4D');
-          setSecondaryColor('#A61C2E');
+          setPrimaryColor('#A61C2E');
+          setSecondaryColor('#8C1625');
         }
-        setExtractedPalette(['#1F2E4D', '#A61C2E', '#263652', '#9A202F']);
-        setColorExtractionFeedback('¡Colores oficiales de AYME detectados! Azul Marino (#1F2E4D) y Rojo Carmesí (#A61C2E).');
+        setExtractedPalette(['#A61C2E', '#8C1625', '#C5283D', '#1F2E4D']);
+        setColorExtractionFeedback('¡Colores oficiales de AYME detectados! Rojo Primario (#A61C2E) y Rojo Secundario (#8C1625).');
       } else {
         setColorExtractionFeedback(
           'No se pudieron extraer los colores directamente de la imagen remota. Puedes ajustarlos con el selector manual.'

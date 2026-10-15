@@ -1,29 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Package,
-  Phone,
-  Mail,
-  MapPin,
-  Clock,
-  CheckCircle2,
-  Send,
   MessageCircle,
-  FileText,
-  SlidersHorizontal,
   ChevronRight,
-  ShieldCheck,
-  Zap,
-  Layers,
+  ChevronDown,
   ArrowRight,
   ShoppingCart,
   Plus,
   Eye,
-  Candy,
-  Sparkles,
-  LayoutDashboard
+  LayoutDashboard,
+  Search
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -47,25 +35,36 @@ export default function TenantLandingView({
 }: TenantLandingViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
-  const [activeTab, setActiveTab] = useState<'catalog' | 'services' | 'branches'>('catalog');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLLIElement | null>(null);
 
-  const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
+  // Motor de Secuencia de Scroll Interactiva (Hero Dinámico)
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [frameIndex, setFrameIndex] = useState<number>(1);
+
+  // Formulario de Contacto B2B
+  const [contactName, setContactName] = useState<string>('');
+  const [contactCompany, setContactCompany] = useState<string>('');
+  const [contactPhone, setContactPhone] = useState<string>('');
+  const [contactCity, setContactCity] = useState<string>('');
+  const [contactReqType, setContactReqType] = useState<string>('Cotización General de Envases');
+  const [contactMessage, setContactMessage] = useState<string>('');
+
+  const { openCart, addItem, getTotalPackages } = useCartStore();
 
   const { landing_config: landing, theme_config: theme } = tenant;
-  const logoHeight = (theme as any)?.logo_height || 38;
+  const logoHeight = (theme as any)?.logo_height || 42;
   const rawWhatsapp = selectedBranch?.phone_whatsapp || landing.whatsapp_default || '';
   const mainWhatsapp = rawWhatsapp.replace(/\D/g, '') || '593998722324';
 
-  const totalCartUnits = getTotalUnits(tenant.id);
   const totalCartPackages = getTotalPackages(tenant.id);
 
-  const isPlastics = tenant.industry_type === 'plastics';
-  const isConfectionery = tenant.industry_type === 'confectionery';
-
-  // Colores corporativos configurados (o defaults estéticos de industria)
-  const primaryColor = theme?.primary_color || (isConfectionery ? '#e11d48' : '#1F2E4D');
-  const secondaryColor = theme?.secondary_color || (isConfectionery ? '#ea580c' : '#A61C2E');
-  const landingBgColor = (theme as any)?.landing_bg_color || '#020617';
+  // Colores corporativos configurados
+  const primaryColor = theme?.primary_color || '#A61C2E';
+  const secondaryColor = theme?.secondary_color || '#8C1625';
+  const landingBgColor = (theme as any)?.landing_bg_color || (tenant.slug === 'ayme-pet' ? '#0a1128' : '#020617');
 
   // Detección de contraste inteligente según luminancia del fondo
   const isLightBg = (() => {
@@ -79,6 +78,86 @@ export default function TenantLandingView({
     return false;
   })();
 
+  // Listener para la Secuencia de Scroll con Lerp continuo a 60fps
+  useEffect(() => {
+    let ticking = false;
+    let currentProgress = 0;
+    let targetProgress = 0;
+
+    const calculateProgress = () => {
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+      const totalScrollable = rect.height - windowHeight;
+      if (totalScrollable <= 0) return;
+      const scrolled = -rect.top;
+      targetProgress = Math.max(0, Math.min(1, scrolled / totalScrollable));
+    };
+
+    const tick = () => {
+      const diff = targetProgress - currentProgress;
+      if (Math.abs(diff) < 0.001) {
+        currentProgress = targetProgress;
+      } else {
+        currentProgress += diff * 0.35;
+        requestAnimationFrame(tick);
+      }
+      setScrollProgress(currentProgress);
+      const fIndex = Math.min(144, Math.max(1, Math.floor(currentProgress * 143) + 1));
+      setFrameIndex(fIndex);
+    };
+
+    const onScroll = () => {
+      calculateProgress();
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          tick();
+          ticking = false;
+        });
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+
+  // Cálculo de opacidades y traslaciones de las tarjetas del Hero interactivo
+  // Fase 0: Intro (0.0 a 0.22)
+  const introOpacity = scrollProgress <= 0.22
+    ? (scrollProgress > 0.12 ? Math.max(0, Math.min(1, (0.22 - scrollProgress) / 0.10)) : 1)
+    : 0;
+  const introTranslate = (1 - introOpacity) * -25;
+
+  // Fase 1: Control Térmico (0.22 a 0.58)
+  const step1Opacity = (scrollProgress >= 0.22 && scrollProgress <= 0.58)
+    ? (scrollProgress < 0.32 ? (scrollProgress - 0.22) / 0.10 : (scrollProgress > 0.48 ? (0.58 - scrollProgress) / 0.10 : 1))
+    : 0;
+  const step1Translate = (1 - step1Opacity) * 25;
+
+  // Fase 2: Soplado (0.58 a 0.98)
+  const step2Opacity = (scrollProgress >= 0.58 && scrollProgress <= 0.98)
+    ? (scrollProgress < 0.68 ? (scrollProgress - 0.58) / 0.10 : (scrollProgress > 0.88 ? (0.98 - scrollProgress) / 0.10 : 1))
+    : 0;
+  const step2Translate = (1 - step2Opacity) * 25;
+
+  // Cerrar dropdown al hacer clic fuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsProductsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
   const [visibleCount, setVisibleCount] = useState<number>(24);
   const [prevCategory, setPrevCategory] = useState<string>(selectedCategory);
@@ -87,22 +166,49 @@ export default function TenantLandingView({
     setVisibleCount(24);
   }
 
-  const filteredProducts = selectedCategory === 'all'
-    ? products
-    : products.filter((p) => p.category_id === selectedCategory);
+  const filteredProducts = products.filter((p) => {
+    const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory;
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return matchesCategory;
+
+    const nameMatch = p.name.toLowerCase().includes(query);
+    const descMatch = p.description?.toLowerCase().includes(query) ?? false;
+    const skuMatch = p.sku?.toLowerCase().includes(query) ?? false;
+    const specsMatch = p.attributes?.specs
+      ? Object.values(p.attributes.specs).some((val) =>
+          String(val).toLowerCase().includes(query)
+        )
+      : false;
+    return matchesCategory && (nameMatch || descMatch || skuMatch || specsMatch);
+  });
+
   const displayedProducts = filteredProducts.slice(0, visibleCount);
 
   const handleWhatsAppQuote = (productName?: string) => {
-    let msg = `Hola ${tenant.name}, vengo desde su portal web.\n`;
+    let msg = `Hola ${tenant.name}, vengo desde su portal web oficial.\n`;
     if (productName) {
       msg += `Deseo cotizar el producto: *${productName}*.\n`;
     } else {
-      msg += `Deseo solicitar información y lista de precios mayorista.\n`;
+      msg += `Deseo solicitar información y lista de precios mayorista de fábrica.\n`;
     }
     if (selectedBranch) {
       msg += `Sucursal / Centro de distribución de interés: ${selectedBranch.name} (${selectedBranch.city}).`;
     }
     const url = `https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleContactSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    let text = `🏭 *SOLICITUD DE COTIZACIÓN B2B - ${tenant.name}*\n\n`;
+    text += `👤 *Nombre:* ${contactName}\n`;
+    if (contactCompany) text += `🏢 *Empresa:* ${contactCompany}\n`;
+    text += `📱 *Teléfono / WhatsApp:* ${contactPhone}\n`;
+    if (contactCity) text += `📍 *Ciudad / Provincia:* ${contactCity}\n`;
+    text += `📦 *Requerimiento:* ${contactReqType}\n`;
+    if (contactMessage) text += `📝 *Mensaje / Volúmenes:* ${contactMessage}\n`;
+
+    const url = `https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -126,734 +232,982 @@ export default function TenantLandingView({
         onSelectBranch={setSelectedBranch}
       />
 
-      {/* Top Bar Corporativo */}
-      <div
-        className={`border-b text-xs py-2 px-4 backdrop-blur-md sticky top-0 z-50 transition-colors ${
-          isLightBg
-            ? 'bg-white/85 border-slate-200 text-slate-600'
-            : 'border-slate-800 text-slate-400'
-        }`}
-        style={{ backgroundColor: !isLightBg ? `${landingBgColor}dd` : undefined }}
-      >
-        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
-          <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1">
-              <MapPin className="w-3.5 h-3.5 text-rose-400" />
-              {landing.plant_location || landing.address}
-            </span>
-            <span className="hidden md:flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-rose-400" />
-              {landing.hours}
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            {isAdmin && (
-              <Link
-                href={`/store/${tenant.slug}/admin`}
-                className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-0.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors"
-                title="Volver a la administración de tu tienda"
-              >
-                <LayoutDashboard className="w-3.5 h-3.5 text-amber-400" />
-                <span className="hidden sm:inline">Volver a Mi Panel</span>
-                <span className="sm:hidden">Panel</span>
-              </Link>
-            )}
-            {branches.length > 1 && (
-              <div className="flex items-center gap-1">
-                <span className="text-slate-500">Centro de Despacho:</span>
-                <select
-                  value={selectedBranch?.id}
-                  onChange={(e) => {
-                    const b = branches.find((item) => item.id === e.target.value);
-                    if (b) setSelectedBranch(b);
-                  }}
-                  className="bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-0.5 text-xs focus:outline-none"
-                >
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.city} - {b.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
-            <a
-              href={`https://wa.me/${mainWhatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-medium"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-              WhatsApp: +{mainWhatsapp}
-            </a>
-          </div>
+      {/* Header Flotante Integrado sobre la Secuencia de Video (Glassmorphism Oficial) */}
+      <div className="fixed-header-wrapper" id="fixed-header-wrapper">
+        {/* Barra de Notificación Industrial Oficial */}
+        <div className="top-promo-bar">
+          <span>🏭 <strong>{tenant.name}</strong> | Solutions in Packaging</span>
+          <span>•</span>
+          <span>📦 <strong>Ventas Mayoristas & Fabricación de Moldes</strong></span>
+          <span>•</span>
+          <span>📱 <strong>WhatsApp Comercial: {landing.display_phone || '0998722324'}</strong></span>
         </div>
-      </div>
 
-      {/* Header Principal */}
-      <header
-        className={`border-b backdrop-blur sticky top-8 z-40 transition-colors ${
-          isLightBg
-            ? 'border-slate-200 bg-white/90 shadow-2xs'
-            : 'border-slate-800/80'
-        }`}
-        style={{ backgroundColor: !isLightBg ? `${landingBgColor}ee` : undefined }}
-      >
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
+        {/* Header Principal Oficial */}
+        <header className="site-header" id="site-header">
+          <div className="container header-inner">
             {tenant.logo_url ? (
               <Link
                 href={`/store/${tenant.slug}`}
-                className="inline-flex items-center bg-white rounded-xl border border-white/80 shadow-md shrink-0 hover:shadow-lg transition-all group"
-                style={{
-                  padding: `${Math.max(4, Math.round(logoHeight * 0.12))}px ${Math.max(8, Math.round(logoHeight * 0.25))}px`,
-                }}
+                className="brand-logo-link"
                 title={tenant.name}
               >
                 <img
                   src={tenant.logo_url}
                   alt={tenant.name}
                   loading="eager"
-                  decoding="async"
+                  className="brand-logo-img"
                   style={{ height: `${logoHeight}px` }}
-                  className="w-auto object-contain block transition-transform group-hover:scale-102"
                 />
               </Link>
             ) : (
-              <div
-                className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white shadow-lg text-sm shrink-0 uppercase font-mono ${
-                  isConfectionery
-                    ? 'bg-gradient-to-br from-rose-500 to-amber-500 shadow-rose-500/20'
-                    : 'bg-gradient-to-br from-sky-500 to-blue-700 shadow-sky-500/20'
-                }`}
+              <Link
+                href={`/store/${tenant.slug}`}
+                className="brand-logo-link"
+                title={tenant.name}
               >
-                {tenant.name.slice(0, 2).toUpperCase()}
-              </div>
+                <img
+                  src="/assets/logo.png"
+                  alt={tenant.name}
+                  loading="eager"
+                  className="brand-logo-img"
+                  style={{ height: `${logoHeight}px` }}
+                />
+              </Link>
             )}
-            <div className="hidden sm:block">
-              <h1 className="text-base sm:text-lg font-bold tracking-tight text-white flex items-center gap-2 leading-tight">
-                {tenant.name}
-              </h1>
-              <p
-                className="text-[11px] font-medium uppercase tracking-wider"
-                style={{ color: secondaryColor }}
+
+            <nav className="main-navigation">
+              <ul className="main-nav-links">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="nav-link active cursor-pointer bg-transparent border-0"
+                  >
+                    Inicio
+                  </button>
+                </li>
+                {/* Dropdown de Categorías de Envases */}
+                <li className="relative" ref={dropdownRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsProductsDropdownOpen((prev) => !prev)}
+                    className="nav-link cursor-pointer bg-transparent border-0 flex items-center gap-1.5"
+                  >
+                    <span>Catálogo de Envases</span>
+                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {isProductsDropdownOpen && (
+                    <div
+                      className="absolute top-full left-0 mt-2 w-72 rounded-2xl border shadow-2xl p-2 z-50 bg-slate-900 border-slate-700 text-slate-100"
+                    >
+                      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1 flex items-center justify-between">
+                        <span>Líneas de Envases</span>
+                        <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                          {categories.length} Líneas
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory('all');
+                          setIsProductsDropdownOpen(false);
+                          document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                          selectedCategory === 'all'
+                            ? 'bg-red-500/20 text-red-400 font-bold'
+                            : 'hover:bg-slate-800 text-slate-300'
+                        }`}
+                      >
+                        <span>✨ Todos los Envases</span>
+                        <span className="text-[10px] text-slate-400 font-mono">({products.length})</span>
+                      </button>
+
+                      {categories.map((cat) => {
+                        const count = products.filter((p) => p.category_id === cat.id).length;
+                        return (
+                          <button
+                            key={cat.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedCategory(cat.id);
+                              setIsProductsDropdownOpen(false);
+                              document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                              selectedCategory === cat.id
+                                ? 'bg-red-500/20 text-red-400 font-bold'
+                                : 'hover:bg-slate-800 text-slate-300'
+                            }`}
+                          >
+                            <span className="truncate pr-2">{cat.name}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">({count})</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </li>
+
+                {landing.show_services !== false && (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="nav-link cursor-pointer bg-transparent border-0"
+                    >
+                      Servicios Industriales
+                    </button>
+                  </li>
+                )}
+
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="nav-link cursor-pointer bg-transparent border-0"
+                  >
+                    Contacto & Cotizaciones
+                  </button>
+                </li>
+              </ul>
+            </nav>
+
+            <div className="header-actions">
+              {/* Botón Cotizador */}
+              <button
+                type="button"
+                onClick={openCart}
+                className="btn-cart-header cursor-pointer"
+                title="Ver lista de cotización"
               >
-                {isConfectionery
-                  ? 'Distribución Mayorista B2B de Confitería'
-                  : 'Soluciones en Envases PET & PP'}
-              </p>
+                <ShoppingCart className="w-5 h-5" style={{ color: secondaryColor }} />
+                {totalCartPackages > 0 && (
+                  <span className="cart-badge-count">{totalCartPackages}</span>
+                )}
+              </button>
+
+              <a
+                href={`https://wa.me/${mainWhatsapp}?text=¡Hola%20${encodeURIComponent(tenant.name)}!%20Quisiera%20cotizar%20envases%20plásticos%20para%20mi%20empresa.`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-whatsapp"
+                style={{ padding: '0.65rem 1.4rem', fontSize: '0.92rem' }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/>
+                </svg>
+                <span>Cotizar por WhatsApp</span>
+              </a>
             </div>
           </div>
+        </header>
+      </div>
 
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <button
-              onClick={() => {
-                setActiveTab('catalog');
-                document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="transition-colors cursor-pointer text-sm font-medium pb-1"
-              style={{
-                color: activeTab === 'catalog' ? primaryColor : (isLightBg ? '#475569' : '#cbd5e1'),
-                borderBottom: activeTab === 'catalog' ? `2px solid ${primaryColor}` : '2px solid transparent',
-              }}
-            >
-              Catálogo Mayorista
-            </button>
-            {landing.show_services && (
-              <button
-                onClick={() => {
-                  setActiveTab('services');
-                  document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="transition-colors cursor-pointer text-sm font-medium pb-1"
-                style={{
-                  color: activeTab === 'services' ? primaryColor : (isLightBg ? '#475569' : '#cbd5e1'),
-                  borderBottom: activeTab === 'services' ? `2px solid ${primaryColor}` : '2px solid transparent',
-                }}
-              >
-                Servicios Industriales
-              </button>
-            )}
-            <button
-              onClick={() => {
-                setActiveTab('branches');
-                document.getElementById('branches-section')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="transition-colors cursor-pointer text-sm font-medium pb-1"
-              style={{
-                color: activeTab === 'branches' ? primaryColor : (isLightBg ? '#475569' : '#cbd5e1'),
-                borderBottom: activeTab === 'branches' ? `2px solid ${primaryColor}` : '2px solid transparent',
-              }}
-            >
-              Centros de Despacho
-            </button>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            {/* Botón Carrito Cotizador */}
-            <button
-              onClick={openCart}
-              className="relative bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700 p-2.5 rounded-lg flex items-center gap-2 transition-all cursor-pointer"
-              title="Ver Lista de Cotización"
-            >
-              <ShoppingCart
-                className="w-4 h-4"
-                style={{ color: secondaryColor }}
-              />
-              <span className="hidden sm:inline text-xs font-semibold">Cotizador</span>
-              {totalCartPackages > 0 && (
-                <span
-                  className="text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full"
-                  style={{ backgroundColor: secondaryColor }}
-                >
-                  {totalCartPackages}
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => handleWhatsAppQuote()}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-medium px-4 py-2 rounded-lg text-sm shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">WhatsApp Directo</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="relative min-h-[520px] flex items-center justify-center overflow-hidden border-b border-slate-800">
-        <div className="absolute inset-0 z-0 opacity-25">
-          {landing.hero_video_url ? (
-            <video
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              className="w-full h-full object-cover"
-            >
-              <source src={landing.hero_video_url} type="video/mp4" />
-            </video>
-          ) : (
-            <div className="w-full h-full bg-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/40" />
-          )}
-          <div
-            className="absolute inset-0 transition-all"
+      {/* =========================================================================
+           SECCIÓN INTERACTIVA: SECUENCIA DE TRANSFORMACIÓN SINCRONIZADA AL SCROLL
+           ========================================================================= */}
+      <section className="scroll-sequence-track" id="scroll-sequence-track" ref={trackRef}>
+        <div className="scroll-sequence-sticky">
+          {/* Video de Fondo Industrial Continuo */}
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            id="hero-background-video"
             style={{
-              background: `linear-gradient(to top, ${landingBgColor}, ${landingBgColor}b3 40%, transparent 100%)`,
-            }}
-          />
-        </div>
-
-        <div className="relative z-10 max-w-5xl mx-auto px-4 py-20 text-center">
-          <div
-            className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full mb-6 font-semibold uppercase tracking-wider backdrop-blur-sm border"
-            style={{
-              backgroundColor: `${primaryColor}20`,
-              borderColor: `${primaryColor}50`,
-              color: primaryColor,
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              zIndex: 1,
             }}
           >
-            {isConfectionery ? (
-              <>
-                <Sparkles className="w-3.5 h-3.5" style={{ color: secondaryColor }} />
-                Abastecimiento B2B Mayorista
-              </>
-            ) : (
-              <>
-                <Zap className="w-3.5 h-3.5" style={{ color: secondaryColor }} />
-                Planta de Inyección y Soplado B2B
-              </>
-            )}
-          </div>
-          <h2 className="text-3xl md:text-5xl lg:text-6xl font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-tight">
-            {landing.hero_title}
-          </h2>
-          <p className="mt-6 text-base md:text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            {landing.hero_subtitle}
-          </p>
+            <source src={landing.hero_video_url || '/assets/process-video.mp4'} type="video/mp4" />
+            <source src="/process-video.mp4" type="video/mp4" />
+          </video>
+          <div
+            className="sequence-dark-vignette"
+            style={{
+              background: `radial-gradient(circle at 65% 50%, rgba(11, 17, 32, 0.1) 0%, rgba(11, 17, 32, 0.5) 60%, rgba(11, 17, 32, 0.8) 100%), linear-gradient(to top, ${landingBgColor}, transparent 100%)`,
+              zIndex: 2,
+            }}
+          />
 
-          <div className="mt-8 flex flex-wrap justify-center items-center gap-4">
-            <button
-              onClick={() => {
-                setActiveTab('catalog');
-                document
-                  .getElementById('catalog-section')
-                  ?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="font-semibold px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg transition-all cursor-pointer text-white hover:brightness-110 active:scale-98"
-              style={{
-                backgroundColor: primaryColor,
-                boxShadow: `0 10px 25px -5px ${primaryColor}50`,
-              }}
-            >
-              <Package className="w-5 h-5" />
-              Ver Catálogo Mayorista ({products.length} Referencias)
-            </button>
-            <button
-              onClick={openCart}
-              className="bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold px-6 py-3 rounded-lg flex items-center gap-2 transition-all cursor-pointer hover:border-slate-500"
-            >
-              <ShoppingCart
-                className="w-5 h-5"
-                style={{ color: secondaryColor }}
-              />
-              Armar Pedido por Cajas / Pallets
-            </button>
-          </div>
+          {/* Capa UI con Telemetría y las 3 Secciones Sincronizadas */}
+          <div className="sequence-ui-layer">
+            {/* HUD Superior */}
+            <div className="sequence-top-hud">
+              <div className="hud-badge-active">
+                <span>MONITOREO DE LÍNEA EN TIEMPO REAL</span>
+              </div>
+              <div>
+                <span>SISTEMA: BLOW-MOLD ROTARY TURBINE • 40 BAR</span>
+              </div>
+            </div>
 
-          {/* Estadísticas de Negocio */}
-          <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 backdrop-blur-sm">
-              <div
-                className="text-2xl font-bold"
-                style={{ color: primaryColor }}
+            {/* Contenedor Central de las Secciones que aparecen con el scroll */}
+            <div className="sequence-middle-container">
+              {/* FASE 0: INTRO HERO AL INICIO (Progress 0.0 a 0.22) */}
+              <article
+                className="sequence-step-card"
+                id="sequence-step-intro"
+                style={{
+                  opacity: introOpacity,
+                  transform: `translateY(${introTranslate}px)`,
+                  pointerEvents: introOpacity > 0.1 ? 'auto' : 'none',
+                }}
               >
-                {isConfectionery ? '+50 Tn' : '+10M'}
-              </div>
-              <div className="text-xs text-slate-400 mt-1">
-                {isConfectionery ? 'Despacho Mensual' : 'Unidades / Mes'}
+                <span className="step-phase-tag">AYME INDUSTRIAS PET • PACKAGING ENGINEERING</span>
+                <h1 className="step-card-title" style={{ fontSize: '2.4rem' }}>
+                  TECNOLOGÍA EN <br />
+                  <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--accent)', textTransform: 'none' }}>
+                    soplado & inyección
+                  </span>
+                </h1>
+                <p className="step-card-lead">
+                  Fabricación de envases, botellas, tapas y preformas en PET y PP con tecnología rotativa de alta velocidad para la industria.
+                </p>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' })}
+                    className="btn btn-accent cursor-pointer"
+                    style={{ padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                  >
+                    Ver Catálogo 2026
+                  </button>
+                  <a
+                    href={`https://wa.me/${mainWhatsapp}?text=¡Hola%20${encodeURIComponent(tenant.name)}!%20Quiero%20asesoría%20y%20cotización.`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-outline"
+                    style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.4)', padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                  >
+                    Cotizar por WhatsApp
+                  </a>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span>↕</span>
+                  <span>Desplace con la rueda del mouse para ver la secuencia sincronizada</span>
+                </div>
+              </article>
+
+              {/* SECCIÓN SINCRONIZADA 1: Fase 01 (0.22 a 0.58) */}
+              <article
+                className="sequence-step-card"
+                id="sequence-step-1"
+                style={{
+                  opacity: step1Opacity,
+                  transform: `translateY(${step1Translate}px)`,
+                  pointerEvents: step1Opacity > 0.1 ? 'auto' : 'none',
+                }}
+              >
+                <span className="step-phase-tag">FASE 01 / CONTROL TÉRMICO DE PREFORMAS</span>
+                <h2 className="step-card-title">Inyección & Calentamiento Infrarrojo de Precisión</h2>
+                <p className="step-card-lead">
+                  Las preformas de resina PET 100% virgen entran en el túnel térmico rotativo con control por zonas independientes, asegurando plasticidad perfecta y distribución milimétrica de pared.
+                </p>
+                <div className="step-features-grid">
+                  <div className="step-feat-box">
+                    <h5>🔥 Infrarrojo Modular</h5>
+                    <p>Perfil térmico calibrado según el gramaje del envase.</p>
+                  </div>
+                  <div className="step-feat-box">
+                    <h5>🔬 Cuello PCO Sellado</h5>
+                    <p>Protección térmica en la rosca para cero deformaciones.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="btn btn-accent btn-block cursor-pointer"
+                  style={{ padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                >
+                  Conocer Proceso de Inyección
+                </button>
+              </article>
+
+              {/* SECCIÓN SINCRONIZADA 2: Fase 02 (0.58 a 0.98) */}
+              <article
+                className="sequence-step-card"
+                id="sequence-step-2"
+                style={{
+                  opacity: step2Opacity,
+                  transform: `translateY(${step2Translate}px)`,
+                  pointerEvents: step2Opacity > 0.1 ? 'auto' : 'none',
+                }}
+              >
+                <span className="step-phase-tag" style={{ background: 'rgba(37, 211, 102, 0.2)', color: '#25D366' }}>
+                  FASE 02 / BI-ORIENTACIÓN MOLECULAR
+                </span>
+                <h2 className="step-card-title">Soplado Rotativo a 40 Bar & Enfriamiento Criogénico</h2>
+                <p className="step-card-lead">
+                  Las varillas de estiramiento servoasistidas expanden la preforma mientras el aire a alta presión copia cada detalle del molde en aluminio aeronáutico refrigerado.
+                </p>
+                <div className="step-features-grid">
+                  <div className="step-feat-box">
+                    <h5>⚡ Alta Resistencia</h5>
+                    <p>Bi-orientación molecular que triplica la resistencia a caídas.</p>
+                  </div>
+                  <div className="step-feat-box">
+                    <h5>❄️ Enfriamiento Rápido</h5>
+                    <p>Ciclo ultraveloz con fondo petaloide libre de tensiones.</p>
+                  </div>
+                </div>
+                <a
+                  href={`https://wa.me/${mainWhatsapp}?text=¡Hola%20${encodeURIComponent(tenant.name)}!%20Deseo%20cotizar%20fabricación%20en%20volumen%20de%20envases.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-whatsapp btn-block"
+                  style={{ padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                >
+                  Cotizar Producción por WhatsApp
+                </a>
+              </article>
+
+              {/* Indicador Lateral de Progreso */}
+              <div className="sequence-timeline-hud">
+                <span className="timeline-node">01</span>
+                <div className="timeline-track-bar">
+                  <div
+                    className="timeline-fill-bar"
+                    id="sequence-progress-bar"
+                    style={{ height: `${scrollProgress * 100}%` }}
+                  />
+                </div>
+                <span className="timeline-node">02</span>
               </div>
             </div>
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 backdrop-blur-sm">
-              <div className="text-2xl font-bold text-emerald-400">
-                {isConfectionery ? 'INVIMA' : 'FDA & BPM'}
+
+            {/* HUD Inferior con Telemetría Sincronizada */}
+            <div className="sequence-bottom-hud">
+              <div className="hud-telemetry-col">
+                <span>SECUENCIA: </span>
+                <strong id="telemetry-frame-val">FR-{String(frameIndex).padStart(4, '0')} / 0144</strong>
               </div>
-              <div className="text-xs text-slate-400 mt-1">Registro Sanitario</div>
-            </div>
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 backdrop-blur-sm">
-              <div className="text-2xl font-bold text-amber-400">
-                {isConfectionery ? 'Cajas Master' : '100%'}
+              <div className="hud-telemetry-col">
+                <span>SINCRONIZACIÓN: </span>
+                <strong id="telemetry-progress-val">{Math.round(scrollProgress * 100)}%</strong>
               </div>
-              <div className="text-xs text-slate-400 mt-1">
-                {isConfectionery ? 'Empaque Corrugado' : 'PET / PP Virgen'}
+              <div className="hud-telemetry-col">
+                <span>VELOCIDAD: </span>
+                <strong>12.000 BPH CONTINUO</strong>
               </div>
-            </div>
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 backdrop-blur-sm">
-              <div className="text-2xl font-bold text-indigo-400">Palletizado</div>
-              <div className="text-xs text-slate-400 mt-1">Despacho Nacional</div>
+              <div className="hud-telemetry-col">
+                <span>SCROLL INTERACTIVO: </span>
+                <strong>BIDIRECCIONAL ↕</strong>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Catálogo de Productos B2B */}
-      <section id="catalog-section" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-          <div>
-            <h3 className="text-2xl md:text-3xl font-bold text-white">
-              {isConfectionery
-                ? 'Catálogo Mayorista de Chocolates y Golosinas'
-                : 'Catálogo Industrial de Envases y Accesorios'}
-            </h3>
-            <p className="text-slate-400 text-sm mt-1">
-              {isConfectionery
-                ? 'Precios y escalas por volumen en cajas máster y pallets para distribución.'
-                : 'Fichas técnicas estandarizadas con medidas de boca, rosca, altura y gramaje.'}
+      {/* =========================================================================
+           SECCIÓN DE CATÁLOGO: ENVASES DESTACADOS Y FILTROS POR LÍNEAS
+           ========================================================================= */}
+      <section id="catalog-section" style={{ padding: '4.5rem 0', background: 'var(--bg-main)' }}>
+        <div className="container">
+          <div className="section-header">
+            <span className="section-tag">Alta Rotación de Fábrica</span>
+            <h2 className="section-title">Envases, Botellas, Tapas & Preformas</h2>
+            <p className="section-subtitle">
+              Línea técnica de envases estándar con stock continuo para entregas inmediatas a nivel nacional.
             </p>
           </div>
-          <div className="text-xs text-slate-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
-            <SlidersHorizontal
-              className="w-3.5 h-3.5"
-              style={{ color: primaryColor }}
-            />
-            Mostrando {filteredProducts.length} productos
-          </div>
-        </div>
 
-        {/* Filtros de Categorías */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-thin">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className="px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
-            style={
-              selectedCategory === 'all'
-                ? {
-                    backgroundColor: primaryColor,
-                    color: '#ffffff',
-                    boxShadow: `0 4px 14px -2px ${primaryColor}50`,
-                  }
-                : {
-                    backgroundColor: '#0f172a',
-                    color: '#94a3b8',
-                    border: '1px solid #1e293b',
-                  }
-            }
-          >
-            Todos ({products.length})
-          </button>
-          {categories.map((cat) => (
+          {/* Barra de Búsqueda Reactiva en Vivo */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
+            <div className="relative flex-1 max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar por capacidad (500ml, 1L), boca (28mm), nombre..."
+                className="w-full pl-10 pr-8 py-2.5 rounded-xl text-xs sm:text-sm border transition-all focus:outline-none bg-white border-slate-200 text-slate-900 focus:border-red-600 shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <div className="text-xs text-slate-500 flex items-center gap-2">
+              <span>Mostrando <strong>{displayedProducts.length}</strong> de <strong>{filteredProducts.length}</strong> referencias técnicas</span>
+            </div>
+          </div>
+
+          {/* Filtros de Categorías */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
             <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className="px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className="px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shadow-xs"
               style={
-                selectedCategory === cat.id
+                selectedCategory === 'all'
                   ? {
                       backgroundColor: primaryColor,
                       color: '#ffffff',
                       boxShadow: `0 4px 14px -2px ${primaryColor}50`,
                     }
                   : {
-                      backgroundColor: '#0f172a',
-                      color: '#94a3b8',
-                      border: '1px solid #1e293b',
+                      backgroundColor: '#ffffff',
+                      color: '#475569',
+                      border: '1px solid #e2e8f0',
                     }
               }
             >
-              {cat.name}
+              Todos ({products.length})
             </button>
-          ))}
-        </div>
-
-        {/* Grid de Productos o Estado de Inventario */}
-        {products.length === 0 ? (
-          <div className="text-center py-16 px-6 max-w-xl mx-auto bg-slate-900/50 border border-slate-800 rounded-2xl backdrop-blur-sm">
-            <div
-              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-lg border"
-              style={{ backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}40` }}
-            >
-              <Package className="w-7 h-7" style={{ color: primaryColor }} />
-            </div>
-            <h4 className="font-bold text-lg text-white mb-2">Catálogo en Actualización de Inventario</h4>
-            <p className="text-xs text-slate-400 mb-6 leading-relaxed max-w-md mx-auto">
-              Estamos actualizando nuestras referencias de envases, planos y fichas técnicas. Comunícate directamente con nuestra planta para recibir la lista completa y cotizaciones mayoristas.
-            </p>
-            <button
-              onClick={() => handleWhatsAppQuote()}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg inline-flex items-center gap-2 cursor-pointer transition-all hover:scale-102"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Solicitar Lista de Precios por WhatsApp</span>
-            </button>
-          </div>
-        ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {displayedProducts.map((product) => {
-            const specs = product.attributes?.specs || {};
-            const badge = product.attributes?.badge;
-            const packSize = product.units_per_package || 1;
-            const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(product.slug || product.sku?.toLowerCase() || product.id)}`;
-
-            return (
-              <div
-                key={product.id}
-                className={`bg-slate-900/70 border border-slate-800 rounded-xl overflow-hidden transition-all flex flex-col group ${
-                  isConfectionery
-                    ? 'hover:border-rose-500/50'
-                    : 'hover:border-sky-500/50'
-                }`}
-              >
-                {/* Visual del Producto */}
-                <Link
-                  href={productHref}
-                  className="relative h-56 bg-slate-950/80 flex items-center justify-center p-6 border-b border-slate-800/80 cursor-pointer block"
+            {categories.map((cat) => {
+              const count = products.filter((p) => p.category_id === cat.id).length;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className="px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer shadow-xs"
+                  style={
+                    selectedCategory === cat.id
+                      ? {
+                          backgroundColor: primaryColor,
+                          color: '#ffffff',
+                          boxShadow: `0 4px 14px -2px ${primaryColor}50`,
+                        }
+                      : {
+                          backgroundColor: '#ffffff',
+                          color: '#475569',
+                          border: '1px solid #e2e8f0',
+                        }
+                  }
                 >
-                  {badge && (
-                    <span
-                      className="absolute top-3 left-3 border text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
-                      style={{
-                        backgroundColor: `${secondaryColor}20`,
-                        borderColor: `${secondaryColor}50`,
-                        color: secondaryColor,
-                      }}
-                    >
-                      {badge}
-                    </span>
-                  )}
-                  <span className="absolute top-3 right-3 text-slate-500 text-[10px] font-mono">
-                    {product.sku}
-                  </span>
+                  {cat.name} ({count})
+                </button>
+              );
+            })}
+          </div>
 
-                  {product.images && product.images.length > 0 && product.images[0] ? (
-                    <img
-                      src={product.images[0]}
-                      alt={product.name}
-                      className="w-full h-full object-contain filter drop-shadow-sm group-hover:scale-105 transition-transform duration-300"
-                    />
-                  ) : (
-                    <div className="text-5xl group-hover:scale-110 transition-transform duration-300">
-                      {isConfectionery ? '🍬' : '♳'}
-                    </div>
-                  )}
+          {/* Grid de Productos Oficial */}
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-16 px-6 max-w-xl mx-auto rounded-3xl border bg-white border-slate-200 shadow-sm">
+              <div
+                className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-lg border"
+                style={{ backgroundColor: `${primaryColor}15`, borderColor: `${primaryColor}40` }}
+              >
+                <Package className="w-7 h-7" style={{ color: primaryColor }} />
+              </div>
+              <h4 className="font-bold text-lg mb-2 text-slate-900">
+                No se encontraron referencias para esta búsqueda
+              </h4>
+              <p className="text-xs mb-6 leading-relaxed max-w-md mx-auto text-slate-500">
+                Prueba con otra capacidad o restablece los filtros para ver todo el catálogo disponible.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                }}
+                className="font-bold text-xs px-5 py-2.5 rounded-xl shadow-md text-white transition-all hover:brightness-110 cursor-pointer"
+                style={{ backgroundColor: primaryColor }}
+              >
+                Restablecer Filtros
+              </button>
+            </div>
+          ) : (
+            <div className="products-grid" id="products-grid">
+              {displayedProducts.map((product) => {
+                const specs = product.attributes?.specs || {};
+                const badge = product.attributes?.badge;
+                const packSize = product.units_per_package || 1;
+                const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(product.slug || product.sku?.toLowerCase() || product.id)}`;
 
-                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[1px]">
-                    <span
-                      className="text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg"
-                      style={{ backgroundColor: primaryColor }}
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                      Ver Ficha Técnica
-                    </span>
-                  </div>
-                </Link>
-
-                {/* Info */}
-                <div className="p-5 flex-1 flex flex-col">
-                  <h4 className="font-bold text-white text-base line-clamp-2 mb-2 hover:text-sky-300 transition-colors">
-                    <Link href={productHref} className="hover:underline">
-                      {product.name}
-                    </Link>
-                  </h4>
-                  <p className="text-slate-400 text-xs line-clamp-2 mb-4">
-                    {product.description}
-                  </p>
-
-                  {/* Tabla de Specs Rápidas */}
-                  <Link
-                    href={productHref}
-                    className="bg-slate-950/60 rounded-lg p-3 text-xs space-y-1.5 border border-slate-800/50 mb-4 font-mono block hover:border-slate-700 transition-colors"
+                return (
+                  <div
+                    key={product.id}
+                    className="product-card group"
                   >
-                    {Object.entries(specs)
-                      .slice(0, 3)
-                      .map(([k, v]) => (
-                        <div key={k} className="flex justify-between">
-                          <span className="text-slate-500 capitalize">{k.replace('_', ' ')}:</span>
-                          <span className="text-slate-200 font-medium truncate max-w-[150px]">
-                            {String(v)}
-                          </span>
-                        </div>
-                      ))}
-                  </Link>
+                    <Link
+                      href={productHref}
+                      className="product-img-box cursor-pointer block relative"
+                    >
+                      {badge && (
+                        <span className="product-badge" style={{ backgroundColor: primaryColor }}>
+                          {badge}
+                        </span>
+                      )}
 
-                  <div className="mt-auto pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
-                    <div>
-                      <div className="text-[10px] text-slate-500 uppercase">
-                        {isConfectionery ? 'Caja / Display' : 'Fardo de Fábrica'}
-                      </div>
-                      <div className="text-xs font-bold text-slate-200">
-                        {packSize} uds / caja
-                      </div>
-                    </div>
+                      {product.images && product.images.length > 0 && product.images[0] ? (
+                        <img
+                          src={product.images[0]}
+                          alt={product.name}
+                          className="product-img transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="text-5xl py-12 text-center">♳</div>
+                      )}
+                    </Link>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="product-info-box">
+                      <div className="product-meta-row">
+                        <span className="product-category" style={{ color: primaryColor }}>
+                          {categories.find((c) => c.id === product.category_id)?.name || 'Envase PET'}
+                        </span>
+                        <span className="product-code">{product.sku}</span>
+                      </div>
+
                       <Link
                         href={productHref}
-                        className="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-700 transition-colors"
-                        style={{ color: primaryColor }}
-                        title="Ver Ficha Técnica Completa"
+                        className="product-name block hover:underline"
                       >
-                        <Eye className="w-3.5 h-3.5" />
-                        <span className="hidden sm:inline">Ficha</span>
+                        {product.name}
                       </Link>
-                      <button
-                        onClick={() => addItem(product)}
-                        className="text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-md hover:brightness-110 active:scale-95"
-                        style={{
-                          backgroundColor: secondaryColor,
-                          boxShadow: `0 4px 12px -2px ${secondaryColor}30`,
-                        }}
-                        title="Agregar caja al cotizador"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Agregar</span>
-                      </button>
-                      <button
-                        onClick={() => handleWhatsAppQuote(product.name)}
-                        className="bg-slate-800 hover:bg-slate-700 text-emerald-400 p-2 rounded-lg transition-colors cursor-pointer"
-                        title="Cotizar directo"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                      </button>
+
+                      {/* Specs Rápidas */}
+                      <div className="product-specs-table">
+                        {Object.entries(specs)
+                          .slice(0, 3)
+                          .map(([k, v]) => (
+                            <div key={k} className="spec-item">
+                              <span className="spec-label capitalize">{k.replace('_', ' ')}</span>
+                              <span className="spec-val truncate">{String(v)}</span>
+                            </div>
+                          ))}
+                      </div>
+
+                      <div className="product-bottom-row">
+                        <div className="pack-info">
+                          <span className="pack-label">Empaque</span>
+                          <span className="pack-val">{packSize} uds / fardo</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <Link
+                            href={productHref}
+                            className="btn btn-outline"
+                            style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
+                            title="Ver Ficha Técnica"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span>Ficha</span>
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => addItem(product)}
+                            className="btn btn-outline"
+                            style={{ padding: '0.45rem 0.65rem', fontSize: '0.78rem' }}
+                            title="Agregar al Cotizador"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleWhatsAppQuote(product.name)}
+                            className="btn btn-whatsapp"
+                            style={{ padding: '0.45rem 0.65rem' }}
+                            title="Cotizar por WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4 text-white" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        )}
+                );
+              })}
+            </div>
+          )}
 
-        {/* Paginación progresiva para catálogos extensos */}
-        {products.length > 0 && visibleCount < filteredProducts.length && (
-          <div className="mt-10 text-center">
-            <button
-              type="button"
-              onClick={() => setVisibleCount((prev) => prev + 24)}
-              className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs px-6 py-3 rounded-xl border border-slate-700 shadow-lg hover:border-slate-500 transition-all cursor-pointer inline-flex items-center gap-2"
-            >
-              <span>Ver más referencias ({filteredProducts.length - visibleCount} restantes)</span>
-              <ChevronRight className="w-4 h-4 text-sky-400 rotate-90" />
-            </button>
-          </div>
-        )}
+          {/* Paginación progresiva */}
+          {products.length > 0 && visibleCount < filteredProducts.length && (
+            <div className="text-center" style={{ marginTop: '3rem' }}>
+              <button
+                type="button"
+                onClick={() => setVisibleCount((prev) => prev + 24)}
+                className="btn btn-primary"
+              >
+                <span>Ver más referencias ({filteredProducts.length - visibleCount} restantes)</span>
+                <ChevronRight className="w-4 h-4 rotate-90" />
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* Sección de Servicios Industriales y Maquila */}
+      {/* =========================================================================
+           SECCIÓN DE SERVICIOS INDUSTRIALES
+           ========================================================================= */}
       {landing.show_services !== false && (
-        <section id="services-section" className="max-w-7xl mx-auto px-4 py-16 border-t border-slate-800/80">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span
-              className="text-xs font-semibold uppercase tracking-wider"
-              style={{ color: primaryColor }}
-            >
-              Capacidad de Planta & Maquila
-            </span>
-            <h3 className={`text-3xl font-bold mt-2 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>
-              Servicios Industriales en Plásticos PET & PP
-            </h3>
-            <p className={`text-sm mt-2 ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
-              Desde el diseño del molde y la inyección de preformas hasta el soplado y logística nacional.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>
-                ⚙️
-              </div>
-              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Inyección de Preformas</h4>
-              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
-                Cuello PCO 1810 / 1881 de 28mm y 38mm con distribución uniforme de espesores y cero deformación térmica.
+        <section id="services-section" style={{ padding: '4.5rem 0', background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
+          <div className="container">
+            <div className="section-header">
+              <span className="section-tag">Capacidad de Planta</span>
+              <h2 className="section-title">Servicios Industriales en Plásticos PET & PP</h2>
+              <p className="section-subtitle">
+                Desde el diseño del molde y la inyección de preformas hasta el soplado, etiquetado y logística nacional para su empresa.
               </p>
             </div>
 
-            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${secondaryColor}20`, color: secondaryColor }}>
-                🍾
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/* Servicio 1 */}
+              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="h-48 relative overflow-hidden bg-slate-900">
+                  <img
+                    src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-2149182258-612x612.webp/:/cr=t:0%25,l:5.67%25,w:88.67%25,h:100%25/rs=w:612,h:460,cg:true"
+                    alt="Soplado e Inyección de Envases"
+                    className="w-full h-full object-cover"
+                    onError={(e: any) => {
+                      e.target.onerror = null;
+                      e.target.src = '/hero-machine.jpg';
+                    }}
+                  />
+                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                    01 • SOPLADO & INYECCIÓN
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-lg mb-2 text-slate-900">
+                    Diseño, desarrollo y fabricación de envases PET, tapas y accesorios en PP
+                  </h3>
+                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                    Producción rotativa en alta cadencia para alimentos, bebidas, farma y químicos con cuello PCO 28mm y 38mm libre de deformaciones.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsAppQuote('Servicio de Soplado de Envases PET')}
+                    className="btn btn-accent btn-block"
+                  >
+                    <span>Cotizar Fabricación</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
-              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Maquila de Soplado</h4>
-              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
-                Soplado automatizado en alta cadencia para envases desde 100ml hasta 5000ml (galones y botellones).
-              </p>
+
+              {/* Servicio 2 */}
+              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="h-48 relative overflow-hidden bg-slate-900">
+                  <img
+                    src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-1669778843-2048x2048.webp/:/cr=t:0%25,l:5.68%25,w:88.65%25,h:100%25/rs=w:730,h:549,cg:true"
+                    alt="Tapas, liners y accesorios"
+                    className="w-full h-full object-cover"
+                    onError={(e: any) => {
+                      e.target.onerror = null;
+                      e.target.src = '/hero-machine.jpg';
+                    }}
+                  />
+                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                    02 • TAPAS & ACCESORIOS
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-lg mb-2 text-slate-900">
+                    Proveedores de tapas, liners y accesorios para envases plásticos
+                  </h3>
+                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                    Suministro masivo de tapas de seguridad inviolable, liners de inducción para hermeticidad total, atomizadores y bombas dosificadoras.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsAppQuote('Suministro de Tapas y Liners')}
+                    className="btn btn-accent btn-block"
+                  >
+                    <span>Cotizar Tapas & Accesorios</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Servicio 3 */}
+              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
+                <div className="h-48 relative overflow-hidden bg-slate-900">
+                  <img
+                    src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/blob-9c30011.png/:/cr=t:0%25,l:12.59%25,w:74.81%25,h:100%25/rs=w:730,h:549,cg:true"
+                    alt="Moldes 3D y Matricería"
+                    className="w-full h-full object-cover"
+                    onError={(e: any) => {
+                      e.target.onerror = null;
+                      e.target.src = '/hero-machine.jpg';
+                    }}
+                  />
+                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                    03 • INGENIERÍA DE MOLDES
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="font-bold text-lg mb-2 text-slate-900">
+                    Personalización de proyectos, matricería 3D y moldes exclusivos
+                  </h3>
+                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                    Modelado CAD 3D para moldes exclusivos de tu marca en aluminio aeronáutico refrigerado con optimización de gramaje y resistencia.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => handleWhatsAppQuote('Desarrollo de Molde Exclusivo 3D')}
+                    className="btn btn-accent btn-block"
+                  >
+                    <span>Solicitar Molde 3D</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>
-                🔬
+            {/* Respaldo Industrial */}
+            <div style={{ marginTop: '4rem', background: '#f8fafc', borderRadius: 'var(--radius-md)', padding: '2.5rem', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem', textAlign: 'center' }}>
+              <div>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏆</div>
+                <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: primaryColor, fontWeight: 700 }}>Normas Técnicas</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cumplimiento de estándares de inocuidad y BPM para contacto alimentario y farmacéutico.</p>
               </div>
-              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Diseño de Moldes 3D</h4>
-              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
-                Ingeniería de moldes CNC a medida para geometrías exclusivas y optimización de gramaje por unidad.
-              </p>
-            </div>
-
-            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${secondaryColor}20`, color: secondaryColor }}>
-                🛡️
+              <div>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>♻️</div>
+                <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: primaryColor, fontWeight: 700 }}>Compromiso Sostenible</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>PET 100% reciclable con opciones de resina PCR grado alimenticio (rPET).</p>
               </div>
-              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Ensayos & Inocuidad</h4>
-              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
-                Certificación FDA & BPM con pruebas de caída, resistencia a presión interna y sellado hermético.
-              </p>
+              <div>
+                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⚡</div>
+                <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: primaryColor, fontWeight: 700 }}>Respuesta Inmediata</h4>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Línea directa de atención y despacho rápido por WhatsApp: {landing.display_phone || '0998722324'}.</p>
+              </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* Red de Sucursales y Centros de Despacho */}
-      <section id="branches-section" className="max-w-7xl mx-auto px-4 py-16">
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span
-            className="text-xs font-semibold uppercase tracking-wider"
-            style={{ color: primaryColor }}
-          >
-            Cobertura y Logística B2B
-          </span>
-          <h3 className="text-3xl font-bold text-white mt-2">
-            Centros de Distribución & Sucursales
-          </h3>
-          <p className="text-slate-400 text-sm mt-2">
-            Atención comercial y despacho directo según tu zona de distribución.
-          </p>
-        </div>
+      {/* =========================================================================
+           SECCIÓN DE CONTACTO & UBICACIÓN GOOGLE MAPS
+           ========================================================================= */}
+      <section id="contact-section" style={{ padding: '4.5rem 0', background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
+        <div className="container">
+          <div className="section-header">
+            <span className="section-tag">Planta Industrial & Ventas</span>
+            <h2 className="section-title">Contacto & Ubicación de Fábrica</h2>
+            <p className="section-subtitle">
+              Visite nuestras instalaciones, solicite un kit de muestras físicas o cotice directamente con nuestros asesores.
+            </p>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {branches.map((b) => (
-            <div
-              key={b.id}
-              className="p-6 rounded-xl border transition-all"
-              style={
-                selectedBranch?.id === b.id
-                  ? {
-                      backgroundColor: '#0f172a',
-                      borderColor: primaryColor,
-                      boxShadow: `0 10px 25px -5px ${primaryColor}25`,
-                    }
-                  : {
-                      backgroundColor: '#020617',
-                      borderColor: '#1e293b',
-                    }
-              }
-            >
-              <div className="flex items-center justify-between mb-4">
-                <span
-                  className="text-xs font-semibold px-2.5 py-1 rounded"
-                  style={{
-                    color: primaryColor,
-                    backgroundColor: `${primaryColor}20`,
-                  }}
-                >
-                  {b.city}
-                </span>
-                {b.is_main_branch && (
-                  <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
-                    CEDI Principal
-                  </span>
-                )}
-              </div>
-              <h4 className="font-bold text-white text-lg mb-2">{b.name}</h4>
-              <p className="text-xs text-slate-400 flex items-start gap-2 mb-2">
-                <MapPin className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-                {b.address}
+          <div className="contact-grid">
+            {/* Formulario de Contacto B2B */}
+            <div className="contact-card-box">
+              <h3 style={{ fontSize: '1.35rem', color: primaryColor, marginBottom: '0.4rem', fontWeight: 700 }}>
+                Solicitud de Cotización & Muestras
+              </h3>
+              <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.75rem' }}>
+                Complete sus datos para recibir asesoría técnica y cotización formal por WhatsApp.
               </p>
-              {b.phone_number && (
-                <p className="text-xs text-slate-400 flex items-center gap-2 mb-4">
-                  <Phone className="w-4 h-4 text-slate-500" />
-                  {b.phone_number}
-                </p>
-              )}
 
-              <a
-                href={`https://wa.me/${b.phone_whatsapp}?text=${encodeURIComponent(
-                  `Hola, me comunico con ${b.name} para cotizar pedido mayorista.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full mt-4 bg-emerald-600/90 hover:bg-emerald-600 text-white text-xs font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Contactar Sede (+{b.phone_whatsapp})
-              </a>
+              <form onSubmit={handleContactSubmit} className="custom-contact-form">
+                <div className="form-group-row">
+                  <div className="form-group">
+                    <label className="form-label">Nombre y Apellido *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Ej: Ing. Marco Salgado"
+                      value={contactName}
+                      onChange={(e) => setContactName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Empresa / Razón Social</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Ej: Envasadora del Valle"
+                      value={contactCompany}
+                      onChange={(e) => setContactCompany(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group-row">
+                  <div className="form-group">
+                    <label className="form-label">Teléfono / WhatsApp *</label>
+                    <input
+                      type="tel"
+                      className="form-input"
+                      placeholder="0998722324"
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Ciudad / Provincia *</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      placeholder="Ej: Quito / Guayaquil / Cuenca"
+                      value={contactCity}
+                      onChange={(e) => setContactCity(e.target.value)}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Tipo de Envase o Servicio Requerido</label>
+                  <select
+                    className="form-select"
+                    value={contactReqType}
+                    onChange={(e) => setContactReqType(e.target.value)}
+                  >
+                    <option value="Cotización General de Envases">📦 Cotización General de Envases</option>
+                    <option value="Fabricación de Molde Personalizado">📐 Fabricación de Molde Personalizado 3D</option>
+                    <option value="Solicitud de Muestras Físicas">🧪 Solicitud de Kit de Muestras Físicas</option>
+                    <option value="Maquila de Soplado en Volumen">🏭 Maquila de Soplado en Alto Volumen</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Mensaje / Cantidades estimadas</label>
+                  <textarea
+                    className="form-textarea"
+                    rows={3}
+                    placeholder="Indique cantidades mensuales requeridas, color de envase deseado o requerimientos especiales..."
+                    value={contactMessage}
+                    onChange={(e) => setContactMessage(e.target.value)}
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-whatsapp btn-lg btn-block cursor-pointer">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/>
+                  </svg>
+                  <span>Enviar Solicitud por WhatsApp</span>
+                </button>
+              </form>
             </div>
-          ))}
+
+            {/* Columna Google Maps & Datos de Fábrica */}
+            <div className="contact-info-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Mapa Interactivo de Google Maps - Llano Grande, Quito */}
+              <div className="google-maps-container" style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)', boxShadow: 'var(--shadow-md)' }}>
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.45524675!3d-0.11467465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"
+                  width="100%"
+                  height="240"
+                  style={{ border: 0, display: 'block' }}
+                  allowFullScreen={false}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title="Ubicación Planta AYME INDUSTRIAS PET en Llano Grande, Quito"
+                />
+                <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>📍 Llano Grande, Quito</span>
+                  <a
+                    href="https://maps.google.com/?q=Llano+Grande,+Quito,+Ecuador"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}
+                  >
+                    Ver en Google Maps ↗
+                  </a>
+                </div>
+              </div>
+
+              <div>
+                <h4 style={{ color: '#FFFFFF', fontSize: '1.15rem', marginBottom: '0.25rem', fontWeight: 700 }}>
+                  {tenant.name}
+                </h4>
+                <p style={{ color: 'var(--accent-light)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.85rem' }}>
+                  Solutions in Packaging
+                </p>
+
+                <ul className="contact-channels-list" style={{ marginBottom: 0 }}>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">📍</div>
+                    <div className="channel-text-box">
+                      <h5>Planta de Fabricación</h5>
+                      <span style={{ fontSize: '0.85rem' }}>
+                        {landing.address || 'Llano Grande, Sector Calderón, Quito - Ecuador'}
+                      </span>
+                    </div>
+                  </li>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">💬</div>
+                    <div className="channel-text-box">
+                      <h5>Teléfono / WhatsApp Directo</h5>
+                      <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
+                        {landing.display_phone || '0998722324'}
+                      </span>
+                    </div>
+                  </li>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">✉️</div>
+                    <div className="channel-text-box">
+                      <h5>Ventas & Cotizaciones</h5>
+                      <span style={{ fontSize: '0.85rem' }}>
+                        {landing.email || 'ventas@aymeindustriaspet.com'}
+                      </span>
+                    </div>
+                  </li>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">⏰</div>
+                    <div className="channel-text-box">
+                      <h5>Horarios de Atención</h5>
+                      <span style={{ fontSize: '0.82rem' }}>
+                        {landing.hours || 'Lun a Vie: 8:00 AM - 5:30 PM | Sábados: 8:30 AM - 1:00 PM'}
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+
+              <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--radius-sm)', padding: '1.1rem', border: '1px solid rgba(255,255,255,0.2)' }}>
+                <h5 style={{ color: '#ffffff', marginBottom: '0.35rem', fontSize: '0.92rem', fontWeight: 700 }}>⚡ Despacho Inmediato</h5>
+                <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', marginBottom: '0.65rem' }}>
+                  ¿Su línea de producción requiere envases urgentes? Escríbanos directamente a planta.
+                </p>
+                <a
+                  href={`https://wa.me/${mainWhatsapp}?text=⚡%20PEDIDO%20URGENTE:%20Requiero%20despacho%20inmediato%20de%20envases%20PET%20para%20producción.`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-accent btn-block"
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                >
+                  Contactar por WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* Footer Corporativo */}
-      <footer
-        className={`border-t py-12 text-xs transition-colors ${
-          isLightBg
-            ? 'border-slate-200 bg-slate-100/80 text-slate-600'
-            : 'border-slate-800 text-slate-400'
-        }`}
-        style={{ backgroundColor: !isLightBg ? landingBgColor : undefined }}
-      >
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div>
-            <div className="text-white font-bold text-base mb-1">{tenant.name}</div>
-            <p className="text-slate-500">
-              © {new Date().getFullYear()} Todos los derechos reservados. Plataforma B2B impulsada por tenddy.
+      {/* Footer Corporativo Oficial */}
+      <footer className="site-footer">
+        <div className="container">
+          <div className="footer-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+            <p className="copyright-text" style={{ margin: 0 }}>
+              © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados. Solutions in Packaging.
             </p>
-          </div>
-          <div className="flex items-center gap-6">
-            <span className="flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              Inocuidad & Registro Sanitario Aprobado
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-              Despacho Paletizado Asegurado
-            </span>
+            <div className="footer-badges" style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)' }}>
+              <span>🏆 Inocuidad BPM Aprobada</span>
+              <span>•</span>
+              <span>♻️ PET 100% Reciclable</span>
+              <span>•</span>
+              <span>📦 Despacho Paletizado</span>
+            </div>
           </div>
         </div>
       </footer>
 
       {/* Botón Flotante para Administradores de la Tienda */}
       {isAdmin && (
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className="fixed bottom-6 right-6 z-50">
           <Link
             href={`/store/${tenant.slug}/admin`}
             className="bg-slate-900/95 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105"
