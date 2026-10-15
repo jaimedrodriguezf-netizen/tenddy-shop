@@ -62,6 +62,10 @@ export default function TenantLandingView({
   const isPlastics = tenant.industry_type === 'plastics';
   const isConfectionery = tenant.industry_type === 'confectionery';
 
+  // Colores corporativos configurados (o defaults estéticos de industria)
+  const primaryColor = theme?.primary_color || (isConfectionery ? '#e11d48' : '#1F2E4D');
+  const secondaryColor = theme?.secondary_color || (isConfectionery ? '#ea580c' : '#A61C2E');
+
   // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
   const [visibleCount, setVisibleCount] = useState<number>(24);
   const [prevCategory, setPrevCategory] = useState<string>(selectedCategory);
@@ -194,9 +198,8 @@ export default function TenantLandingView({
                 {tenant.name}
               </h1>
               <p
-                className={`text-[11px] font-medium uppercase tracking-wider ${
-                  isConfectionery ? 'text-rose-400' : 'text-sky-400'
-                }`}
+                className="text-[11px] font-medium uppercase tracking-wider"
+                style={{ color: secondaryColor }}
               >
                 {isConfectionery
                   ? 'Distribución Mayorista B2B de Confitería'
@@ -208,37 +211,33 @@ export default function TenantLandingView({
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <button
               onClick={() => setActiveTab('catalog')}
-              className={`transition-colors cursor-pointer ${
-                activeTab === 'catalog'
-                  ? isConfectionery
-                    ? 'text-rose-400 border-b-2 border-rose-400 pb-1'
-                    : 'text-sky-400 border-b-2 border-sky-400 pb-1'
-                  : 'text-slate-300 hover:text-white'
-              }`}
+              className="transition-colors cursor-pointer text-sm font-medium pb-1"
+              style={{
+                color: activeTab === 'catalog' ? primaryColor : '#cbd5e1',
+                borderBottom: activeTab === 'catalog' ? `2px solid ${primaryColor}` : '2px solid transparent',
+              }}
             >
               Catálogo Mayorista
             </button>
             {landing.show_services && (
               <button
                 onClick={() => setActiveTab('services')}
-                className={`transition-colors cursor-pointer ${
-                  activeTab === 'services'
-                    ? 'text-sky-400 border-b-2 border-sky-400 pb-1'
-                    : 'text-slate-300 hover:text-white'
-                }`}
+                className="transition-colors cursor-pointer text-sm font-medium pb-1"
+                style={{
+                  color: activeTab === 'services' ? primaryColor : '#cbd5e1',
+                  borderBottom: activeTab === 'services' ? `2px solid ${primaryColor}` : '2px solid transparent',
+                }}
               >
                 Servicios Industriales
               </button>
             )}
             <button
               onClick={() => setActiveTab('branches')}
-              className={`transition-colors cursor-pointer ${
-                activeTab === 'branches'
-                  ? isConfectionery
-                    ? 'text-rose-400 border-b-2 border-rose-400 pb-1'
-                    : 'text-sky-400 border-b-2 border-sky-400 pb-1'
-                  : 'text-slate-300 hover:text-white'
-              }`}
+              className="transition-colors cursor-pointer text-sm font-medium pb-1"
+              style={{
+                color: activeTab === 'branches' ? primaryColor : '#cbd5e1',
+                borderBottom: activeTab === 'branches' ? `2px solid ${primaryColor}` : '2px solid transparent',
+              }}
             >
               Centros de Despacho
             </button>
@@ -252,11 +251,15 @@ export default function TenantLandingView({
               title="Ver Lista de Cotización"
             >
               <ShoppingCart
-                className={`w-4 h-4 ${isConfectionery ? 'text-rose-400' : 'text-sky-400'}`}
+                className="w-4 h-4"
+                style={{ color: secondaryColor }}
               />
               <span className="hidden sm:inline text-xs font-semibold">Cotizador</span>
               {totalCartPackages > 0 && (
-                <span className="bg-emerald-500 text-slate-950 font-bold text-[10px] px-1.5 py-0.5 rounded-full">
+                <span
+                  className="text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full"
+                  style={{ backgroundColor: secondaryColor }}
+                >
                   {totalCartPackages}
                 </span>
               )}
@@ -295,20 +298,21 @@ export default function TenantLandingView({
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 py-20 text-center">
           <div
-            className={`inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full mb-6 font-semibold uppercase tracking-wider backdrop-blur-sm border ${
-              isConfectionery
-                ? 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-                : 'bg-sky-500/10 border-sky-500/30 text-sky-400'
-            }`}
+            className="inline-flex items-center gap-2 text-xs px-3 py-1.5 rounded-full mb-6 font-semibold uppercase tracking-wider backdrop-blur-sm border"
+            style={{
+              backgroundColor: `${primaryColor}20`,
+              borderColor: `${primaryColor}50`,
+              color: primaryColor,
+            }}
           >
             {isConfectionery ? (
               <>
-                <Sparkles className="w-3.5 h-3.5 text-rose-400" />
+                <Sparkles className="w-3.5 h-3.5" style={{ color: secondaryColor }} />
                 Abastecimiento B2B Mayorista
               </>
             ) : (
               <>
-                <Zap className="w-3.5 h-3.5 text-sky-400" />
+                <Zap className="w-3.5 h-3.5" style={{ color: secondaryColor }} />
                 Planta de Inyección y Soplado B2B
               </>
             )}
@@ -328,21 +332,22 @@ export default function TenantLandingView({
                   .getElementById('catalog-section')
                   ?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className={`font-semibold px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg transition-all cursor-pointer text-white ${
-                isConfectionery
-                  ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30'
-                  : 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/30'
-              }`}
+              className="font-semibold px-6 py-3 rounded-lg flex items-center gap-2 shadow-lg transition-all cursor-pointer text-white hover:brightness-110 active:scale-98"
+              style={{
+                backgroundColor: primaryColor,
+                boxShadow: `0 10px 25px -5px ${primaryColor}50`,
+              }}
             >
               <Package className="w-5 h-5" />
               Ver Catálogo Mayorista ({products.length} Referencias)
             </button>
             <button
               onClick={openCart}
-              className="bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold px-6 py-3 rounded-lg flex items-center gap-2 transition-all cursor-pointer"
+              className="bg-slate-800/90 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold px-6 py-3 rounded-lg flex items-center gap-2 transition-all cursor-pointer hover:border-slate-500"
             >
               <ShoppingCart
-                className={`w-5 h-5 ${isConfectionery ? 'text-rose-400' : 'text-sky-400'}`}
+                className="w-5 h-5"
+                style={{ color: secondaryColor }}
               />
               Armar Pedido por Cajas / Pallets
             </button>
@@ -352,9 +357,8 @@ export default function TenantLandingView({
           <div className="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
             <div className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-4 backdrop-blur-sm">
               <div
-                className={`text-2xl font-bold ${
-                  isConfectionery ? 'text-rose-400' : 'text-sky-400'
-                }`}
+                className="text-2xl font-bold"
+                style={{ color: primaryColor }}
               >
                 {isConfectionery ? '+50 Tn' : '+10M'}
               </div>
@@ -401,7 +405,8 @@ export default function TenantLandingView({
           </div>
           <div className="text-xs text-slate-400 flex items-center gap-1 bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-lg">
             <SlidersHorizontal
-              className={`w-3.5 h-3.5 ${isConfectionery ? 'text-rose-400' : 'text-sky-400'}`}
+              className="w-3.5 h-3.5"
+              style={{ color: primaryColor }}
             />
             Mostrando {filteredProducts.length} productos
           </div>
@@ -411,13 +416,20 @@ export default function TenantLandingView({
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scrollbar-thin">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            className="px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
+            style={
               selectedCategory === 'all'
-                ? isConfectionery
-                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                  : 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
-                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-            }`}
+                ? {
+                    backgroundColor: primaryColor,
+                    color: '#ffffff',
+                    boxShadow: `0 4px 14px -2px ${primaryColor}50`,
+                  }
+                : {
+                    backgroundColor: '#0f172a',
+                    color: '#94a3b8',
+                    border: '1px solid #1e293b',
+                  }
+            }
           >
             Todos ({products.length})
           </button>
@@ -425,13 +437,20 @@ export default function TenantLandingView({
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className="px-4 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer"
+              style={
                 selectedCategory === cat.id
-                  ? isConfectionery
-                    ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
-                    : 'bg-sky-600 text-white shadow-md shadow-sky-600/30'
-                  : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
-              }`}
+                  ? {
+                      backgroundColor: primaryColor,
+                      color: '#ffffff',
+                      boxShadow: `0 4px 14px -2px ${primaryColor}50`,
+                    }
+                  : {
+                      backgroundColor: '#0f172a',
+                      color: '#94a3b8',
+                      border: '1px solid #1e293b',
+                    }
+              }
             >
               {cat.name}
             </button>
@@ -462,11 +481,12 @@ export default function TenantLandingView({
                 >
                   {badge && (
                     <span
-                      className={`absolute top-3 left-3 border text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider ${
-                        isConfectionery
-                          ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                          : 'bg-sky-500/10 text-sky-400 border-sky-500/20'
-                      }`}
+                      className="absolute top-3 left-3 border text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
+                      style={{
+                        backgroundColor: `${secondaryColor}20`,
+                        borderColor: `${secondaryColor}50`,
+                        color: secondaryColor,
+                      }}
                     >
                       {badge}
                     </span>
@@ -489,9 +509,8 @@ export default function TenantLandingView({
 
                   <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity backdrop-blur-[1px]">
                     <span
-                      className={`text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg ${
-                        isConfectionery ? 'bg-rose-600/90' : 'bg-sky-600/90'
-                      }`}
+                      className="text-white text-xs font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5 shadow-lg"
+                      style={{ backgroundColor: primaryColor }}
                     >
                       <Eye className="w-3.5 h-3.5" />
                       Ver Ficha Técnica
@@ -540,7 +559,8 @@ export default function TenantLandingView({
                     <div className="flex items-center gap-1.5">
                       <Link
                         href={productHref}
-                        className="bg-slate-800 hover:bg-slate-700 text-sky-400 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-700 transition-colors"
+                        className="bg-slate-800 hover:bg-slate-700 text-xs font-semibold px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-slate-700 transition-colors"
+                        style={{ color: primaryColor }}
                         title="Ver Ficha Técnica Completa"
                       >
                         <Eye className="w-3.5 h-3.5" />
@@ -548,11 +568,11 @@ export default function TenantLandingView({
                       </Link>
                       <button
                         onClick={() => addItem(product)}
-                        className={`text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer shadow-md ${
-                          isConfectionery
-                            ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/20'
-                            : 'bg-sky-600 hover:bg-sky-500 shadow-sky-600/20'
-                        }`}
+                        className="text-white text-xs font-semibold px-3 py-2 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer shadow-md hover:brightness-110 active:scale-95"
+                        style={{
+                          backgroundColor: secondaryColor,
+                          boxShadow: `0 4px 12px -2px ${secondaryColor}30`,
+                        }}
                         title="Agregar caja al cotizador"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -592,9 +612,8 @@ export default function TenantLandingView({
       <section className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span
-            className={`text-xs font-semibold uppercase tracking-wider ${
-              isConfectionery ? 'text-rose-400' : 'text-sky-400'
-            }`}
+            className="text-xs font-semibold uppercase tracking-wider"
+            style={{ color: primaryColor }}
           >
             Cobertura y Logística B2B
           </span>
@@ -610,21 +629,27 @@ export default function TenantLandingView({
           {branches.map((b) => (
             <div
               key={b.id}
-              className={`p-6 rounded-xl border transition-all ${
+              className="p-6 rounded-xl border transition-all"
+              style={
                 selectedBranch?.id === b.id
-                  ? isConfectionery
-                    ? 'bg-slate-900 border-rose-500/80 shadow-lg shadow-rose-500/10'
-                    : 'bg-slate-900 border-sky-500/80 shadow-lg shadow-sky-500/10'
-                  : 'bg-slate-950 border-slate-800 hover:border-slate-700'
-              }`}
+                  ? {
+                      backgroundColor: '#0f172a',
+                      borderColor: primaryColor,
+                      boxShadow: `0 10px 25px -5px ${primaryColor}25`,
+                    }
+                  : {
+                      backgroundColor: '#020617',
+                      borderColor: '#1e293b',
+                    }
+              }
             >
               <div className="flex items-center justify-between mb-4">
                 <span
-                  className={`text-xs font-semibold px-2.5 py-1 rounded ${
-                    isConfectionery
-                      ? 'text-rose-400 bg-rose-500/10'
-                      : 'text-sky-400 bg-sky-500/10'
-                  }`}
+                  className="text-xs font-semibold px-2.5 py-1 rounded"
+                  style={{
+                    color: primaryColor,
+                    backgroundColor: `${primaryColor}20`,
+                  }}
                 >
                   {b.city}
                 </span>

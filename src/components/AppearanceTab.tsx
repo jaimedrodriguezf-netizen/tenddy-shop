@@ -13,9 +13,11 @@ import {
   Sparkles,
   LayoutDashboard,
   Upload,
-  Trash2
+  Trash2,
+  Wand2
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
+import { extractColorsFromImage } from '@/lib/color-extractor';
 
 interface AppearanceTabProps {
   tenant: Tenant;
@@ -25,6 +27,12 @@ interface AppearanceTabProps {
 export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTabProps) {
   const [name, setName] = useState(tenant.name || '');
   const [primaryColor, setPrimaryColor] = useState(tenant.theme_config?.primary_color || '#0284c7');
+  const [secondaryColor, setSecondaryColor] = useState(
+    tenant.theme_config?.secondary_color || '#a61c2e'
+  );
+  const [extractedPalette, setExtractedPalette] = useState<string[]>([]);
+  const [isExtractingColors, setIsExtractingColors] = useState(false);
+  const [colorExtractionFeedback, setColorExtractionFeedback] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
   const [logoHeight, setLogoHeight] = useState<number>((tenant.theme_config as any)?.logo_height || 38);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -82,6 +90,13 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
       }
 
       setLogoUrl(data.url);
+
+      // Extraer automáticamente los colores del logo subido
+      try {
+        await handleExtractColors(file);
+      } catch {
+        // Fallback silencioso si no se pudo analizar inmediatamente
+      }
     } catch (err: any) {
       setLogoUploadError(err.message || 'Error al subir el logo');
     } finally {
@@ -90,10 +105,40 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
     }
   };
 
+  const handleExtractColors = async (source?: string | File) => {
+    const targetSource = source || logoUrl;
+    if (!targetSource) {
+      setLogoUploadError('Primero sube o ingresa la URL de un logotipo para extraer sus colores corporativos.');
+      return;
+    }
+
+    setIsExtractingColors(true);
+    setColorExtractionFeedback(null);
+
+    try {
+      const result = await extractColorsFromImage(targetSource);
+      setExtractedPalette(result.palette);
+      if (result.primary) setPrimaryColor(result.primary);
+      if (result.secondary) setSecondaryColor(result.secondary);
+      setColorExtractionFeedback(
+        `¡Paleta corporativa extraída con éxito! Primario: ${result.primary} | Secundario: ${result.secondary}`
+      );
+      setTimeout(() => setColorExtractionFeedback(null), 6000);
+    } catch (err: any) {
+      console.warn('Error al extraer colores:', err);
+      setColorExtractionFeedback(
+        'No se pudieron extraer los colores directamente de la imagen remota. Puedes ajustarlos con el selector manual.'
+      );
+      setTimeout(() => setColorExtractionFeedback(null), 6000);
+    } finally {
+      setIsExtractingColors(false);
+    }
+  };
+
   const predefinedColors = [
-    { label: 'Azul Marino', hex: '#1e3a8a' },
+    { label: 'Azul Marino AYME', hex: '#1F2E4D' },
+    { label: 'Rojo Carmesí AYME', hex: '#A61C2E' },
     { label: 'Azul Industrial', hex: '#0284c7' },
-    { label: 'Rojo Carmesí', hex: '#e11d48' },
     { label: 'Verde Esmeralda', hex: '#059669' },
     { label: 'Púrpura Elegante', hex: '#7c3aed' },
     { label: 'Naranja Ámbar', hex: '#ea580c' },
@@ -114,6 +159,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           tenant_id: tenant.id,
           name,
           primary_color: primaryColor,
+          secondary_color: secondaryColor,
           store_template: storeTemplate,
           logo_url: logoUrl || null,
           logo_height: logoHeight,
@@ -229,35 +275,174 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           </p>
         </div>
 
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-5">
+          {/* Color Primario */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-2">Color Primario:</label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: primaryColor }} />
+                <span>Color Primario (Botones principales, acentos y llamadas a la acción):</span>
+              </label>
+              <span className="font-mono text-slate-700 text-xs font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
+                {primaryColor}
+              </span>
+            </div>
             <div className="flex flex-wrap gap-2 items-center">
               {predefinedColors.map((c) => (
                 <button
                   type="button"
-                  key={c.hex}
+                  key={`p-${c.hex}`}
                   onClick={() => setPrimaryColor(c.hex)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
-                    primaryColor === c.hex
-                      ? 'bg-white border-slate-900 text-slate-900 shadow-xs font-bold'
+                    primaryColor.toLowerCase() === c.hex.toLowerCase()
+                      ? 'bg-white border-slate-900 text-slate-900 shadow-xs font-bold ring-1 ring-slate-900'
                       : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
                   }`}
                 >
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c.hex }} />
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.hex }} />
                   <span>{c.label}</span>
                 </button>
               ))}
 
-              <div className="flex items-center gap-2 ml-2 bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+              <div className="flex items-center gap-2 ml-auto bg-white border border-slate-200 rounded-lg px-2.5 py-1">
                 <input
                   type="color"
                   value={primaryColor}
                   onChange={(e) => setPrimaryColor(e.target.value)}
                   className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                  title="Elegir tono personalizado"
                 />
-                <span className="font-mono text-slate-700 text-xs font-bold">{primaryColor}</span>
+                <span className="text-[11px] font-semibold text-slate-500">Selector fino</span>
               </div>
+            </div>
+          </div>
+
+          {/* Color Secundario / Acento */}
+          <div className="pt-3 border-t border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: secondaryColor }} />
+                <span>Color Secundario / Acento (Badges, cotizador y detalles de contraste):</span>
+              </label>
+              <span className="font-mono text-slate-700 text-xs font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
+                {secondaryColor}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              {predefinedColors.map((c) => (
+                <button
+                  type="button"
+                  key={`s-${c.hex}`}
+                  onClick={() => setSecondaryColor(c.hex)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                    secondaryColor.toLowerCase() === c.hex.toLowerCase()
+                      ? 'bg-white border-slate-900 text-slate-900 shadow-xs font-bold ring-1 ring-slate-900'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: c.hex }} />
+                  <span>{c.label}</span>
+                </button>
+              ))}
+
+              <div className="flex items-center gap-2 ml-auto bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+                <input
+                  type="color"
+                  value={secondaryColor}
+                  onChange={(e) => setSecondaryColor(e.target.value)}
+                  className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                  title="Elegir tono personalizado"
+                />
+                <span className="text-[11px] font-semibold text-slate-500">Selector fino</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Paleta Extraída del Logotipo */}
+          {extractedPalette.length > 0 && (
+            <div className="pt-3 border-t border-slate-200/80 bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100">
+              <div className="flex items-center gap-2 mb-2.5">
+                <Wand2 className="w-4 h-4 text-indigo-600" />
+                <span className="text-xs font-bold text-indigo-950">
+                  Colores detectados en tu logotipo:
+                </span>
+                <span className="text-[10px] text-indigo-600 font-medium">
+                  (Haz clic para asignar a Primario o Secundario)
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2.5">
+                {extractedPalette.map((hex, idx) => (
+                  <div
+                    key={`extracted-${hex}-${idx}`}
+                    className="flex items-center gap-1.5 bg-white border border-indigo-200 rounded-lg p-1.5 shadow-2xs"
+                  >
+                    <span
+                      className="w-5 h-5 rounded-md border border-slate-200 shadow-xs"
+                      style={{ backgroundColor: hex }}
+                    />
+                    <span className="font-mono text-[11px] font-bold text-slate-700 px-1">{hex}</span>
+                    <button
+                      type="button"
+                      onClick={() => setPrimaryColor(hex)}
+                      className="text-[10px] font-bold bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                      title="Usar como color primario"
+                    >
+                      P
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSecondaryColor(hex)}
+                      className="text-[10px] font-bold bg-slate-100 hover:bg-slate-900 hover:text-white text-slate-700 px-1.5 py-0.5 rounded transition-colors cursor-pointer"
+                      title="Usar como color secundario"
+                    >
+                      S
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Vista Previa en Vivo de Combinación */}
+          <div className="pt-3 border-t border-slate-200/80">
+            <div className="text-[11px] font-semibold text-slate-500 mb-2">
+              Vista previa interactiva de contraste y combinación:
+            </div>
+            <div className="flex flex-wrap items-center gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+              <button
+                type="button"
+                className="text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                style={{ backgroundColor: primaryColor }}
+              >
+                <span>Botón Primario</span>
+              </button>
+              <button
+                type="button"
+                className="text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-all flex items-center gap-1.5"
+                style={{ backgroundColor: secondaryColor }}
+              >
+                <span>Botón Secundario</span>
+              </button>
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-full border"
+                style={{
+                  backgroundColor: `${primaryColor}20`,
+                  borderColor: primaryColor,
+                  color: primaryColor,
+                }}
+              >
+                Badge Primario
+              </span>
+              <span
+                className="text-xs font-bold px-2.5 py-1 rounded-full border"
+                style={{
+                  backgroundColor: `${secondaryColor}20`,
+                  borderColor: secondaryColor,
+                  color: secondaryColor,
+                }}
+              >
+                Badge Secundario
+              </span>
             </div>
           </div>
 
@@ -353,6 +538,31 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                       {showManualUrl ? 'Ocultar URL' : 'O pegar enlace web'}
                     </button>
                   </div>
+
+                  {/* Botón de Extracción Automática de Colores */}
+                  {logoUrl && (
+                    <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleExtractColors()}
+                        disabled={isExtractingColors}
+                        className="bg-gradient-to-r from-indigo-50 to-sky-50 hover:from-indigo-100 hover:to-sky-100 border border-indigo-200 text-indigo-700 font-bold text-xs px-3 py-1.5 rounded-xl flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all active:scale-95"
+                      >
+                        {isExtractingColors ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                        ) : (
+                          <Wand2 className="w-3.5 h-3.5 text-indigo-600" />
+                        )}
+                        <span>{isExtractingColors ? 'Analizando tonos del logo...' : 'Extraer colores del logotipo'}</span>
+                      </button>
+
+                      {colorExtractionFeedback && (
+                        <span className="text-[11px] font-semibold text-indigo-700 bg-indigo-50/80 px-2.5 py-1 rounded-lg border border-indigo-100 animate-fade-in">
+                          {colorExtractionFeedback}
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Barra Deslizante de Tamaño de Logo (Estilo Control de Volumen) */}
                   {logoUrl && (

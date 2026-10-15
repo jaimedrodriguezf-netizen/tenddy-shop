@@ -20,6 +20,8 @@ export async function PATCH(request: Request) {
       tenant_id,
       name,
       primary_color,
+      secondary_color,
+      accent_color,
       logo_url,
       hero_title,
       hero_subtitle,
@@ -58,9 +60,18 @@ export async function PATCH(request: Request) {
       ? Math.round(logoHeightRaw)
       : (currentTenant.theme_config?.logo_height || 38);
 
+    const sanitizeHexColor = (val: unknown, fallback: string): string => {
+      if (typeof val === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(val.trim())) {
+        return val.trim();
+      }
+      return fallback;
+    };
+
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),
-      primary_color: primary_color || currentTenant.theme_config?.primary_color || '#0284c7',
+      primary_color: sanitizeHexColor(primary_color, currentTenant.theme_config?.primary_color || '#0284c7'),
+      secondary_color: sanitizeHexColor(secondary_color, currentTenant.theme_config?.secondary_color || '#a61c2e'),
+      accent_color: sanitizeHexColor(accent_color, currentTenant.theme_config?.accent_color || '#0284c7'),
       store_template: body.store_template || currentTenant.theme_config?.store_template || 'temu',
       logo_height: validLogoHeight,
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.theme_config?.show_best_sellers ?? true),
