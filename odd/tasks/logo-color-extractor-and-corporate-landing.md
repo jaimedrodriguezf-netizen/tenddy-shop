@@ -64,3 +64,4 @@ El usuario solicitó que en el panel de personalización (`/store/[shopSlug]/adm
   - `next build` exitoso generando 35 rutas estáticas y dinámicas.
   - Bump de versión a v1.0.117.
 - **RDD**: Revisión aprobada y recibo quemado (`review-2777304206d37544`).
+- **Commit**: `6eb50de` en branch `feat/logo-color-extractor-and-corporate-landing`.
