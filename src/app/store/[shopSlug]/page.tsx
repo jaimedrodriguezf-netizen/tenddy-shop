@@ -8,6 +8,10 @@ import TenantLandingView from '@/components/TenantLandingView';
 import TenantCatalogView from '@/components/TenantCatalogView';
 import ViewTracker from '@/components/ViewTracker';
 
+// Garantizar renderizado dinámico en tiempo real (evitar servir páginas desactualizadas desde caché estática)
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface ShopPageProps {
   params: Promise<{
     shopSlug: string;

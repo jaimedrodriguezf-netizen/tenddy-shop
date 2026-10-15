@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 
@@ -117,6 +118,14 @@ export async function PATCH(request: Request) {
     if (updateErr) {
       console.error('Error actualizando apariencia (PATCH):', updateErr);
       return NextResponse.json({ error: 'No se pudo actualizar la configuración de la tienda' }, { status: 500 });
+    }
+
+    // Invalidar caché de Next.js para que los cambios impacten en tiempo real en la tienda pública
+    try {
+      revalidatePath(`/store/${updated.slug}`);
+      revalidatePath(`/store/${updated.slug}/admin`);
+    } catch (revalErr) {
+      console.warn('Advertencia en revalidatePath:', revalErr);
     }
 
     return NextResponse.json({ success: true, tenant: updated });

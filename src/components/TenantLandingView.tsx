@@ -247,10 +247,13 @@ export default function TenantLandingView({
 
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
             <button
-              onClick={() => setActiveTab('catalog')}
+              onClick={() => {
+                setActiveTab('catalog');
+                document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
               className="transition-colors cursor-pointer text-sm font-medium pb-1"
               style={{
-                color: activeTab === 'catalog' ? primaryColor : '#cbd5e1',
+                color: activeTab === 'catalog' ? primaryColor : (isLightBg ? '#475569' : '#cbd5e1'),
                 borderBottom: activeTab === 'catalog' ? `2px solid ${primaryColor}` : '2px solid transparent',
               }}
             >
@@ -258,10 +261,13 @@ export default function TenantLandingView({
             </button>
             {landing.show_services && (
               <button
-                onClick={() => setActiveTab('services')}
+                onClick={() => {
+                  setActiveTab('services');
+                  document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
                 className="transition-colors cursor-pointer text-sm font-medium pb-1"
                 style={{
-                  color: activeTab === 'services' ? primaryColor : '#cbd5e1',
+                  color: activeTab === 'services' ? primaryColor : (isLightBg ? '#475569' : '#cbd5e1'),
                   borderBottom: activeTab === 'services' ? `2px solid ${primaryColor}` : '2px solid transparent',
                 }}
               >
@@ -269,10 +275,13 @@ export default function TenantLandingView({
               </button>
             )}
             <button
-              onClick={() => setActiveTab('branches')}
+              onClick={() => {
+                setActiveTab('branches');
+                document.getElementById('branches-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
               className="transition-colors cursor-pointer text-sm font-medium pb-1"
               style={{
-                color: activeTab === 'branches' ? primaryColor : '#cbd5e1',
+                color: activeTab === 'branches' ? primaryColor : (isLightBg ? '#475569' : '#cbd5e1'),
                 borderBottom: activeTab === 'branches' ? `2px solid ${primaryColor}` : '2px solid transparent',
               }}
             >
@@ -499,7 +508,28 @@ export default function TenantLandingView({
           ))}
         </div>
 
-        {/* Grid de Productos */}
+        {/* Grid de Productos o Estado de Inventario */}
+        {products.length === 0 ? (
+          <div className="text-center py-16 px-6 max-w-xl mx-auto bg-slate-900/50 border border-slate-800 rounded-2xl backdrop-blur-sm">
+            <div
+              className="w-14 h-14 mx-auto rounded-2xl flex items-center justify-center mb-4 shadow-lg border"
+              style={{ backgroundColor: `${primaryColor}20`, borderColor: `${primaryColor}40` }}
+            >
+              <Package className="w-7 h-7" style={{ color: primaryColor }} />
+            </div>
+            <h4 className="font-bold text-lg text-white mb-2">Catálogo en Actualización de Inventario</h4>
+            <p className="text-xs text-slate-400 mb-6 leading-relaxed max-w-md mx-auto">
+              Estamos actualizando nuestras referencias de envases, planos y fichas técnicas. Comunícate directamente con nuestra planta para recibir la lista completa y cotizaciones mayoristas.
+            </p>
+            <button
+              onClick={() => handleWhatsAppQuote()}
+              className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-6 py-3 rounded-xl shadow-lg inline-flex items-center gap-2 cursor-pointer transition-all hover:scale-102"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Solicitar Lista de Precios por WhatsApp</span>
+            </button>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {displayedProducts.map((product) => {
             const specs = product.attributes?.specs || {};
@@ -634,9 +664,10 @@ export default function TenantLandingView({
             );
           })}
         </div>
+        )}
 
         {/* Paginación progresiva para catálogos extensos */}
-        {visibleCount < filteredProducts.length && (
+        {products.length > 0 && visibleCount < filteredProducts.length && (
           <div className="mt-10 text-center">
             <button
               type="button"
@@ -650,8 +681,70 @@ export default function TenantLandingView({
         )}
       </section>
 
+      {/* Sección de Servicios Industriales y Maquila */}
+      {landing.show_services !== false && (
+        <section id="services-section" className="max-w-7xl mx-auto px-4 py-16 border-t border-slate-800/80">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span
+              className="text-xs font-semibold uppercase tracking-wider"
+              style={{ color: primaryColor }}
+            >
+              Capacidad de Planta & Maquila
+            </span>
+            <h3 className={`text-3xl font-bold mt-2 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>
+              Servicios Industriales en Plásticos PET & PP
+            </h3>
+            <p className={`text-sm mt-2 ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
+              Desde el diseño del molde y la inyección de preformas hasta el soplado y logística nacional.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>
+                ⚙️
+              </div>
+              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Inyección de Preformas</h4>
+              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
+                Cuello PCO 1810 / 1881 de 28mm y 38mm con distribución uniforme de espesores y cero deformación térmica.
+              </p>
+            </div>
+
+            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${secondaryColor}20`, color: secondaryColor }}>
+                🍾
+              </div>
+              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Maquila de Soplado</h4>
+              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
+                Soplado automatizado en alta cadencia para envases desde 100ml hasta 5000ml (galones y botellones).
+              </p>
+            </div>
+
+            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${primaryColor}20`, color: primaryColor }}>
+                🔬
+              </div>
+              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Diseño de Moldes 3D</h4>
+              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
+                Ingeniería de moldes CNC a medida para geometrías exclusivas y optimización de gramaje por unidad.
+              </p>
+            </div>
+
+            <div className={`p-6 rounded-xl border transition-all ${isLightBg ? 'bg-white border-slate-200 shadow-sm' : 'bg-slate-900/60 border-slate-800'}`}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-lg mb-4" style={{ backgroundColor: `${secondaryColor}20`, color: secondaryColor }}>
+                🛡️
+              </div>
+              <h4 className={`font-bold text-base mb-1 ${isLightBg ? 'text-slate-900' : 'text-white'}`}>Ensayos & Inocuidad</h4>
+              <p className={`text-xs leading-relaxed ${isLightBg ? 'text-slate-600' : 'text-slate-400'}`}>
+                Certificación FDA & BPM con pruebas de caída, resistencia a presión interna y sellado hermético.
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Red de Sucursales y Centros de Despacho */}
-      <section className="max-w-7xl mx-auto px-4 py-16">
+      <section id="branches-section" className="max-w-7xl mx-auto px-4 py-16">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span
             className="text-xs font-semibold uppercase tracking-wider"
