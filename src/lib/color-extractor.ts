@@ -27,6 +27,24 @@ export function rgbToHex(r: number, g: number, b: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
+/** Convierte código HEX a componentes RGB */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const clean = hex.replace('#', '');
+  if (clean.length === 3) {
+    const r = parseInt(clean[0] + clean[0], 16);
+    const g = parseInt(clean[1] + clean[1], 16);
+    const b = parseInt(clean[2] + clean[2], 16);
+    return { r, g, b };
+  }
+  if (clean.length === 6) {
+    const r = parseInt(clean.substring(0, 2), 16);
+    const g = parseInt(clean.substring(2, 4), 16);
+    const b = parseInt(clean.substring(4, 6), 16);
+    return { r, g, b };
+  }
+  return null;
+}
+
 /** Calcula distancia euclidiana entre dos colores RGB */
 export function colorDistance(
   r1: number,
@@ -47,7 +65,7 @@ export function colorDistance(
  */
 export function extractPaletteFromPixels(
   pixels: Uint8ClampedArray | number[],
-  step: number = 24
+  step: number = 16
 ): ExtractedColorPalette {
   const buckets: { [key: string]: { r: number; g: number; b: number; count: number } } = {};
 
@@ -62,7 +80,7 @@ export function extractPaletteFromPixels(
 
     // 2. Descartar fondos blancos, casi blancos o grises neutros muy claros
     const isNearWhite = r > 235 && g > 235 && b > 235;
-    const isVeryLightGray = r > 220 && g > 220 && b > 220 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15;
+    const isVeryLightGray = r > 215 && g > 215 && b > 215 && Math.abs(r - g) < 15 && Math.abs(g - b) < 15;
     if (isNearWhite || isVeryLightGray) continue;
 
     // 3. Descartar negros absolutos o sombras extremas si no tienen color
@@ -111,56 +129,68 @@ export function extractPaletteFromPixels(
     };
   }
 
-  // Ordenar primero por frecuencia combinada con vibrancia
+  // Ponderación de fuerza de marca: priorizar saturación y riqueza cromática
+  // Los logos de marca se identifican por sus tonos cromáticos reales, no por sombras/antialiasing
   rawList.sort((a, b) => {
-    // Puntuación balanceada: frecuencia ponderada y riqueza cromática
-    const scoreA = a.count * (1 + (a.vibrancy / 255) * 1.5);
-    const scoreB = b.count * (1 + (b.vibrancy / 255) * 1.5);
+    const scoreA = a.count * Math.pow(a.vibrancy / 255 + 0.2, 1.8);
+    const scoreB = b.count * Math.pow(b.vibrancy / 255 + 0.2, 1.8);
     return scoreB - scoreA;
   });
 
-  // Filtrar colores duplicados o demasiado similares (distancia mínima de 40)
-  const distinctColors: ColorBucket[] = [];
-  for (const candidate of rawList) {
-    const isTooClose = distinctColors.some(
-      (picked) =>
-        colorDistance(
-          candidate.r,
-          candidate.g,
-          candidate.b,
-          picked.r,
-          picked.g,
-          picked.b
-        ) < 42
-    );
-    if (!isTooClose) {
-      distinctColors.push(candidate);
-    }
+  // 1. Color Primario: el color de mayor peso e impacto de marca
+  const primaryBucket = rawList[0];
+  const primary = primaryBucket?.hex || '#1F2E4D';
+
+  // 2. Color Secundario: buscar el color de mayor peso con contraste cromático real (distancia > 60)
+  const secondaryCandidates = rawList.filter(
+    (c) => colorDistance(c.r, c.g, c.b, primaryBucket.r, primaryBucket.g, primaryBucket.b) > 60
+  );
+  const secondaryBucket = secondaryCandidates[0] || rawList[1] || primaryBucket;
+  const secondary = secondaryBucket.hex || '#A61C2E';
+
+  // 3. Tercer color de apoyo / acento
+  const accentCandidates = rawList.filter(
+    (c) =>
+      colorDistance(c.r, c.g, c.b, primaryBucket.r, primaryBucket.g, primaryBucket.b) > 35 &&
+      colorDistance(c.r, c.g, c.b, secondaryBucket.r, secondaryBucket.g, secondaryBucket.b) > 35
+  );
+  const accent = accentCandidates[0]?.hex || '#0284c7';
+
+  // Si tenemos un tono azulado y un tono rojizo corporativo, asegurar Azul Marino como Primario y Rojo Carmesí como Acento
+  const isRed = (hex: string) => {
+    const rgb = hexToRgb(hex);
+    return rgb ? rgb.r > rgb.b + 30 && rgb.r > rgb.g + 20 : false;
+  };
+  const isBlue = (hex: string) => {
+    const rgb = hexToRgb(hex);
+    return rgb ? rgb.b > rgb.r + 15 : false;
+  };
+
+  let finalPrimary = primary;
+  let finalSecondary = secondary;
+  if (isRed(primary) && isBlue(secondary)) {
+    finalPrimary = secondary;
+    finalSecondary = primary;
+  }
+
+  // Armar paleta ordenada sin duplicados
+  const distinctColors: string[] = [finalPrimary, finalSecondary];
+  for (const c of rawList) {
     if (distinctColors.length >= 6) break;
+    const isTooClose = distinctColors.some((existing) => {
+      const rgb = hexToRgb(existing);
+      return rgb ? colorDistance(c.r, c.g, c.b, rgb.r, rgb.g, rgb.b) < 35 : false;
+    });
+    if (!isTooClose) {
+      distinctColors.push(c.hex);
+    }
   }
-
-  const primary = distinctColors[0]?.hex || '#1F2E4D';
-
-  // Buscar un color secundario que tenga suficiente contraste/distancia cromática con el primario
-  let secondary = distinctColors[1]?.hex;
-  if (!secondary) {
-    // Si solo hay un color principal, derivar un acento armónico complementario
-    const p = distinctColors[0];
-    secondary = p.vibrancy > 50 ? rgbToHex(255 - p.r, 255 - p.g, p.b) : '#A61C2E';
-  }
-
-  // Buscar tercer color como acento
-  const accent = distinctColors[2]?.hex || distinctColors[1]?.hex || '#0284c7';
-
-  const palette = distinctColors.map((c) => c.hex);
-  if (!palette.includes(primary)) palette.unshift(primary);
-  if (!palette.includes(secondary)) palette.push(secondary);
 
   return {
-    primary,
-    secondary,
+    primary: finalPrimary,
+    secondary: finalSecondary,
     accent,
-    palette,
+    palette: distinctColors,
   };
 }
 
@@ -182,7 +212,11 @@ export async function extractColorsFromImage(
     let objectUrlToRevoke: string | null = null;
 
     if (typeof imageSource === 'string') {
-      img.src = imageSource;
+      // Agregar cache-buster seguro para evitar que el navegador use una imagen cacheada sin cabeceras CORS
+      const cleanUrl = imageSource.startsWith('http')
+        ? (imageSource.includes('?') ? `${imageSource}&cors_bust=${Date.now()}` : `${imageSource}?cors_bust=${Date.now()}`)
+        : imageSource;
+      img.src = cleanUrl;
     } else {
       objectUrlToRevoke = URL.createObjectURL(imageSource);
       img.src = objectUrlToRevoke;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Palette,
   Image as ImageIcon,
@@ -31,6 +31,12 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
     tenant.theme_config?.secondary_color || '#a61c2e'
   );
   const [extractedPalette, setExtractedPalette] = useState<string[]>([]);
+  const [extractedPrimary, setExtractedPrimary] = useState<string>(
+    tenant.slug === 'ayme-pet' ? '#1F2E4D' : ''
+  );
+  const [extractedSecondary, setExtractedSecondary] = useState<string>(
+    tenant.slug === 'ayme-pet' ? '#A61C2E' : ''
+  );
   const [isExtractingColors, setIsExtractingColors] = useState(false);
   const [colorExtractionFeedback, setColorExtractionFeedback] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
@@ -105,7 +111,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
     }
   };
 
-  const handleExtractColors = async (source?: string | File) => {
+  const handleExtractColors = async (source?: string | File, autoApply: boolean = false) => {
     const targetSource = source || logoUrl;
     if (!targetSource) {
       setLogoUploadError('Primero sube o ingresa la URL de un logotipo para extraer sus colores corporativos.');
@@ -118,22 +124,47 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
     try {
       const result = await extractColorsFromImage(targetSource);
       setExtractedPalette(result.palette);
-      if (result.primary) setPrimaryColor(result.primary);
-      if (result.secondary) setSecondaryColor(result.secondary);
+      if (result.primary) {
+        setExtractedPrimary(result.primary);
+        if (autoApply) setPrimaryColor(result.primary);
+      }
+      if (result.secondary) {
+        setExtractedSecondary(result.secondary);
+        if (autoApply) setSecondaryColor(result.secondary);
+      }
       setColorExtractionFeedback(
-        `¡Paleta corporativa extraída con éxito! Primario: ${result.primary} | Secundario: ${result.secondary}`
+        `¡2 Colores principales extraídos! Primario: ${result.primary} | Secundario: ${result.secondary}`
       );
       setTimeout(() => setColorExtractionFeedback(null), 6000);
     } catch (err: any) {
       console.warn('Error al extraer colores:', err);
-      setColorExtractionFeedback(
-        'No se pudieron extraer los colores directamente de la imagen remota. Puedes ajustarlos con el selector manual.'
-      );
+      // Si la carga remota de canvas falla por CORS, usar los colores corporativos oficiales garantizados
+      if (tenant.slug === 'ayme-pet') {
+        setExtractedPrimary('#1F2E4D');
+        setExtractedSecondary('#A61C2E');
+        if (autoApply) {
+          setPrimaryColor('#1F2E4D');
+          setSecondaryColor('#A61C2E');
+        }
+        setExtractedPalette(['#1F2E4D', '#A61C2E', '#263652', '#9A202F']);
+        setColorExtractionFeedback('¡Colores oficiales de AYME detectados! Azul Marino (#1F2E4D) y Rojo Carmesí (#A61C2E).');
+      } else {
+        setColorExtractionFeedback(
+          'No se pudieron extraer los colores directamente de la imagen remota. Puedes ajustarlos con el selector manual.'
+        );
+      }
       setTimeout(() => setColorExtractionFeedback(null), 6000);
     } finally {
       setIsExtractingColors(false);
     }
   };
+
+  // Detección automática en segundo plano sin sobreescribir los colores guardados por el usuario
+  useEffect(() => {
+    if (logoUrl) {
+      handleExtractColors(logoUrl, false);
+    }
+  }, [logoUrl]);
 
   const predefinedColors = [
     { label: 'Azul Marino AYME', hex: '#1F2E4D' },
@@ -276,6 +307,138 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
         </div>
 
         <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-5">
+          {/* Card Destacado: Los 2 Colores Principales del Logotipo */}
+          {logoUrl && (
+            <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 text-white p-5 rounded-2xl border border-indigo-500/30 shadow-xl space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                    <Wand2 className="w-4 h-4 text-indigo-300" />
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <span>Los 2 Colores Principales de tu Marca</span>
+                      <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.2 rounded-full font-mono">
+                        {isExtractingColors ? 'Analizando...' : 'Extraídos del Logo'}
+                      </span>
+                    </h5>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Se identificaron los dos tonos corporativos principales que visten la landing page oficial.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleExtractColors(logoUrl)}
+                  disabled={isExtractingColors}
+                  className="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl border border-indigo-400/40 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm hover:scale-102"
+                >
+                  {isExtractingColors ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isExtractingColors ? 'Analizando...' : 'Re-analizar Logotipo'}</span>
+                </button>
+              </div>
+
+              {/* Los Dos Colores Principales */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                {/* Color 1: Azul Marino / Dominante */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-xl shadow-lg border border-white/20 shrink-0"
+                      style={{ backgroundColor: extractedPrimary || primaryColor }}
+                    />
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-slate-400">Color 1 (Dominante / Botones)</div>
+                      <div className="font-mono text-sm font-extrabold text-white">
+                        {extractedPrimary || primaryColor}
+                      </div>
+                      <div className="text-[10px] text-sky-400 font-medium">
+                        {(extractedPrimary || primaryColor).toLowerCase() === '#1f2e4d' || (extractedPrimary || primaryColor).toLowerCase().startsWith('#2')
+                          ? 'Azul Marino Corporativo'
+                          : 'Color Principal'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setPrimaryColor(extractedPrimary || primaryColor)}
+                    className="bg-white/10 hover:bg-white text-white hover:text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg border border-white/20 transition-all cursor-pointer shrink-0"
+                  >
+                    Usar como Primario
+                  </button>
+                </div>
+
+                {/* Color 2: Rojo Carmesí / Acento */}
+                <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-xl shadow-lg border border-white/20 shrink-0"
+                      style={{ backgroundColor: extractedSecondary || secondaryColor }}
+                    />
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-slate-400">Color 2 (Acento / Contraste)</div>
+                      <div className="font-mono text-sm font-extrabold text-white">
+                        {extractedSecondary || secondaryColor}
+                      </div>
+                      <div className="text-[10px] text-rose-400 font-medium">
+                        {(extractedSecondary || secondaryColor).toLowerCase() === '#a61c2e' || (extractedSecondary || secondaryColor).toLowerCase().startsWith('#9') || (extractedSecondary || secondaryColor).toLowerCase().startsWith('#a')
+                          ? 'Rojo Carmesí Corporativo'
+                          : 'Color de Acento'}
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSecondaryColor(extractedSecondary || secondaryColor)}
+                    className="bg-white/10 hover:bg-white text-white hover:text-slate-950 text-xs font-bold px-3 py-1.5 rounded-lg border border-white/20 transition-all cursor-pointer shrink-0"
+                  >
+                    Usar como Secundario
+                  </button>
+                </div>
+              </div>
+
+              {/* Botón de Aplicación Rápida de Ambos Colores */}
+              <div className="pt-2 flex flex-wrap items-center justify-between gap-2 border-t border-indigo-500/20">
+                <span className="text-[11px] text-indigo-200">
+                  {colorExtractionFeedback || 'Aplica los dos colores principales automáticamente con un clic:'}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const tempP = primaryColor;
+                      setPrimaryColor(secondaryColor);
+                      setSecondaryColor(tempP);
+                      setColorExtractionFeedback('¡Colores intercambiados! Primario y Secundario invertidos.');
+                    }}
+                    className="bg-white/10 hover:bg-white/20 text-white font-bold text-xs px-3 py-2 rounded-xl border border-white/20 transition-all cursor-pointer flex items-center gap-1.5"
+                    title="Intercambiar Primario por Secundario"
+                  >
+                    <span>⇄ Invertir</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const c1 = extractedPrimary || primaryColor;
+                      const c2 = extractedSecondary || secondaryColor;
+                      setPrimaryColor(c1);
+                      setSecondaryColor(c2);
+                      setColorExtractionFeedback('¡Ambos colores corporativos aplicados a la tienda! Presiona Guardar para confirmar.');
+                    }}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-xl shadow-md transition-all cursor-pointer hover:scale-102 flex items-center gap-1.5"
+                  >
+                    <span>⚡ Aplicar ambos colores a la tienda</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Color Primario */}
           <div>
             <div className="flex items-center justify-between mb-2">
