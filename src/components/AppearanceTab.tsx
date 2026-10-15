@@ -17,7 +17,7 @@ import {
   Wand2
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
-import { extractColorsFromImage } from '@/lib/color-extractor';
+import { extractColorsFromImage, hexToRgb, rgbToHex } from '@/lib/color-extractor';
 
 interface AppearanceTabProps {
   tenant: Tenant;
@@ -29,6 +29,9 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [primaryColor, setPrimaryColor] = useState(tenant.theme_config?.primary_color || '#0284c7');
   const [secondaryColor, setSecondaryColor] = useState(
     tenant.theme_config?.secondary_color || '#a61c2e'
+  );
+  const [landingBgColor, setLandingBgColor] = useState<string>(
+    (tenant.theme_config as any)?.landing_bg_color || '#020617'
   );
   const [extractedPalette, setExtractedPalette] = useState<string[]>([]);
   const [extractedPrimary, setExtractedPrimary] = useState<string>(
@@ -176,6 +179,25 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
     { label: 'Pizarra / Slate', hex: '#334155' },
   ];
 
+  const predefinedBgColors = [
+    { label: 'Azul Marino Profundo AYME', hex: '#0a1128', description: 'Atmósfera corporativa oscura' },
+    { label: 'Oscuro Pizarra', hex: '#020617', description: 'Contraste máximo nocturno' },
+    { label: 'Gris Carbón Industrial', hex: '#111827', description: 'Tono neutro elegante' },
+    { label: 'Blanco Institucional', hex: '#f8fafc', description: 'Fondo claro como la web original' },
+  ];
+
+  const handleApplyHarmonicBg = () => {
+    const rgb = hexToRgb(primaryColor);
+    if (!rgb) return;
+    const darkR = Math.min(255, Math.max(0, Math.round(rgb.r * 0.16 + 4)));
+    const darkG = Math.min(255, Math.max(0, Math.round(rgb.g * 0.16 + 7)));
+    const darkB = Math.min(255, Math.max(0, Math.round(rgb.b * 0.22 + 16)));
+    const derived = rgbToHex(darkR, darkG, darkB);
+    setLandingBgColor(derived);
+    setColorExtractionFeedback(`Fondo teñido armónicamente con el color primario: ${derived}`);
+    setTimeout(() => setColorExtractionFeedback(null), 5000);
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -191,6 +213,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           name,
           primary_color: primaryColor,
           secondary_color: secondaryColor,
+          landing_bg_color: landingBgColor,
           store_template: storeTemplate,
           logo_url: logoUrl || null,
           logo_height: logoHeight,
@@ -521,6 +544,59 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
             </div>
           </div>
 
+          {/* Color de Fondo de la Landing Page */}
+          <div className="pt-3 border-t border-slate-200/80">
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full border border-slate-300" style={{ backgroundColor: landingBgColor }} />
+                <span>Color de Fondo de la Landing Page (Lienzo y atmósfera general):</span>
+              </label>
+              <span className="font-mono text-slate-700 text-xs font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
+                {landingBgColor}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2 items-center">
+              {predefinedBgColors.map((bg) => (
+                <button
+                  type="button"
+                  key={`bg-${bg.hex}`}
+                  onClick={() => setLandingBgColor(bg.hex)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-xs font-medium transition-all cursor-pointer ${
+                    landingBgColor.toLowerCase() === bg.hex.toLowerCase()
+                      ? 'bg-white border-slate-900 text-slate-900 shadow-xs font-bold ring-1 ring-slate-900'
+                      : 'bg-white border-slate-200 text-slate-600 hover:border-slate-300'
+                  }`}
+                  title={bg.description}
+                >
+                  <span className="w-3.5 h-3.5 rounded-full border border-slate-300 shrink-0" style={{ backgroundColor: bg.hex }} />
+                  <span>{bg.label}</span>
+                </button>
+              ))}
+
+              <button
+                type="button"
+                onClick={handleApplyHarmonicBg}
+                className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer"
+                title="Generar un fondo ambiental oscuro derivado del color primario"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Teñir con logo</span>
+              </button>
+
+              <div className="flex items-center gap-2 ml-auto bg-white border border-slate-200 rounded-lg px-2.5 py-1">
+                <input
+                  type="color"
+                  value={landingBgColor}
+                  onChange={(e) => setLandingBgColor(e.target.value)}
+                  className="w-5 h-5 rounded cursor-pointer border-0 bg-transparent"
+                  title="Elegir color de fondo libre"
+                />
+                <span className="text-[11px] font-semibold text-slate-500">Selector fino</span>
+              </div>
+            </div>
+          </div>
+
           {/* Paleta Extraída del Logotipo */}
           {extractedPalette.length > 0 && (
             <div className="pt-3 border-t border-slate-200/80 bg-indigo-50/50 p-3.5 rounded-xl border border-indigo-100">
@@ -569,9 +645,12 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           {/* Vista Previa en Vivo de Combinación */}
           <div className="pt-3 border-t border-slate-200/80">
             <div className="text-[11px] font-semibold text-slate-500 mb-2">
-              Vista previa interactiva de contraste y combinación:
+              Vista previa interactiva de contraste y combinación sobre el fondo de tu tienda:
             </div>
-            <div className="flex flex-wrap items-center gap-3 bg-slate-950 p-3.5 rounded-xl border border-slate-800">
+            <div
+              className="flex flex-wrap items-center gap-3 p-4 rounded-xl border border-slate-800 transition-all shadow-inner"
+              style={{ backgroundColor: landingBgColor }}
+            >
               <button
                 type="button"
                 className="text-white text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-all flex items-center gap-1.5"

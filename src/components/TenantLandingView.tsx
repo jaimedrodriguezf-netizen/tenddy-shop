@@ -65,6 +65,19 @@ export default function TenantLandingView({
   // Colores corporativos configurados (o defaults estéticos de industria)
   const primaryColor = theme?.primary_color || (isConfectionery ? '#e11d48' : '#1F2E4D');
   const secondaryColor = theme?.secondary_color || (isConfectionery ? '#ea580c' : '#A61C2E');
+  const landingBgColor = (theme as any)?.landing_bg_color || '#020617';
+
+  // Detección de contraste inteligente según luminancia del fondo
+  const isLightBg = (() => {
+    const hex = landingBgColor.replace('#', '');
+    if (hex.length === 6) {
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return (0.299 * r + 0.587 * g + 0.114 * b) / 255 > 0.55;
+    }
+    return false;
+  })();
 
   // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
   const [visibleCount, setVisibleCount] = useState<number>(24);
@@ -94,7 +107,17 @@ export default function TenantLandingView({
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-rose-500 selection:text-white">
+    <div
+      className={`min-h-screen font-sans ${
+        isLightBg ? 'text-slate-900 selection:bg-slate-900 selection:text-white' : 'text-slate-100 selection:bg-rose-500 selection:text-white'
+      }`}
+      style={{
+        backgroundColor: landingBgColor,
+        backgroundImage: !isLightBg
+          ? `radial-gradient(circle at 50% 0%, ${primaryColor}22 0%, transparent 65%)`
+          : undefined,
+      }}
+    >
       {/* Drawer del Carrito Cotizador */}
       <CartDrawer
         tenant={tenant}
@@ -104,7 +127,14 @@ export default function TenantLandingView({
       />
 
       {/* Top Bar Corporativo */}
-      <div className="bg-slate-900/80 border-b border-slate-800 text-xs text-slate-400 py-2 px-4 backdrop-blur-md sticky top-0 z-50">
+      <div
+        className={`border-b text-xs py-2 px-4 backdrop-blur-md sticky top-0 z-50 transition-colors ${
+          isLightBg
+            ? 'bg-white/85 border-slate-200 text-slate-600'
+            : 'border-slate-800 text-slate-400'
+        }`}
+        style={{ backgroundColor: !isLightBg ? `${landingBgColor}dd` : undefined }}
+      >
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-2">
           <div className="flex items-center gap-4">
             <span className="flex items-center gap-1">
@@ -161,7 +191,14 @@ export default function TenantLandingView({
       </div>
 
       {/* Header Principal */}
-      <header className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur sticky top-8 z-40">
+      <header
+        className={`border-b backdrop-blur sticky top-8 z-40 transition-colors ${
+          isLightBg
+            ? 'border-slate-200 bg-white/90 shadow-2xs'
+            : 'border-slate-800/80'
+        }`}
+        style={{ backgroundColor: !isLightBg ? `${landingBgColor}ee` : undefined }}
+      >
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
             {tenant.logo_url ? (
@@ -293,7 +330,12 @@ export default function TenantLandingView({
           ) : (
             <div className="w-full h-full bg-slate-900 bg-gradient-to-br from-slate-950 via-slate-900 to-rose-950/40" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/70 to-transparent" />
+          <div
+            className="absolute inset-0 transition-all"
+            style={{
+              background: `linear-gradient(to top, ${landingBgColor}, ${landingBgColor}b3 40%, transparent 100%)`,
+            }}
+          />
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 py-20 text-center">
@@ -688,7 +730,14 @@ export default function TenantLandingView({
       </section>
 
       {/* Footer Corporativo */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-12 text-slate-400 text-xs">
+      <footer
+        className={`border-t py-12 text-xs transition-colors ${
+          isLightBg
+            ? 'border-slate-200 bg-slate-100/80 text-slate-600'
+            : 'border-slate-800 text-slate-400'
+        }`}
+        style={{ backgroundColor: !isLightBg ? landingBgColor : undefined }}
+      >
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-6">
           <div>
             <div className="text-white font-bold text-base mb-1">{tenant.name}</div>
