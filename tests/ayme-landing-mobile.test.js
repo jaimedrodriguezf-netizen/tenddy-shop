@@ -45,4 +45,23 @@ assert.ok(!pageContent.includes('Volver a Mi Panel'), 'src/app/store/[shopSlug]/
 assert.ok(landingContent.includes('Volver a Mi Panel'), 'TenantLandingView debe ser el único encargado del botón flotante de administración');
 console.log('✅ 6. Hero & Admin: Separación de 7rem en Hero (cero cruces) y eliminación de botón duplicado de administración verificadas.');
 
+// 7. Menú móvil hamburguesa y drawer deslizable
+assert.ok(landingContent.includes('isMobileMenuOpen'), 'TenantLandingView debe gestionar el estado isMobileMenuOpen');
+assert.ok(landingContent.includes('Menú de Navegación'), 'Debe existir el drawer de navegación móvil');
+console.log('✅ 7. Navegación Móvil: Botón Hamburger y Drawer de navegación con categorías verificados.');
+
+// 8. Poster en video del Hero
+assert.ok(landingContent.includes('poster='), 'El video del hero debe tener un atributo poster configurado');
+console.log('✅ 8. Media: Poster industrial de alta resolución de respaldo en video Hero verificado.');
+
+// 9. Utilidad .no-scrollbar y CartDrawer responsivo
+const globalsPath = path.join(__dirname, '..', 'src', 'app', 'globals.css');
+const globalsContent = fs.readFileSync(globalsPath, 'utf8');
+assert.ok(globalsContent.includes('no-scrollbar'), 'globals.css debe declarar la utilidad no-scrollbar');
+assert.ok(cssContent.includes('.no-scrollbar'), 'style.css debe declarar la clase .no-scrollbar');
+const cartDrawerPath = path.join(__dirname, '..', 'src', 'components', 'CartDrawer.tsx');
+const cartDrawerContent = fs.readFileSync(cartDrawerPath, 'utf8');
+assert.ok(cartDrawerContent.includes('pl-0 sm:pl-10'), 'CartDrawer debe usar pl-0 sm:pl-10 para ocupar el 100% de pantalla en móvil');
+console.log('✅ 9. UX Móvil: Utilidad .no-scrollbar y CartDrawer al 100% de pantalla verificados.');
+
 console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');

@@ -11,7 +11,9 @@ import {
   Plus,
   Eye,
   LayoutDashboard,
-  Search
+  Search,
+  Menu,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -38,6 +40,7 @@ export default function TenantLandingView({
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState<boolean>(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLLIElement | null>(null);
 
   // Motor de Secuencia de Scroll Interactiva (Hero Dinámico)
@@ -262,7 +265,7 @@ export default function TenantLandingView({
                 <span className="hidden md:inline">•</span>
                 <span className="hidden md:inline">📦 <strong>Ventas Mayoristas & Moldes</strong></span>
                 <span className="hidden sm:inline">•</span>
-                <span>📱 <strong>WhatsApp: {landing.display_phone || '0998722324'}</strong></span>
+                <span>📱 <strong>WhatsApp: {displayPhone}</strong></span>
               </>
             )}
           </div>
@@ -428,9 +431,136 @@ export default function TenantLandingView({
                 <span className="hidden sm:inline">Cotizar por WhatsApp</span>
                 <span className="inline sm:hidden">Cotizar</span>
               </a>
+
+              {/* Botón Menú Móvil */}
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+                className="md:hidden p-1.5 rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
+              >
+                {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+              </button>
             </div>
           </div>
         </header>
+
+        {/* Drawer de Navegación Móvil */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-[1000] md:hidden">
+            <div
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+            />
+            <div className="fixed top-0 right-0 w-4/5 max-w-xs h-full bg-slate-900 border-l border-slate-800 p-5 flex flex-col justify-between shadow-2xl text-slate-100 animate-fade-in overflow-y-auto">
+              <div>
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                  <span className="font-bold text-sm tracking-wide text-white">Menú de Navegación</span>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <ul className="space-y-2">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                    >
+                      <span>🏠 Inicio</span>
+                      <ChevronRight className="w-4 h-4 text-slate-500" />
+                    </button>
+                  </li>
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        setSelectedCategory('all');
+                        document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                    >
+                      <span>📦 Catálogo de Envases</span>
+                      <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-mono">
+                        {products.length}
+                      </span>
+                    </button>
+                  </li>
+                  {categories.length > 0 && (
+                    <div className="pl-4 pr-1 py-1 space-y-1 border-l-2 border-slate-800 ml-3 my-1">
+                      {categories.slice(0, 5).map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory(cat.id);
+                            setIsMobileMenuOpen(false);
+                            document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className="w-full text-left px-2 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-slate-800/60 truncate flex items-center justify-between"
+                        >
+                          <span className="truncate">{cat.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  {landing.show_services !== false && (
+                    <li>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
+                        }}
+                        className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                      >
+                        <span>🏭 Servicios Industriales</span>
+                        <ChevronRight className="w-4 h-4 text-slate-500" />
+                      </button>
+                    </li>
+                  )}
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsMobileMenuOpen(false);
+                        document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth' });
+                      }}
+                      className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                    >
+                      <span>📍 Contacto & Fábrica</span>
+                      <ChevronRight className="w-4 h-4 text-slate-500" />
+                    </button>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-4 border-t border-slate-800 space-y-3">
+                <a
+                  href={buildEcuadorWhatsAppUrl(mainWhatsapp, defaultWelcomeMsg)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-whatsapp w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>WhatsApp: {displayPhone}</span>
+                </a>
+                <div className="text-[11px] text-slate-500 text-center">
+                  <span>{tenant.name} • Solutions in Packaging</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* =========================================================================
@@ -444,6 +574,7 @@ export default function TenantLandingView({
             muted
             loop
             playsInline
+            poster={landing.hero_image_url || '/hero-machine.jpg'}
             id="hero-background-video"
             style={{
               position: 'absolute',
@@ -1007,7 +1138,7 @@ export default function TenantLandingView({
               <div>
                 <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">⚡</div>
                 <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Respuesta Inmediata</h4>
-                <p className="text-xs sm:text-sm text-slate-500">Línea directa de atención y despacho rápido por WhatsApp: {landing.display_phone || '0998722324'}.</p>
+                <p className="text-xs sm:text-sm text-slate-500">Línea directa de atención y despacho rápido por WhatsApp: {displayPhone}.</p>
               </div>
             </div>
           </div>
@@ -1172,7 +1303,7 @@ export default function TenantLandingView({
                     <div className="channel-text-box">
                       <h5>Teléfono / WhatsApp Directo</h5>
                       <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
-                        {landing.display_phone || '0998722324'}
+                        {displayPhone}
                       </span>
                     </div>
                   </li>
@@ -1181,7 +1312,7 @@ export default function TenantLandingView({
                     <div className="channel-text-box">
                       <h5>Ventas & Cotizaciones</h5>
                       <span style={{ fontSize: '0.85rem' }}>
-                        {landing.email || 'ventas@aymeindustriaspet.com'}
+                        {landing.email || (tenant as any)?.email || 'ventas@aymeindustriaspet.com'}
                       </span>
                     </div>
                   </li>
@@ -1227,7 +1358,7 @@ export default function TenantLandingView({
               </p>
               {/* Redes Sociales Oficiales B2B */}
               {(social.linkedin || social.facebook || social.instagram || social.tiktok || social.youtube) && (
-                <div className="flex items-center gap-3 mt-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs">
                   <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
                   {social.linkedin && (
                     <a href={social.linkedin} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
@@ -1257,11 +1388,11 @@ export default function TenantLandingView({
                 </div>
               )}
             </div>
-            <div className="footer-badges" style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)' }}>
-              <span>🏆 Inocuidad BPM Aprobada</span>
-              <span>•</span>
+            <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400 mt-2 sm:mt-0">
+              <span>🏆 Inocuidad BPM</span>
+              <span className="hidden sm:inline">•</span>
               <span>♻️ PET 100% Reciclable</span>
-              <span>•</span>
+              <span className="hidden sm:inline">•</span>
               <span>📦 Despacho Paletizado</span>
             </div>
           </div>
