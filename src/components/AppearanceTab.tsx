@@ -14,10 +14,14 @@ import {
   LayoutDashboard,
   Upload,
   Trash2,
-  Wand2
+  Wand2,
+  Megaphone,
+  MessageCircle,
+  Share2
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
 import { extractColorsFromImage, hexToRgb, rgbToHex } from '@/lib/color-extractor';
+import { normalizeEcuadorPhone } from '@/lib/ecuador-phone';
 
 interface AppearanceTabProps {
   tenant: Tenant;
@@ -44,6 +48,33 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [colorExtractionFeedback, setColorExtractionFeedback] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
   const [logoHeight, setLogoHeight] = useState<number>((tenant.theme_config as any)?.logo_height || 38);
+  const defaultTopBarText = `🏭 ${tenant.name || 'AYME INDUSTRIAS PET'} | Solutions in Packaging • 📦 Ventas Mayoristas & Fabricación de Moldes • 📱 WhatsApp Comercial: ${tenant.landing_config?.display_phone || '0998722324'}`;
+  const [showTopBar, setShowTopBar] = useState<boolean>(
+    tenant.landing_config?.show_top_bar ?? (tenant.theme_config as any)?.show_top_bar ?? true
+  );
+  const [topBarText, setTopBarText] = useState<string>(
+    tenant.landing_config?.top_bar_text ?? (tenant.theme_config as any)?.top_bar_text ?? defaultTopBarText
+  );
+
+  // Canales de Contacto & Redes Sociales B2B (Ecuador)
+  const initialSocial = (tenant.landing_config as any)?.social_links || (tenant.theme_config as any)?.social_links || {};
+  const [whatsappMain, setWhatsappMain] = useState<string>(
+    initialSocial.whatsapp_display || initialSocial.whatsapp_main || tenant.landing_config?.display_phone || '0998722324'
+  );
+  const [whatsappUrgent, setWhatsappUrgent] = useState<string>(
+    initialSocial.whatsapp_urgent || ''
+  );
+  const [whatsappWelcomeMsg, setWhatsappWelcomeMsg] = useState<string>(
+    initialSocial.whatsapp_welcome_msg || `¡Hola ${tenant.name || 'AYME INDUSTRIAS PET'}! Vengo desde su portal web oficial y deseo cotizar envases plásticos.`
+  );
+  const [linkedinUrl, setLinkedinUrl] = useState<string>(initialSocial.linkedin || '');
+  const [facebookUrl, setFacebookUrl] = useState<string>(initialSocial.facebook || '');
+  const [instagramUrl, setInstagramUrl] = useState<string>(initialSocial.instagram || '');
+  const [tiktokUrl, setTiktokUrl] = useState<string>(initialSocial.tiktok || '');
+  const [youtubeUrl, setYoutubeUrl] = useState<string>(initialSocial.youtube || '');
+  const [showFloatingWhatsapp, setShowFloatingWhatsapp] = useState<boolean>(
+    initialSocial.show_floating_whatsapp ?? true
+  );
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
   const [showManualUrl, setShowManualUrl] = useState(false);
@@ -217,6 +248,19 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           store_template: storeTemplate,
           logo_url: logoUrl || null,
           logo_height: logoHeight,
+          show_top_bar: showTopBar,
+          top_bar_text: topBarText,
+          social_links: {
+            whatsapp_main: whatsappMain,
+            whatsapp_urgent: whatsappUrgent,
+            whatsapp_welcome_msg: whatsappWelcomeMsg,
+            linkedin: linkedinUrl,
+            facebook: facebookUrl,
+            instagram: instagramUrl,
+            tiktok: tiktokUrl,
+            youtube: youtubeUrl,
+            show_floating_whatsapp: showFloatingWhatsapp,
+          },
           hero_title: heroTitle,
           hero_subtitle: heroSubtitle,
           hero_video_url: heroVideoUrl || null,
@@ -851,6 +895,276 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                     </div>
                   )}
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bloque: Mini Barra Superior de Anuncios (Top Promo Bar) */}
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <Megaphone className="w-4 h-4 text-slate-500" />
+            Mini Barra Superior de Notificación (Top Promo Bar)
+          </h4>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Personaliza o apaga la barra superior fija que destaca lemas, servicios mayoristas y WhatsApp comercial.
+          </p>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+          <label className="flex items-start gap-3 bg-white p-4 rounded-xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
+            <input
+              type="checkbox"
+              checked={showTopBar}
+              onChange={(e) => setShowTopBar(e.target.checked)}
+              className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer"
+            />
+            <div>
+              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                <span>Activar Mini Barra de Anuncio Superior</span>
+                {showTopBar ? (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    Activa
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-full">
+                    Oculta
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                Al desmarcar esta opción, la mini barra superior se ocultará por completo en la tienda pública.
+              </div>
+            </div>
+          </label>
+
+          {showTopBar && (
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="block text-xs font-semibold text-slate-700">
+                  Texto del Anuncio Comercial
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setTopBarText(defaultTopBarText)}
+                  className="text-[11px] text-sky-600 hover:text-sky-800 font-medium hover:underline cursor-pointer"
+                >
+                  Restablecer texto por defecto
+                </button>
+              </div>
+
+              <textarea
+                rows={2}
+                value={topBarText}
+                onChange={(e) => setTopBarText(e.target.value)}
+                placeholder="Ej: 🏭 AYME INDUSTRIAS PET | Solutions in Packaging • 📦 Ventas Mayoristas • 📱 WhatsApp: 0998722324"
+                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all resize-none font-sans"
+              />
+
+              <div className="space-y-1.5">
+                <span className="text-[11px] text-slate-500 font-medium">Vista previa en vivo:</span>
+                <div className="p-3 bg-slate-900 text-slate-100 rounded-xl text-xs font-semibold text-center border border-slate-700 shadow-inner overflow-hidden truncate">
+                  {topBarText || defaultTopBarText}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bloque: Canales de WhatsApp & Redes Sociales B2B (Ecuador 🇪🇨) */}
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <MessageCircle className="w-4 h-4 text-emerald-600" />
+            WhatsApp Comercial & Redes Sociales Oficiales (Ecuador 🇪🇨)
+          </h4>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Centraliza la línea oficial de ventas por WhatsApp y los enlaces a perfiles corporativos. Todos los botones de cotización del sitio usarán esta información normalizada.
+          </p>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-5">
+          {/* WhatsApp Principal con Validación Ecuador */}
+          <div className="space-y-2">
+            <label className="block text-xs font-bold text-slate-800 flex items-center justify-between">
+              <span>Línea Oficial de WhatsApp de Ventas (Ecuador) *</span>
+              {(() => {
+                const check = normalizeEcuadorPhone(whatsappMain);
+                if (!whatsappMain) return null;
+                return check.isValid ? (
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                    ✓ Formato válido: {check.formatted}
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                    {check.error || 'Ingresa un número de Ecuador'}
+                  </span>
+                );
+              })()}
+            </label>
+
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 select-none shrink-0 shadow-2xs">
+                <span>🇪🇨</span>
+                <span>+593</span>
+              </div>
+              <input
+                type="text"
+                required
+                value={whatsappMain}
+                onChange={(e) => setWhatsappMain(e.target.value)}
+                placeholder="0998722324 o 998722324"
+                className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-mono focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+              />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Ingresa los 10 dígitos (ej: <strong>0998722324</strong>). El sistema lo transforma automáticamente al estándar internacional <code className="bg-slate-200/60 px-1 py-0.5 rounded">wa.me/593...</code> para que nunca se rompan los clics de cotización.
+            </p>
+          </div>
+
+          {/* Mensaje de Bienvenida Predeterminado */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-semibold text-slate-700">
+              Mensaje de Cotización Predeterminado
+            </label>
+            <textarea
+              rows={2}
+              value={whatsappWelcomeMsg}
+              onChange={(e) => setWhatsappWelcomeMsg(e.target.value)}
+              placeholder="¡Hola! Vengo desde su portal web oficial..."
+              className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all resize-none shadow-2xs"
+            />
+            <p className="text-[11px] text-slate-500">
+              Texto inicial que verá el cliente pre-rellenado en WhatsApp al hacer clic en &quot;Cotizar por WhatsApp&quot;.
+            </p>
+          </div>
+
+          {/* WhatsApp Secundario (Urgencias / Planta) */}
+          <div className="space-y-1.5 pt-2 border-t border-slate-200/60">
+            <label className="block text-xs font-semibold text-slate-700">
+              Línea Secundaria de Planta / Despacho Urgente (Opcional)
+            </label>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 bg-white border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold text-slate-700 select-none shrink-0 shadow-2xs">
+                <span>🇪🇨</span>
+                <span>+593</span>
+              </div>
+              <input
+                type="text"
+                value={whatsappUrgent}
+                onChange={(e) => setWhatsappUrgent(e.target.value)}
+                placeholder="Ej: 0980065021 o teléfono fijo de planta"
+                className="flex-1 bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-mono focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+              />
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Usado para pedidos de emergencia en la sección de contacto de fábrica.
+            </p>
+          </div>
+
+          {/* Toggle Botón Flotante */}
+          <div className="pt-2 border-t border-slate-200/60">
+            <label className="flex items-start gap-3 bg-white p-3.5 rounded-xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
+              <input
+                type="checkbox"
+                checked={showFloatingWhatsapp}
+                onChange={(e) => setShowFloatingWhatsapp(e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded text-emerald-600 focus:ring-emerald-600 border-slate-300 cursor-pointer"
+              />
+              <div>
+                <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                  <span>Widget Flotante de WhatsApp en Pantalla</span>
+                  {showFloatingWhatsapp && (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                      Visible en Tienda
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Muestra un botón flotante permanente en la esquina inferior para que los clientes puedan cotizar en cualquier momento.
+                </div>
+              </div>
+            </label>
+          </div>
+
+          {/* Redes Sociales Oficiales */}
+          <div className="space-y-3 pt-3 border-t border-slate-200/60">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+              <Share2 className="w-3.5 h-3.5 text-slate-500" />
+              <span>Redes Sociales Corporativas B2B</span>
+            </div>
+            <p className="text-[11px] text-slate-500">
+              Ingresa los enlaces a los perfiles oficiales de tu empresa (se mostrarán como accesos directos en el pie de página).
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <span>💼 LinkedIn</span>
+                  <span className="text-[10px] text-indigo-600 font-bold bg-indigo-50 px-1.5 py-0.2 rounded">Recomendado B2B</span>
+                </label>
+                <input
+                  type="url"
+                  value={linkedinUrl}
+                  onChange={(e) => setLinkedinUrl(e.target.value)}
+                  placeholder="https://linkedin.com/company/ayme-industrias-pet"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  📘 Facebook
+                </label>
+                <input
+                  type="url"
+                  value={facebookUrl}
+                  onChange={(e) => setFacebookUrl(e.target.value)}
+                  placeholder="https://facebook.com/aymeindustriaspet"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  📸 Instagram
+                </label>
+                <input
+                  type="url"
+                  value={instagramUrl}
+                  onChange={(e) => setInstagramUrl(e.target.value)}
+                  placeholder="https://instagram.com/aymeindustriaspet"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  🎵 TikTok
+                </label>
+                <input
+                  type="url"
+                  value={tiktokUrl}
+                  onChange={(e) => setTiktokUrl(e.target.value)}
+                  placeholder="https://tiktok.com/@aymeindustriaspet"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  ▶️ YouTube
+                </label>
+                <input
+                  type="url"
+                  value={youtubeUrl}
+                  onChange={(e) => setYoutubeUrl(e.target.value)}
+                  placeholder="https://youtube.com/@aymeindustriaspet"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+                />
               </div>
             </div>
           </div>

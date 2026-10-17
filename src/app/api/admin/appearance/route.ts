@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
+import { normalizeEcuadorPhone } from '@/lib/ecuador-phone';
 
 // Helper para sanitizar URLs de imagen (Permite URLs HTTPS/HTTP de Storage y rutas relativas locales seguras /...)
 function sanitizeImageUrl(url: unknown): string | null {
@@ -69,6 +70,28 @@ export async function PATCH(request: Request) {
       return fallback;
     };
 
+    // Normalizar y sanitizar redes sociales y WhatsApp Ecuador
+    let updatedSocialLinks = currentTenant.landing_config?.social_links || currentTenant.theme_config?.social_links || {};
+    if (body.social_links && typeof body.social_links === 'object') {
+      const s = body.social_links;
+      const mainPhoneNorm = s.whatsapp_main ? normalizeEcuadorPhone(s.whatsapp_main) : null;
+      const urgentPhoneNorm = s.whatsapp_urgent ? normalizeEcuadorPhone(s.whatsapp_urgent) : null;
+
+      updatedSocialLinks = {
+        ...updatedSocialLinks,
+        whatsapp_main: mainPhoneNorm?.international || (s.whatsapp_main ? String(s.whatsapp_main).trim() : (updatedSocialLinks.whatsapp_main || '')),
+        whatsapp_display: mainPhoneNorm?.display || (s.whatsapp_display ? String(s.whatsapp_display).trim() : (updatedSocialLinks.whatsapp_display || '')),
+        whatsapp_urgent: urgentPhoneNorm?.international || (s.whatsapp_urgent ? String(s.whatsapp_urgent).trim() : (updatedSocialLinks.whatsapp_urgent || '')),
+        whatsapp_welcome_msg: typeof s.whatsapp_welcome_msg === 'string' ? s.whatsapp_welcome_msg.trim() : updatedSocialLinks.whatsapp_welcome_msg,
+        linkedin: typeof s.linkedin === 'string' ? s.linkedin.trim() : updatedSocialLinks.linkedin,
+        facebook: typeof s.facebook === 'string' ? s.facebook.trim() : updatedSocialLinks.facebook,
+        instagram: typeof s.instagram === 'string' ? s.instagram.trim() : updatedSocialLinks.instagram,
+        tiktok: typeof s.tiktok === 'string' ? s.tiktok.trim() : updatedSocialLinks.tiktok,
+        youtube: typeof s.youtube === 'string' ? s.youtube.trim() : updatedSocialLinks.youtube,
+        show_floating_whatsapp: s.show_floating_whatsapp !== undefined ? Boolean(s.show_floating_whatsapp) : (updatedSocialLinks.show_floating_whatsapp ?? true),
+      };
+    }
+
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),
       primary_color: sanitizeHexColor(primary_color, currentTenant.theme_config?.primary_color || '#0284c7'),
@@ -77,8 +100,11 @@ export async function PATCH(request: Request) {
       landing_bg_color: sanitizeHexColor(landing_bg_color, currentTenant.theme_config?.landing_bg_color || '#020617'),
       store_template: body.store_template || currentTenant.theme_config?.store_template || 'temu',
       logo_height: validLogoHeight,
+      show_top_bar: body.show_top_bar !== undefined ? Boolean(body.show_top_bar) : (currentTenant.theme_config?.show_top_bar ?? true),
+      top_bar_text: body.top_bar_text !== undefined ? String(body.top_bar_text).trim() : (currentTenant.theme_config?.top_bar_text ?? ''),
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.theme_config?.show_best_sellers ?? true),
       show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.theme_config?.show_featured_ratings ?? true),
+      social_links: updatedSocialLinks,
     };
 
     const sanitizedHeroImage = hero_image_url !== undefined 
@@ -93,8 +119,13 @@ export async function PATCH(request: Request) {
       hero_image_url: sanitizedHeroImage,
       show_services: show_services !== undefined ? show_services : currentTenant.landing_config?.show_services,
       show_branches: show_branches !== undefined ? show_branches : currentTenant.landing_config?.show_branches,
+      show_top_bar: body.show_top_bar !== undefined ? Boolean(body.show_top_bar) : (currentTenant.landing_config?.show_top_bar ?? true),
+      top_bar_text: body.top_bar_text !== undefined ? String(body.top_bar_text).trim() : (currentTenant.landing_config?.top_bar_text ?? ''),
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.landing_config?.show_best_sellers ?? true),
       show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.landing_config?.show_featured_ratings ?? true),
+      social_links: updatedSocialLinks,
+      whatsapp_default: updatedSocialLinks.whatsapp_main || currentTenant.landing_config?.whatsapp_default || '593998722324',
+      display_phone: updatedSocialLinks.whatsapp_display || currentTenant.landing_config?.display_phone || '0998722324',
     };
 
     const updatePayload: Record<string, unknown> = {

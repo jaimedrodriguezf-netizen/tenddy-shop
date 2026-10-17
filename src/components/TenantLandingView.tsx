@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
+import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
 
 interface TenantLandingViewProps {
   tenant: Tenant;
@@ -56,8 +57,13 @@ export default function TenantLandingView({
 
   const { landing_config: landing, theme_config: theme } = tenant;
   const logoHeight = (theme as any)?.logo_height || 42;
-  const rawWhatsapp = selectedBranch?.phone_whatsapp || landing.whatsapp_default || '';
-  const mainWhatsapp = rawWhatsapp.replace(/\D/g, '') || '593998722324';
+
+  // Canales de Contacto & Redes Sociales Oficiales
+  const social = (landing as any)?.social_links || (theme as any)?.social_links || {};
+  const rawWhatsapp = social.whatsapp_main || selectedBranch?.phone_whatsapp || landing.whatsapp_default || '';
+  const { international: mainWhatsapp, display: displayPhone } = normalizeEcuadorPhone(rawWhatsapp || '0998722324');
+  const urgentWhatsapp = social.whatsapp_urgent ? normalizeEcuadorPhone(social.whatsapp_urgent).international : mainWhatsapp;
+  const defaultWelcomeMsg = social.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su portal web oficial y deseo cotizar envases plásticos.`;
 
   const totalCartPackages = getTotalPackages(tenant.id);
 
@@ -65,6 +71,10 @@ export default function TenantLandingView({
   const primaryColor = theme?.primary_color || '#A61C2E';
   const secondaryColor = theme?.secondary_color || '#8C1625';
   const landingBgColor = (theme as any)?.landing_bg_color || (tenant.slug === 'ayme-pet' ? '#0a1128' : '#020617');
+
+  // Control dinámico de la mini barra superior (Top Promo Bar)
+  const showTopBar = landing.show_top_bar ?? (theme as any)?.show_top_bar ?? true;
+  const customTopBarText = landing.top_bar_text ?? (theme as any)?.top_bar_text;
 
   // Detección de contraste inteligente según luminancia del fondo
   const isLightBg = (() => {
@@ -185,16 +195,14 @@ export default function TenantLandingView({
   const displayedProducts = filteredProducts.slice(0, visibleCount);
 
   const handleWhatsAppQuote = (productName?: string) => {
-    let msg = `Hola ${tenant.name}, vengo desde su portal web oficial.\n`;
+    let msg = defaultWelcomeMsg;
     if (productName) {
-      msg += `Deseo cotizar el producto: *${productName}*.\n`;
-    } else {
-      msg += `Deseo solicitar información y lista de precios mayorista de fábrica.\n`;
+      msg += `\n\n📦 *Producto de interés:* ${productName}`;
     }
     if (selectedBranch) {
-      msg += `Sucursal / Centro de distribución de interés: ${selectedBranch.name} (${selectedBranch.city}).`;
+      msg += `\n🏭 *Centro de distribución:* ${selectedBranch.name} (${selectedBranch.city})`;
     }
-    const url = `https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(msg)}`;
+    const url = buildEcuadorWhatsAppUrl(mainWhatsapp, msg);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -208,7 +216,7 @@ export default function TenantLandingView({
     text += `📦 *Requerimiento:* ${contactReqType}\n`;
     if (contactMessage) text += `📝 *Mensaje / Volúmenes:* ${contactMessage}\n`;
 
-    const url = `https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(text)}`;
+    const url = buildEcuadorWhatsAppUrl(mainWhatsapp, text);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -234,14 +242,31 @@ export default function TenantLandingView({
 
       {/* Header Flotante Integrado sobre la Secuencia de Video (Glassmorphism Oficial) */}
       <div className="fixed-header-wrapper" id="fixed-header-wrapper">
-        {/* Barra de Notificación Industrial Oficial */}
-        <div className="top-promo-bar">
-          <span>🏭 <strong>{tenant.name}</strong> | Solutions in Packaging</span>
-          <span>•</span>
-          <span>📦 <strong>Ventas Mayoristas & Fabricación de Moldes</strong></span>
-          <span>•</span>
-          <span>📱 <strong>WhatsApp Comercial: {landing.display_phone || '0998722324'}</strong></span>
-        </div>
+        {/* Barra de Notificación Industrial Oficial Configurable */}
+        {showTopBar && (
+          <div className="top-promo-bar">
+            {customTopBarText && customTopBarText.trim() ? (
+              customTopBarText.includes('•') ? (
+                customTopBarText.split('•').map((segment: string, idx: number, arr: string[]) => (
+                  <React.Fragment key={idx}>
+                    <span>{segment.trim()}</span>
+                    {idx < arr.length - 1 && <span>•</span>}
+                  </React.Fragment>
+                ))
+              ) : (
+                <span>{customTopBarText.trim()}</span>
+              )
+            ) : (
+              <>
+                <span>🏭 <strong>{tenant.name}</strong> | Solutions in Packaging</span>
+                <span>•</span>
+                <span>📦 <strong>Ventas Mayoristas & Fabricación de Moldes</strong></span>
+                <span>•</span>
+                <span>📱 <strong>WhatsApp Comercial: {landing.display_phone || '0998722324'}</strong></span>
+              </>
+            )}
+          </div>
+        )}
 
         {/* Header Principal Oficial */}
         <header className="site-header" id="site-header">
@@ -1173,7 +1198,7 @@ export default function TenantLandingView({
                   ¿Su línea de producción requiere envases urgentes? Escríbanos directamente a planta.
                 </p>
                 <a
-                  href={`https://wa.me/${mainWhatsapp}?text=⚡%20PEDIDO%20URGENTE:%20Requiero%20despacho%20inmediato%20de%20envases%20PET%20para%20producción.`}
+                  href={buildEcuadorWhatsAppUrl(urgentWhatsapp, `⚡ PEDIDO URGENTE: Requiero despacho inmediato de envases PET para línea de producción en planta.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-accent btn-block"
@@ -1191,9 +1216,42 @@ export default function TenantLandingView({
       <footer className="site-footer">
         <div className="container">
           <div className="footer-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <p className="copyright-text" style={{ margin: 0 }}>
-              © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados. Solutions in Packaging.
-            </p>
+            <div>
+              <p className="copyright-text" style={{ margin: 0 }}>
+                © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados. Solutions in Packaging.
+              </p>
+              {/* Redes Sociales Oficiales B2B */}
+              {(social.linkedin || social.facebook || social.instagram || social.tiktok || social.youtube) && (
+                <div className="flex items-center gap-3 mt-2 text-xs">
+                  <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
+                  {social.linkedin && (
+                    <a href={social.linkedin} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
+                      💼 LinkedIn
+                    </a>
+                  )}
+                  {social.facebook && (
+                    <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Facebook">
+                      📘 Facebook
+                    </a>
+                  )}
+                  {social.instagram && (
+                    <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Instagram">
+                      📸 Instagram
+                    </a>
+                  )}
+                  {social.tiktok && (
+                    <a href={social.tiktok} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="TikTok">
+                      🎵 TikTok
+                    </a>
+                  )}
+                  {social.youtube && (
+                    <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="YouTube">
+                      ▶️ YouTube
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
             <div className="footer-badges" style={{ display: 'flex', gap: '1rem', alignItems: 'center', fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)' }}>
               <span>🏆 Inocuidad BPM Aprobada</span>
               <span>•</span>
@@ -1204,6 +1262,29 @@ export default function TenantLandingView({
           </div>
         </div>
       </footer>
+
+      {/* Botón Flotante de WhatsApp Comercial (Ecuador) */}
+      {social.show_floating_whatsapp !== false && (
+        <aside
+          aria-label="Atención por WhatsApp"
+          className="fixed bottom-6 left-6 z-40 flex items-center gap-3 group animate-fade-in"
+        >
+          <a
+            href={buildEcuadorWhatsAppUrl(mainWhatsapp, defaultWelcomeMsg)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-13 h-13 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-2xl shadow-emerald-600/40 hover:scale-108 transition-all active:scale-95 cursor-pointer relative"
+            title={`Chatear por WhatsApp con ${tenant.name} (${displayPhone})`}
+          >
+            <span className="w-3.5 h-3.5 rounded-full bg-emerald-300 absolute -top-0.5 -right-0.5 animate-ping opacity-75" />
+            <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 border-2 border-white" />
+            <MessageCircle className="w-7 h-7" />
+          </a>
+          <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-none whitespace-nowrap">
+            ¿Cotizamos por WhatsApp? 💬
+          </div>
+        </aside>
+      )}
 
       {/* Botón Flotante para Administradores de la Tienda */}
       {isAdmin && (

@@ -1,3 +1,16 @@
+export interface TenantSocialLinks {
+  whatsapp_main?: string;
+  whatsapp_display?: string;
+  whatsapp_urgent?: string;
+  whatsapp_welcome_msg?: string;
+  linkedin?: string;
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
+  youtube?: string;
+  show_floating_whatsapp?: boolean;
+}
+
 export interface Tenant {
   id: string;
   slug: string;
@@ -14,8 +27,11 @@ export interface Tenant {
     border_radius?: string;
     show_best_sellers?: boolean;
     show_featured_ratings?: boolean;
+    show_top_bar?: boolean;
+    top_bar_text?: string;
     store_template?: string;
     custom_theme?: string;
+    social_links?: TenantSocialLinks;
   };
   landing_config: {
     hero_title: string;
@@ -29,6 +45,9 @@ export interface Tenant {
     address?: string;
     hours?: string;
     plant_location?: string;
+    show_top_bar?: boolean;
+    top_bar_text?: string;
+    social_links?: TenantSocialLinks;
     show_catalog?: boolean;
     show_branches?: boolean;
     show_services?: boolean;
