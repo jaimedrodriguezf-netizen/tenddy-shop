@@ -2,8 +2,6 @@
    AYME INDUSTRIAS PET - Solutions in Packaging (Estilos Oficiales)
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&family=Instrument+Sans:wght@400;500;600;700;800&family=Montserrat:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
-
 :root {
     /* Paleta Oficial AYME INDUSTRIAS PET */
     --primary: #1F2E4D;          /* Azul Marino Institucional AYME */
@@ -96,7 +94,6 @@ button {
 
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-heading);
-    color: var(--primary);
     line-height: 1.25;
     font-weight: 700;
 }
