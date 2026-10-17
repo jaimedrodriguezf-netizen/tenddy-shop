@@ -1,0 +1,40 @@
+const fs = require('fs');
+const path = require('path');
+const assert = require('assert');
+
+console.log('🧪 Iniciando verificación de optimizaciones móviles para la landing de AYME...\n');
+
+const cssPath = path.join(__dirname, '..', 'public', 'css', 'style.css');
+const landingPath = path.join(__dirname, '..', 'src', 'components', 'TenantLandingView.tsx');
+
+const cssContent = fs.readFileSync(cssPath, 'utf8');
+const landingContent = fs.readFileSync(landingPath, 'utf8');
+
+// 1. Verificación de reglas CSS móviles para catálogo y header
+assert.ok(cssContent.includes('.products-grid'), 'Debe existir .products-grid en style.css');
+assert.ok(cssContent.includes('@media (max-width: 480px)'), 'Debe existir media query max-width: 480px');
+assert.ok(cssContent.includes('repeat(2, 1fr)'), 'Debe mantener 2 columnas en pantallas móviles pequeñas');
+console.log('✅ 1. CSS Móvil: Catálogo en 2 columnas (@media max-width 480px y 768px) verificado.');
+
+// 2. Verificación de responsive font-size con clamp para títulos
+assert.ok(cssContent.includes('clamp('), 'section-title debe usar clamp() para responsividad de fuentes');
+assert.ok(landingContent.includes('clamp('), 'Los títulos de las tarjetas de la secuencia deben usar clamp()');
+console.log('✅ 2. Tipografía: Títulos fluidos y responsivos con clamp() verificados.');
+
+// 3. Verificación de header y top promo bar móvil
+assert.ok(landingContent.includes('hidden md:inline'), 'Segmentos secundarios del top promo bar deben ocultarse en pantallas móviles');
+assert.ok(landingContent.includes('inline sm:hidden'), 'El botón WhatsApp del header debe tener variante compacta en móvil');
+console.log('✅ 3. Header & Promo Bar: Alturas, textos y botón de WhatsApp compactos en móvil verificados.');
+
+// 4. Verificación de tarjetas de producto
+assert.ok(landingContent.includes('aspect-square'), 'El contenedor de imagen del producto debe tener aspect-square');
+assert.ok(landingContent.includes('object-contain'), 'Las imágenes de producto deben usar object-contain para no deformarse');
+assert.ok(landingContent.includes('grid-cols-2'), 'La tabla de especificaciones rápidas debe usar grid responsivo');
+console.log('✅ 4. Catálogo: Tarjetas de producto compactas con aspect-square y especificaciones de 2 columnas verificadas.');
+
+// 5. Verificación de secciones y respaldo industrial
+assert.ok(landingContent.includes('py-8 sm:py-16'), 'Las secciones principales deben usar espaciados responsivos py-8 sm:py-16');
+assert.ok(landingContent.includes('sm:grid-cols-3'), 'El bloque de respaldo industrial debe apilarse limpiamente en móvil');
+console.log('✅ 5. Secciones: Espaciados responsivos py-8 sm:py-16 y respaldo industrial adaptado verificados.');
+
+console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');

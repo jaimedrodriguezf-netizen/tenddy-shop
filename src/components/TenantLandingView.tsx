@@ -249,8 +249,8 @@ export default function TenantLandingView({
               customTopBarText.includes('•') ? (
                 customTopBarText.split('•').map((segment: string, idx: number, arr: string[]) => (
                   <React.Fragment key={idx}>
-                    <span>{segment.trim()}</span>
-                    {idx < arr.length - 1 && <span>•</span>}
+                    <span className={idx > 1 ? 'hidden md:inline' : 'inline'}>{segment.trim()}</span>
+                    {idx < arr.length - 1 && <span className={idx >= 1 ? 'hidden md:inline' : 'inline'}>•</span>}
                   </React.Fragment>
                 ))
               ) : (
@@ -259,10 +259,10 @@ export default function TenantLandingView({
             ) : (
               <>
                 <span>🏭 <strong>{tenant.name}</strong> | Solutions in Packaging</span>
-                <span>•</span>
-                <span>📦 <strong>Ventas Mayoristas & Fabricación de Moldes</strong></span>
-                <span>•</span>
-                <span>📱 <strong>WhatsApp Comercial: {landing.display_phone || '0998722324'}</strong></span>
+                <span className="hidden md:inline">•</span>
+                <span className="hidden md:inline">📦 <strong>Ventas Mayoristas & Moldes</strong></span>
+                <span className="hidden sm:inline">•</span>
+                <span>📱 <strong>WhatsApp: {landing.display_phone || '0998722324'}</strong></span>
               </>
             )}
           </div>
@@ -420,12 +420,13 @@ export default function TenantLandingView({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-whatsapp"
-                style={{ padding: '0.65rem 1.4rem', fontSize: '0.92rem' }}
+                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/>
                 </svg>
-                <span>Cotizar por WhatsApp</span>
+                <span className="hidden sm:inline">Cotizar por WhatsApp</span>
+                <span className="inline sm:hidden">Cotizar</span>
               </a>
             </div>
           </div>
@@ -468,10 +469,10 @@ export default function TenantLandingView({
           <div className="sequence-ui-layer">
             {/* HUD Superior */}
             <div className="sequence-top-hud">
-              <div className="hud-badge-active">
-                <span>MONITOREO DE LÍNEA EN TIEMPO REAL</span>
+              <div className="hud-badge-active text-[10px] sm:text-xs">
+                <span>MONITOREO DE LÍNEA</span>
               </div>
-              <div>
+              <div className="hidden sm:block text-[10px] sm:text-xs">
                 <span>SISTEMA: BLOW-MOLD ROTARY TURBINE • 40 BAR</span>
               </div>
             </div>
@@ -488,22 +489,22 @@ export default function TenantLandingView({
                   pointerEvents: introOpacity > 0.1 ? 'auto' : 'none',
                 }}
               >
-                <span className="step-phase-tag">AYME INDUSTRIAS PET • PACKAGING ENGINEERING</span>
-                <h1 className="step-card-title" style={{ fontSize: '2.4rem' }}>
+                <span className="step-phase-tag text-[10px] sm:text-xs">AYME INDUSTRIAS PET • PACKAGING</span>
+                <h1 className="step-card-title" style={{ fontSize: 'clamp(1.35rem, 4vw, 2.4rem)' }}>
                   TECNOLOGÍA EN <br />
                   <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--accent)', textTransform: 'none' }}>
                     soplado & inyección
                   </span>
                 </h1>
-                <p className="step-card-lead">
+                <p className="step-card-lead text-xs sm:text-sm">
                   Fabricación de envases, botellas, tapas y preformas en PET y PP con tecnología rotativa de alta velocidad para la industria.
                 </p>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
                   <button
                     type="button"
                     onClick={() => document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' })}
                     className="btn btn-accent cursor-pointer"
-                    style={{ padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                   >
                     Ver Catálogo 2026
                   </button>
@@ -512,14 +513,14 @@ export default function TenantLandingView({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-outline"
-                    style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.4)', padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                    style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.4)', padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                   >
                     Cotizar por WhatsApp
                   </a>
                 </div>
-                <div style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                   <span>↕</span>
-                  <span>Desplace con la rueda del mouse para ver la secuencia sincronizada</span>
+                  <span>Desplace hacia abajo para ver la secuencia sincronizada</span>
                 </div>
               </article>
 
@@ -533,9 +534,9 @@ export default function TenantLandingView({
                   pointerEvents: step1Opacity > 0.1 ? 'auto' : 'none',
                 }}
               >
-                <span className="step-phase-tag">FASE 01 / CONTROL TÉRMICO DE PREFORMAS</span>
-                <h2 className="step-card-title">Inyección & Calentamiento Infrarrojo de Precisión</h2>
-                <p className="step-card-lead">
+                <span className="step-phase-tag text-[10px] sm:text-xs">FASE 01 / CONTROL TÉRMICO DE PREFORMAS</span>
+                <h2 className="step-card-title" style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.85rem)' }}>Inyección & Calentamiento Infrarrojo de Precisión</h2>
+                <p className="step-card-lead text-xs sm:text-sm">
                   Las preformas de resina PET 100% virgen entran en el túnel térmico rotativo con control por zonas independientes, asegurando plasticidad perfecta y distribución milimétrica de pared.
                 </p>
                 <div className="step-features-grid">
@@ -552,7 +553,7 @@ export default function TenantLandingView({
                   type="button"
                   onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
                   className="btn btn-accent btn-block cursor-pointer"
-                  style={{ padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                 >
                   Conocer Proceso de Inyección
                 </button>
@@ -568,11 +569,11 @@ export default function TenantLandingView({
                   pointerEvents: step2Opacity > 0.1 ? 'auto' : 'none',
                 }}
               >
-                <span className="step-phase-tag" style={{ background: 'rgba(37, 211, 102, 0.2)', color: '#25D366' }}>
+                <span className="step-phase-tag text-[10px] sm:text-xs" style={{ background: 'rgba(37, 211, 102, 0.2)', color: '#25D366' }}>
                   FASE 02 / BI-ORIENTACIÓN MOLECULAR
                 </span>
-                <h2 className="step-card-title">Soplado Rotativo a 40 Bar & Enfriamiento Criogénico</h2>
-                <p className="step-card-lead">
+                <h2 className="step-card-title" style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.85rem)' }}>Soplado Rotativo a 40 Bar & Enfriamiento Criogénico</h2>
+                <p className="step-card-lead text-xs sm:text-sm">
                   Las varillas de estiramiento servoasistidas expanden la preforma mientras el aire a alta presión copia cada detalle del molde en aluminio aeronáutico refrigerado.
                 </p>
                 <div className="step-features-grid">
@@ -590,7 +591,7 @@ export default function TenantLandingView({
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-whatsapp btn-block"
-                  style={{ padding: '0.65rem 1.2rem', fontSize: '0.88rem' }}
+                  style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                 >
                   Cotizar Producción por WhatsApp
                 </a>
@@ -636,7 +637,7 @@ export default function TenantLandingView({
       {/* =========================================================================
            SECCIÓN DE CATÁLOGO: ENVASES DESTACADOS Y FILTROS POR LÍNEAS
            ========================================================================= */}
-      <section id="catalog-section" style={{ padding: '4.5rem 0', background: 'var(--bg-main)' }}>
+      <section id="catalog-section" className="py-8 sm:py-16" style={{ background: 'var(--bg-main)' }}>
         <div className="container">
           <div className="section-header">
             <span className="section-tag">Alta Rotación de Fábrica</span>
@@ -764,7 +765,7 @@ export default function TenantLandingView({
                   >
                     <Link
                       href={productHref}
-                      className="product-img-box cursor-pointer block relative"
+                      className="product-img-box cursor-pointer block relative aspect-square w-full bg-slate-50 overflow-hidden"
                     >
                       {badge && (
                         <span className="product-badge" style={{ backgroundColor: primaryColor }}>
@@ -776,73 +777,77 @@ export default function TenantLandingView({
                         <img
                           src={product.images[0]}
                           alt={product.name}
-                          className="product-img transition-transform duration-500 group-hover:scale-105"
+                          className="product-img w-full h-full object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="text-5xl py-12 text-center">♳</div>
+                        <div className="text-3xl sm:text-5xl py-8 sm:py-12 text-center text-slate-300">♳</div>
                       )}
                     </Link>
 
-                    <div className="product-info-box">
-                      <div className="product-meta-row">
-                        <span className="product-category" style={{ color: primaryColor }}>
-                          {categories.find((c) => c.id === product.category_id)?.name || 'Envase PET'}
-                        </span>
-                        <span className="product-code">{product.sku}</span>
-                      </div>
-
-                      <Link
-                        href={productHref}
-                        className="product-name block hover:underline"
-                      >
-                        {product.name}
-                      </Link>
-
-                      {/* Specs Rápidas */}
-                      <div className="product-specs-table">
-                        {Object.entries(specs)
-                          .slice(0, 3)
-                          .map(([k, v]) => (
-                            <div key={k} className="spec-item">
-                              <span className="spec-label capitalize">{k.replace('_', ' ')}</span>
-                              <span className="spec-val truncate">{String(v)}</span>
-                            </div>
-                          ))}
-                      </div>
-
-                      <div className="product-bottom-row">
-                        <div className="pack-info">
-                          <span className="pack-label">Empaque</span>
-                          <span className="pack-val">{packSize} uds / fardo</span>
+                    <div className="p-2 sm:p-4 flex flex-col flex-1 justify-between">
+                      <div>
+                        <div className="flex items-center justify-between text-[10px] sm:text-xs mb-1">
+                          <span className="font-semibold truncate max-w-[65%]" style={{ color: primaryColor }}>
+                            {categories.find((c) => c.id === product.category_id)?.name || 'Envase PET'}
+                          </span>
+                          <span className="text-slate-400 font-mono text-[9px] sm:text-[11px]">{product.sku}</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <Link
+                          href={productHref}
+                          className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 hover:underline mb-1.5 sm:mb-2 leading-snug"
+                        >
+                          {product.name}
+                        </Link>
+
+                        {/* Specs Rápidas */}
+                        {Object.keys(specs).length > 0 && (
+                          <div className="grid grid-cols-2 gap-1 bg-slate-50 border border-slate-100 rounded-lg p-1.5 sm:p-2 mb-2 text-[10px] sm:text-xs">
+                            {Object.entries(specs)
+                              .slice(0, 2)
+                              .map(([k, v]) => (
+                                <div key={k} className="flex flex-col">
+                                  <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-medium truncate">{k.replace('_', ' ')}</span>
+                                  <span className="font-bold text-slate-700 truncate">{String(v)}</span>
+                                </div>
+                              ))}
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 mt-auto">
+                        <div className="flex flex-col">
+                          <span className="text-[9px] sm:text-[10px] text-slate-400">Empaque</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-800">{packSize} u/fardo</span>
+                        </div>
+
+                        <div className="flex items-center gap-1 sm:gap-1.5">
                           <Link
                             href={productHref}
                             className="btn btn-outline"
-                            style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
                             title="Ver Ficha Técnica"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Ficha</span>
+                            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                            <span className="hidden sm:inline">Ficha</span>
                           </Link>
                           <button
                             type="button"
                             onClick={() => addItem(product)}
-                            className="btn btn-outline"
-                            style={{ padding: '0.45rem 0.65rem', fontSize: '0.78rem' }}
+                            className="btn btn-outline cursor-pointer"
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
                             title="Agregar al Cotizador"
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => handleWhatsAppQuote(product.name)}
-                            className="btn btn-whatsapp"
-                            style={{ padding: '0.45rem 0.65rem' }}
+                            className="btn btn-whatsapp cursor-pointer"
+                            style={{ padding: '0.35rem 0.5rem' }}
                             title="Cotizar por WhatsApp"
                           >
-                            <MessageCircle className="w-4 h-4 text-white" />
+                            <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
                           </button>
                         </div>
                       </div>
@@ -873,7 +878,7 @@ export default function TenantLandingView({
            SECCIÓN DE SERVICIOS INDUSTRIALES
            ========================================================================= */}
       {landing.show_services !== false && (
-        <section id="services-section" style={{ padding: '4.5rem 0', background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
+        <section id="services-section" className="py-8 sm:py-16" style={{ background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
           <div className="container">
             <div className="section-header">
               <span className="section-tag">Capacidad de Planta</span>
@@ -988,21 +993,21 @@ export default function TenantLandingView({
             </div>
 
             {/* Respaldo Industrial */}
-            <div style={{ marginTop: '4rem', background: '#f8fafc', borderRadius: 'var(--radius-md)', padding: '2.5rem', border: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '2rem', textAlign: 'center' }}>
+            <div className="mt-8 sm:mt-16 bg-slate-50 rounded-2xl p-4 sm:p-8 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 text-center">
               <div>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>🏆</div>
-                <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: primaryColor, fontWeight: 700 }}>Normas Técnicas</h4>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cumplimiento de estándares de inocuidad y BPM para contacto alimentario y farmacéutico.</p>
+                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">🏆</div>
+                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Normas Técnicas</h4>
+                <p className="text-xs sm:text-sm text-slate-500">Cumplimiento de estándares de inocuidad y BPM para contacto alimentario y farmacéutico.</p>
               </div>
               <div>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>♻️</div>
-                <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: primaryColor, fontWeight: 700 }}>Compromiso Sostenible</h4>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>PET 100% reciclable con opciones de resina PCR grado alimenticio (rPET).</p>
+                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">♻️</div>
+                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Compromiso Sostenible</h4>
+                <p className="text-xs sm:text-sm text-slate-500">PET 100% reciclable con opciones de resina PCR grado alimenticio (rPET).</p>
               </div>
               <div>
-                <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>⚡</div>
-                <h4 style={{ fontSize: '1.1rem', marginBottom: '0.25rem', color: primaryColor, fontWeight: 700 }}>Respuesta Inmediata</h4>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Línea directa de atención y despacho rápido por WhatsApp: {landing.display_phone || '0998722324'}.</p>
+                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">⚡</div>
+                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Respuesta Inmediata</h4>
+                <p className="text-xs sm:text-sm text-slate-500">Línea directa de atención y despacho rápido por WhatsApp: {landing.display_phone || '0998722324'}.</p>
               </div>
             </div>
           </div>
@@ -1012,7 +1017,7 @@ export default function TenantLandingView({
       {/* =========================================================================
            SECCIÓN DE CONTACTO & UBICACIÓN GOOGLE MAPS
            ========================================================================= */}
-      <section id="contact-section" style={{ padding: '4.5rem 0', background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
+      <section id="contact-section" className="py-8 sm:py-16" style={{ background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
         <div className="container">
           <div className="section-header">
             <span className="section-tag">Planta Industrial & Ventas</span>
@@ -1267,18 +1272,18 @@ export default function TenantLandingView({
       {social.show_floating_whatsapp !== false && (
         <aside
           aria-label="Atención por WhatsApp"
-          className="fixed bottom-6 left-6 z-40 flex items-center gap-3 group animate-fade-in"
+          className="fixed bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 flex items-center gap-3 group animate-fade-in"
         >
           <a
             href={buildEcuadorWhatsAppUrl(mainWhatsapp, defaultWelcomeMsg)}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-13 h-13 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-2xl shadow-emerald-600/40 hover:scale-108 transition-all active:scale-95 cursor-pointer relative"
+            className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-2xl shadow-emerald-600/40 hover:scale-108 transition-all active:scale-95 cursor-pointer relative"
             title={`Chatear por WhatsApp con ${tenant.name} (${displayPhone})`}
           >
-            <span className="w-3.5 h-3.5 rounded-full bg-emerald-300 absolute -top-0.5 -right-0.5 animate-ping opacity-75" />
-            <span className="w-3.5 h-3.5 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 border-2 border-white" />
-            <MessageCircle className="w-7 h-7" />
+            <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-emerald-300 absolute -top-0.5 -right-0.5 animate-ping opacity-75" />
+            <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 border-2 border-white" />
+            <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
           </a>
           <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-none whitespace-nowrap">
             ¿Cotizamos por WhatsApp? 💬
@@ -1288,10 +1293,10 @@ export default function TenantLandingView({
 
       {/* Botón Flotante para Administradores de la Tienda */}
       {isAdmin && (
-        <div className="fixed bottom-6 right-6 z-50">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50">
           <Link
             href={`/store/${tenant.slug}/admin`}
-            className="bg-slate-900/95 hover:bg-slate-900 text-white font-bold text-xs px-4 py-2.5 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105"
+            className="bg-slate-900/95 hover:bg-slate-900 text-white font-bold text-[11px] sm:text-xs px-3 py-2 sm:px-4 sm:py-2.5 rounded-2xl border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105"
             title="Volver al panel de control de tu tienda"
           >
             <LayoutDashboard className="w-4 h-4 text-sky-400" />
