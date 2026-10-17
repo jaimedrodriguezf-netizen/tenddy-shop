@@ -1,7 +1,5 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import Link from 'next/link';
-import { LayoutDashboard } from 'lucide-react';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import { verifySuperadminToken, verifyTenantAdminToken } from '@/lib/session';
 import TenantLandingView from '@/components/TenantLandingView';
@@ -43,17 +41,6 @@ export default async function ShopPage({ params }: ShopPageProps) {
     return (
       <>
         <ViewTracker tenantId={tenant.id} />
-        {isAdmin && (
-          <div className="fixed top-3 right-3 z-[10000] animate-fade-in">
-            <Link
-              href={`/store/${tenant.slug}/admin`}
-              className="bg-slate-900/95 hover:bg-slate-900 text-white font-bold text-xs px-3.5 py-2 rounded-xl border border-slate-700 shadow-2xl backdrop-blur-md flex items-center gap-2 transition-all hover:scale-105"
-            >
-              <LayoutDashboard className="w-4 h-4 text-sky-400" />
-              <span>Volver a Mi Panel</span>
-            </Link>
-          </div>
-        )}
         <TenantLandingView
           tenant={tenant}
           categories={categories}

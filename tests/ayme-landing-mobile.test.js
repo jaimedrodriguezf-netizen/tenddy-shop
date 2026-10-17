@@ -37,4 +37,12 @@ assert.ok(landingContent.includes('py-8 sm:py-16'), 'Las secciones principales d
 assert.ok(landingContent.includes('sm:grid-cols-3'), 'El bloque de respaldo industrial debe apilarse limpiamente en móvil');
 console.log('✅ 5. Secciones: Espaciados responsivos py-8 sm:py-16 y respaldo industrial adaptado verificados.');
 
+// 6. Verificación de separación Header - Hero y eliminación de botones redundantes
+assert.ok(cssContent.includes('padding: 7rem 0.85rem'), 'sequence-ui-layer debe tener 7rem de padding superior en móvil para no colisionar con el header');
+const pagePath = path.join(__dirname, '..', 'src', 'app', 'store', '[shopSlug]', 'page.tsx');
+const pageContent = fs.readFileSync(pagePath, 'utf8');
+assert.ok(!pageContent.includes('Volver a Mi Panel'), 'src/app/store/[shopSlug]/page.tsx NO debe renderizar un botón duplicado de Volver a Mi Panel');
+assert.ok(landingContent.includes('Volver a Mi Panel'), 'TenantLandingView debe ser el único encargado del botón flotante de administración');
+console.log('✅ 6. Hero & Admin: Separación de 7rem en Hero (cero cruces) y eliminación de botón duplicado de administración verificadas.');
+
 console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');

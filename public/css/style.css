@@ -2355,7 +2355,7 @@ h1, h2, h3, h4, h5, h6 {
     height: 100%;
     max-width: 1440px;
     margin: 0 auto;
-    padding: 7.5rem 1.5rem 2rem 1.5rem;
+    padding: 8.5rem 1.5rem 2rem 1.5rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -2533,7 +2533,10 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 768px) {
     .sequence-ui-layer {
-        padding: 5rem 0.85rem 1rem 0.85rem;
+        padding: 7rem 0.85rem 1rem 0.85rem;
+    }
+    .sequence-middle-container {
+        min-height: 340px;
     }
     .sequence-top-hud {
         font-size: 0.65rem;
