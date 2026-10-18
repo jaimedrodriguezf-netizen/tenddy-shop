@@ -37,13 +37,14 @@ assert.ok(landingContent.includes('py-8 sm:py-16'), 'Las secciones principales d
 assert.ok(landingContent.includes('sm:grid-cols-3'), 'El bloque de respaldo industrial debe apilarse limpiamente en móvil');
 console.log('✅ 5. Secciones: Espaciados responsivos py-8 sm:py-16 y respaldo industrial adaptado verificados.');
 
-// 6. Verificación de separación Header - Hero y eliminación de botones redundantes
+// 6. Verificación de separación Header - Hero y menú de perfil de administración
 assert.ok(cssContent.includes('padding: 7rem 0.85rem'), 'sequence-ui-layer debe tener 7rem de padding superior en móvil para no colisionar con el header');
 const pagePath = path.join(__dirname, '..', 'src', 'app', 'store', '[shopSlug]', 'page.tsx');
 const pageContent = fs.readFileSync(pagePath, 'utf8');
 assert.ok(!pageContent.includes('Volver a Mi Panel'), 'src/app/store/[shopSlug]/page.tsx NO debe renderizar un botón duplicado de Volver a Mi Panel');
-assert.ok(landingContent.includes('Volver a Mi Panel'), 'TenantLandingView debe ser el único encargado del botón flotante de administración');
-console.log('✅ 6. Hero & Admin: Separación de 7rem en Hero (cero cruces) y eliminación de botón duplicado de administración verificadas.');
+assert.ok(landingContent.includes('isAdminMenuOpen'), 'TenantLandingView debe gestionar el menú de perfil de administración en la cabecera');
+assert.ok(landingContent.includes('bottom-4 right-4 sm:bottom-6 sm:right-6 z-40'), 'El botón flotante de WhatsApp debe ubicarse en la esquina inferior derecha');
+console.log('✅ 6. Hero, WhatsApp & Admin: Separación de 7rem en Hero, WhatsApp a la derecha y perfil Admin en cabecera verificados.');
 
 // 7. Menú móvil hamburguesa y drawer deslizable
 assert.ok(landingContent.includes('isMobileMenuOpen'), 'TenantLandingView debe gestionar el estado isMobileMenuOpen');
