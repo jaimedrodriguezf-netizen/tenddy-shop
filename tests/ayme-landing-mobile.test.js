@@ -94,4 +94,9 @@ const catalogViewContent = fs.readFileSync(catalogViewPath, 'utf8');
 assert.ok(catalogViewContent.includes('<VersionBadge'), 'TenantCatalogView debe renderizar el VersionBadge en su footer');
 console.log('✅ 13. VersionBadge: Version visible en el pie de pagina de landing personalizada y catalogo estandar verificado.');
 
+// 14. Paridad de UI: Menú de perfil admin y WhatsApp flotante derecho en Catálogo estándar
+assert.ok(catalogViewContent.includes('isAdminMenuOpen'), 'TenantCatalogView debe gestionar el menú de perfil admin en cabecera');
+assert.ok(catalogViewContent.includes('bottom-4 right-4 sm:bottom-6 sm:right-6 z-40'), 'TenantCatalogView debe tener el botón de WhatsApp flotante a la derecha');
+console.log('✅ 14. Paridad UI: Perfil admin en cabecera y WhatsApp flotante a la derecha en catalogo estandar verificados.');
+
 console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');

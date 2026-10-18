@@ -539,8 +539,12 @@ export default function TenantLandingView({
                       <div className="pt-1 mt-1 border-t border-slate-800">
                         <button
                           type="button"
-                          onClick={() => {
-                            document.cookie = `admin_session_${tenant.slug}=; path=/; max-age=0;`;
+                          onClick={async () => {
+                            try {
+                              await fetch(`/api/admin/auth?shopSlug=${tenant.slug}`, { method: 'DELETE' });
+                            } catch {
+                              // Fallback
+                            }
                             window.location.reload();
                           }}
                           className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 hover:bg-red-500/10 text-red-400 transition-colors cursor-pointer"
