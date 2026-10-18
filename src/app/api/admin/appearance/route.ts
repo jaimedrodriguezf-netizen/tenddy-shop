@@ -14,6 +14,14 @@ function sanitizeImageUrl(url: unknown): string | null {
   return null;
 }
 
+function sanitizeHttpUrl(url: any, fallback = ''): string {
+  if (typeof url !== 'string') return fallback;
+  const trimmed = url.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return fallback;
+}
+
 // Actualizar apariencia y configuración del Tenant
 export async function PATCH(request: Request) {
   try {
@@ -83,11 +91,11 @@ export async function PATCH(request: Request) {
         whatsapp_display: mainPhoneNorm?.display || (s.whatsapp_display ? String(s.whatsapp_display).trim() : (updatedSocialLinks.whatsapp_display || '')),
         whatsapp_urgent: urgentPhoneNorm?.international || (s.whatsapp_urgent ? String(s.whatsapp_urgent).trim() : (updatedSocialLinks.whatsapp_urgent || '')),
         whatsapp_welcome_msg: typeof s.whatsapp_welcome_msg === 'string' ? s.whatsapp_welcome_msg.trim() : updatedSocialLinks.whatsapp_welcome_msg,
-        linkedin: typeof s.linkedin === 'string' ? s.linkedin.trim() : updatedSocialLinks.linkedin,
-        facebook: typeof s.facebook === 'string' ? s.facebook.trim() : updatedSocialLinks.facebook,
-        instagram: typeof s.instagram === 'string' ? s.instagram.trim() : updatedSocialLinks.instagram,
-        tiktok: typeof s.tiktok === 'string' ? s.tiktok.trim() : updatedSocialLinks.tiktok,
-        youtube: typeof s.youtube === 'string' ? s.youtube.trim() : updatedSocialLinks.youtube,
+        linkedin: s.linkedin !== undefined ? sanitizeHttpUrl(s.linkedin) : updatedSocialLinks.linkedin,
+        facebook: s.facebook !== undefined ? sanitizeHttpUrl(s.facebook) : updatedSocialLinks.facebook,
+        instagram: s.instagram !== undefined ? sanitizeHttpUrl(s.instagram) : updatedSocialLinks.instagram,
+        tiktok: s.tiktok !== undefined ? sanitizeHttpUrl(s.tiktok) : updatedSocialLinks.tiktok,
+        youtube: s.youtube !== undefined ? sanitizeHttpUrl(s.youtube) : updatedSocialLinks.youtube,
         show_floating_whatsapp: s.show_floating_whatsapp !== undefined ? Boolean(s.show_floating_whatsapp) : (updatedSocialLinks.show_floating_whatsapp ?? true),
       };
     }

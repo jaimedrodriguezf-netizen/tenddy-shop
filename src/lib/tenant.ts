@@ -4,6 +4,7 @@ import { Tenant, Branch, Category, Product } from './types';
 function sanitizeTenant(tenant: any): Tenant | null {
   if (!tenant) return null;
   const sanitized = { ...tenant };
+  delete sanitized.admin_password_hash;
   if (sanitized.settings && typeof sanitized.settings === 'object') {
     const { admin_password_hash, ...safeSettings } = sanitized.settings;
     sanitized.settings = safeSettings;
@@ -47,9 +48,22 @@ export async function getTenantCatalog(tenantId: string) {
   const admin = getAdminClient();
 
   const [categoriesRes, productsRes, branchesRes] = await Promise.all([
-    admin.from('categories').select('*').eq('tenant_id', tenantId).order('name'),
-    admin.from('products').select('*').eq('tenant_id', tenantId).eq('is_active', true).order('created_at', { ascending: false }),
-    admin.from('branches').select('*').eq('tenant_id', tenantId).eq('is_active', true),
+    admin
+      .from('categories')
+      .select('id, name, slug, description, image_url, sort_order, parent_id')
+      .eq('tenant_id', tenantId)
+      .order('name'),
+    admin
+      .from('products')
+      .select('id, tenant_id, slug, name, sku, description, images, attributes, min_order_qty, units_per_package, category_id, price_tiers, created_at, is_active')
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true)
+      .order('created_at', { ascending: false }),
+    admin
+      .from('branches')
+      .select('id, name, slug, branch_type, city, address, phone_number, phone_whatsapp, email, is_main_branch')
+      .eq('tenant_id', tenantId)
+      .eq('is_active', true),
   ]);
 
   return {

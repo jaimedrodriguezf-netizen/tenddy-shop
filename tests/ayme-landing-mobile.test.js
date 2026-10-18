@@ -64,4 +64,26 @@ const cartDrawerContent = fs.readFileSync(cartDrawerPath, 'utf8');
 assert.ok(cartDrawerContent.includes('pl-0 sm:pl-10'), 'CartDrawer debe usar pl-0 sm:pl-10 para ocupar el 100% de pantalla en móvil');
 console.log('✅ 9. UX Móvil: Utilidad .no-scrollbar y CartDrawer al 100% de pantalla verificados.');
 
+// 10. Rendimiento: useMemo y rAF seguro en TenantLandingView
+assert.ok(landingContent.includes('useMemo('), 'TenantLandingView debe usar useMemo para el filtrado de productos');
+assert.ok(landingContent.includes('cancelAnimationFrame'), 'TenantLandingView debe limpiar rAF al desmontar el componente');
+assert.ok(landingContent.includes('loading="lazy"'), 'Las imágenes deben incluir loading="lazy"');
+assert.ok(landingContent.includes('decoding="async"'), 'Las imágenes deben incluir decoding="async"');
+console.log('✅ 10. Rendimiento: useMemo en productos, rAF cancelable y carga diferida (lazy/async) verificados.');
+
+// 11. Seguridad: Sanitización de URLs externas contra XSS
+assert.ok(landingContent.includes('safeExternalUrl'), 'TenantLandingView debe sanitizar URLs externas de redes sociales');
+const appearanceRoutePath = path.join(__dirname, '..', 'src', 'app', 'api', 'admin', 'appearance', 'route.ts');
+const appearanceContent = fs.readFileSync(appearanceRoutePath, 'utf8');
+assert.ok(appearanceContent.includes('sanitizeHttpUrl'), 'La API de apariencia debe sanitizar URLs de redes sociales con sanitizeHttpUrl');
+console.log('✅ 11. Seguridad: Sanitización estricta de protocolos HTTP/HTTPS contra vectores XSS verificada.');
+
+// 12. Escalabilidad y Resiliencia de Negocio: Lead capture en contacto y proyección en tenant.ts
+assert.ok(landingContent.includes("fetch('/api/quotes'"), 'El formulario de contacto debe persistir el lead en /api/quotes');
+const tenantLibPath = path.join(__dirname, '..', 'src', 'lib', 'tenant.ts');
+const tenantLibContent = fs.readFileSync(tenantLibPath, 'utf8');
+assert.ok(tenantLibContent.includes("select('id, name, slug"), 'getTenantCatalog debe proyectar campos en categories');
+assert.ok(tenantLibContent.includes("delete sanitized.admin_password_hash"), 'sanitizeTenant debe eliminar defensivamente admin_password_hash');
+console.log('✅ 12. Escalabilidad & Leads: Proyección SQL de columnas y captura de leads en formulario de contacto verificadas.');
+
 console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');

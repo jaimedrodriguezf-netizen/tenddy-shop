@@ -849,6 +849,17 @@ export default function ProductsManagerView({
                                 alt={p.name}
                                 loading="lazy"
                                 decoding="async"
+                                onError={(e: any) => {
+                                  e.target.onerror = null;
+                                  e.target.style.display = 'none';
+                                  const parent = e.target.parentElement;
+                                  if (parent && !parent.querySelector('.table-fallback-icon')) {
+                                    const fallback = document.createElement('div');
+                                    fallback.className = 'table-fallback-icon text-slate-400 font-bold text-xs flex items-center justify-center w-full h-full';
+                                    fallback.innerText = '♳';
+                                    parent.appendChild(fallback);
+                                  }
+                                }}
                                 className="w-full h-full object-cover rounded"
                               />
                             ) : (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Package,
   MessageCircle,
@@ -20,6 +20,15 @@ import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
+
+function safeExternalUrl(url?: string | null): string | null {
+  if (!url || typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
 
 interface TenantLandingViewProps {
   tenant: Tenant;
@@ -55,6 +64,8 @@ export default function TenantLandingView({
   const [contactCity, setContactCity] = useState<string>('');
   const [contactReqType, setContactReqType] = useState<string>('Cotización General de Envases');
   const [contactMessage, setContactMessage] = useState<string>('');
+  const [isSubmittingContact, setIsSubmittingContact] = useState<boolean>(false);
+  const formRenderedAt = useRef<number>(Date.now());
 
   const { openCart, addItem, getTotalPackages } = useCartStore();
 
@@ -91,11 +102,11 @@ export default function TenantLandingView({
     return false;
   })();
 
-  // Listener para la Secuencia de Scroll con Lerp continuo a 60fps
+  // Listener para la Secuencia de Scroll con Lerp continuo a 60fps optimizado
   useEffect(() => {
-    let ticking = false;
     let currentProgress = 0;
     let targetProgress = 0;
+    let rafId: number | null = null;
 
     const calculateProgress = () => {
       if (!trackRef.current) return;
@@ -111,9 +122,10 @@ export default function TenantLandingView({
       const diff = targetProgress - currentProgress;
       if (Math.abs(diff) < 0.001) {
         currentProgress = targetProgress;
+        rafId = null;
       } else {
         currentProgress += diff * 0.35;
-        requestAnimationFrame(tick);
+        rafId = requestAnimationFrame(tick);
       }
       setScrollProgress(currentProgress);
       const fIndex = Math.min(144, Math.max(1, Math.floor(currentProgress * 143) + 1));
@@ -122,12 +134,8 @@ export default function TenantLandingView({
 
     const onScroll = () => {
       calculateProgress();
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(() => {
-          tick();
-          ticking = false;
-        });
+      if (!rafId) {
+        rafId = requestAnimationFrame(tick);
       }
     };
 
@@ -138,6 +146,9 @@ export default function TenantLandingView({
     return () => {
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
     };
   }, []);
 
@@ -179,21 +190,23 @@ export default function TenantLandingView({
     setVisibleCount(24);
   }
 
-  const filteredProducts = products.filter((p) => {
-    const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory;
+  const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    if (!query) return matchesCategory;
+    return products.filter((p) => {
+      const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory;
+      if (!query) return matchesCategory;
 
-    const nameMatch = p.name.toLowerCase().includes(query);
-    const descMatch = p.description?.toLowerCase().includes(query) ?? false;
-    const skuMatch = p.sku?.toLowerCase().includes(query) ?? false;
-    const specsMatch = p.attributes?.specs
-      ? Object.values(p.attributes.specs).some((val) =>
-          String(val).toLowerCase().includes(query)
-        )
-      : false;
-    return matchesCategory && (nameMatch || descMatch || skuMatch || specsMatch);
-  });
+      const nameMatch = p.name.toLowerCase().includes(query);
+      const descMatch = p.description?.toLowerCase().includes(query) ?? false;
+      const skuMatch = p.sku?.toLowerCase().includes(query) ?? false;
+      const specsMatch = p.attributes?.specs
+        ? Object.values(p.attributes.specs).some((val) =>
+            String(val).toLowerCase().includes(query)
+          )
+        : false;
+      return matchesCategory && (nameMatch || descMatch || skuMatch || specsMatch);
+    });
+  }, [products, selectedCategory, searchQuery]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
 
@@ -211,15 +224,47 @@ export default function TenantLandingView({
 
   const handleContactSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmittingContact(true);
+
+    // 1. Persistir el lead en la base de datos de forma asíncrona (resiliencia ante fallos de WhatsApp)
+    try {
+      fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenant.id,
+          branch_id: selectedBranch?.id || branches[0]?.id || null,
+          customer_name: contactName.trim(),
+          company_name: contactCompany.trim() || undefined,
+          customer_phone: contactPhone.trim(),
+          delivery_city: contactCity.trim() || undefined,
+          notes: contactMessage.trim() || `Requerimiento: ${contactReqType}`,
+          items: [
+            {
+              product_name: contactReqType || 'Cotización General de Envases',
+              units_per_package: 1,
+              packages_count: 1,
+              total_units: 1,
+            },
+          ],
+          _form_rendered_at: formRenderedAt.current,
+        }),
+      }).catch((err) => console.error('Error no bloqueante al registrar lead:', err));
+    } catch {
+      // Ignorar para garantizar la redirección del cliente
+    }
+
+    // 2. Redirigir a WhatsApp de ventas
     let text = `🏭 *SOLICITUD DE COTIZACIÓN B2B - ${tenant.name}*\n\n`;
-    text += `👤 *Nombre:* ${contactName}\n`;
-    if (contactCompany) text += `🏢 *Empresa:* ${contactCompany}\n`;
-    text += `📱 *Teléfono / WhatsApp:* ${contactPhone}\n`;
-    if (contactCity) text += `📍 *Ciudad / Provincia:* ${contactCity}\n`;
+    text += `👤 *Nombre:* ${contactName.trim()}\n`;
+    if (contactCompany.trim()) text += `🏢 *Empresa:* ${contactCompany.trim()}\n`;
+    text += `📱 *Teléfono / WhatsApp:* ${contactPhone.trim()}\n`;
+    if (contactCity.trim()) text += `📍 *Ciudad / Provincia:* ${contactCity.trim()}\n`;
     text += `📦 *Requerimiento:* ${contactReqType}\n`;
-    if (contactMessage) text += `📝 *Mensaje / Volúmenes:* ${contactMessage}\n`;
+    if (contactMessage.trim()) text += `📝 *Mensaje / Volúmenes:* ${contactMessage.trim()}\n`;
 
     const url = buildEcuadorWhatsAppUrl(mainWhatsapp, text);
+    setIsSubmittingContact(false);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -908,6 +953,19 @@ export default function TenantLandingView({
                         <img
                           src={product.images[0]}
                           alt={product.name}
+                          loading="lazy"
+                          decoding="async"
+                          onError={(e: any) => {
+                            e.target.onerror = null;
+                            e.target.style.display = 'none';
+                            const parent = e.target.parentElement;
+                            if (parent && !parent.querySelector('.product-fallback-icon')) {
+                              const fallback = document.createElement('div');
+                              fallback.className = 'product-fallback-icon text-3xl sm:text-5xl py-8 sm:py-12 text-center text-slate-300 w-full h-full flex items-center justify-center';
+                              fallback.innerText = '♳';
+                              parent.appendChild(fallback);
+                            }
+                          }}
                           className="product-img w-full h-full object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
@@ -1026,6 +1084,8 @@ export default function TenantLandingView({
                   <img
                     src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-2149182258-612x612.webp/:/cr=t:0%25,l:5.67%25,w:88.67%25,h:100%25/rs=w:612,h:460,cg:true"
                     alt="Soplado e Inyección de Envases"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     onError={(e: any) => {
                       e.target.onerror = null;
@@ -1060,6 +1120,8 @@ export default function TenantLandingView({
                   <img
                     src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-1669778843-2048x2048.webp/:/cr=t:0%25,l:5.68%25,w:88.65%25,h:100%25/rs=w:730,h:549,cg:true"
                     alt="Tapas, liners y accesorios"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     onError={(e: any) => {
                       e.target.onerror = null;
@@ -1094,6 +1156,8 @@ export default function TenantLandingView({
                   <img
                     src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/blob-9c30011.png/:/cr=t:0%25,l:12.59%25,w:74.81%25,h:100%25/rs=w:730,h:549,cg:true"
                     alt="Moldes 3D y Matricería"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover"
                     onError={(e: any) => {
                       e.target.onerror = null;
@@ -1244,11 +1308,15 @@ export default function TenantLandingView({
                   />
                 </div>
 
-                <button type="submit" className="btn btn-whatsapp btn-lg btn-block cursor-pointer">
+                <button
+                  type="submit"
+                  disabled={isSubmittingContact}
+                  className="btn btn-whatsapp btn-lg btn-block cursor-pointer disabled:opacity-50"
+                >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/>
                   </svg>
-                  <span>Enviar Solicitud por WhatsApp</span>
+                  <span>{isSubmittingContact ? 'Registrando cotización...' : 'Enviar Solicitud por WhatsApp'}</span>
                 </button>
               </form>
             </div>
@@ -1356,32 +1424,32 @@ export default function TenantLandingView({
               <p className="copyright-text" style={{ margin: 0 }}>
                 © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados. Solutions in Packaging.
               </p>
-              {/* Redes Sociales Oficiales B2B */}
-              {(social.linkedin || social.facebook || social.instagram || social.tiktok || social.youtube) && (
+              {/* Redes Sociales Oficiales B2B (Sanitizadas contra XSS) */}
+              {(safeExternalUrl(social.linkedin) || safeExternalUrl(social.facebook) || safeExternalUrl(social.instagram) || safeExternalUrl(social.tiktok) || safeExternalUrl(social.youtube)) && (
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs">
                   <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
-                  {social.linkedin && (
-                    <a href={social.linkedin} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
+                  {safeExternalUrl(social.linkedin) && (
+                    <a href={safeExternalUrl(social.linkedin)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
                       💼 LinkedIn
                     </a>
                   )}
-                  {social.facebook && (
-                    <a href={social.facebook} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Facebook">
+                  {safeExternalUrl(social.facebook) && (
+                    <a href={safeExternalUrl(social.facebook)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Facebook">
                       📘 Facebook
                     </a>
                   )}
-                  {social.instagram && (
-                    <a href={social.instagram} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Instagram">
+                  {safeExternalUrl(social.instagram) && (
+                    <a href={safeExternalUrl(social.instagram)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Instagram">
                       📸 Instagram
                     </a>
                   )}
-                  {social.tiktok && (
-                    <a href={social.tiktok} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="TikTok">
+                  {safeExternalUrl(social.tiktok) && (
+                    <a href={safeExternalUrl(social.tiktok)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="TikTok">
                       🎵 TikTok
                     </a>
                   )}
-                  {social.youtube && (
-                    <a href={social.youtube} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="YouTube">
+                  {safeExternalUrl(social.youtube) && (
+                    <a href={safeExternalUrl(social.youtube)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="YouTube">
                       ▶️ YouTube
                     </a>
                   )}

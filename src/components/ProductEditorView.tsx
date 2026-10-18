@@ -22,7 +22,8 @@ import {
   Trash2,
   Star,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  AlertTriangle
 } from 'lucide-react';
 import { Tenant, Category, Product, Brand, ProductTag, ProductAttribute } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -96,8 +97,9 @@ export default function ProductEditorView({
 
   // Imagen Principal
   const [mainImageBase64, setMainImageBase64] = useState<string | null>(null);
-  const [mainImageUrlInput, setMainImageUrlInput] = useState<string>('');
+  const [mainImageUrlInput, setMainImageUrlInput] = useState<string>(product?.images?.[0] || '');
   const [currentMainImageUrl, setCurrentMainImageUrl] = useState<string | null>(product?.images?.[0] || null);
+  const [imageLoadError, setImageLoadError] = useState<boolean>(false);
 
   // Galería de Imágenes Adicionales
   const [galleryUrls, setGalleryUrls] = useState<string[]>(product?.images?.slice(1) || []);
@@ -1195,11 +1197,27 @@ export default function ProductEditorView({
                       src={mainImageBase64 || normalizeImageUrl(mainImageUrlInput) || (currentMainImageUrl as string)}
                       alt="Imagen del producto"
                       className="w-full h-full object-contain rounded-lg"
+                      onError={() => setImageLoadError(true)}
+                      onLoad={() => setImageLoadError(false)}
                     />
-                    <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
-                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                      <span>Foto destacada ({1 + galleryUrls.length}/8 total)</span>
-                    </div>
+                    {imageLoadError && (
+                      <div className="absolute inset-0 bg-slate-900/95 p-3 text-center flex flex-col items-center justify-center text-white text-xs space-y-1.5 z-10">
+                        <AlertTriangle className="w-6 h-6 text-amber-400" />
+                        <span className="font-bold text-amber-300">Enlace externo bloqueado</span>
+                        <p className="text-[10px] text-slate-300 leading-tight max-w-[200px]">
+                          Esta URL (Google Drive) requiere inicio de sesión y no permite mostrarse públicamente.
+                        </p>
+                        <span className="text-[10px] text-sky-400 underline font-semibold">
+                          Sube el archivo directamente con el botón de abajo.
+                        </span>
+                      </div>
+                    )}
+                    {!imageLoadError && (
+                      <div className="absolute bottom-2 left-2 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 shadow-xs">
+                        <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                        <span>Foto destacada ({1 + galleryUrls.length}/8 total)</span>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="text-center p-4 text-slate-400 space-y-1">
