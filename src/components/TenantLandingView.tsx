@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
+import VersionBadge from '@/components/VersionBadge';
 import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
 
 function safeExternalUrl(url?: string | null): string | null {
@@ -1456,12 +1457,15 @@ export default function TenantLandingView({
                 </div>
               )}
             </div>
-            <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400 mt-2 sm:mt-0">
-              <span>🏆 Inocuidad BPM</span>
-              <span className="hidden sm:inline">•</span>
-              <span>♻️ PET 100% Reciclable</span>
-              <span className="hidden sm:inline">•</span>
-              <span>📦 Despacho Paletizado</span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3 sm:mt-0">
+              <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400">
+                <span>🏆 Inocuidad BPM</span>
+                <span className="hidden sm:inline">•</span>
+                <span>♻️ PET 100% Reciclable</span>
+                <span className="hidden sm:inline">•</span>
+                <span>📦 Despacho Paletizado</span>
+              </div>
+              <VersionBadge className="bg-slate-900 border-slate-800 text-slate-400" />
             </div>
           </div>
         </div>

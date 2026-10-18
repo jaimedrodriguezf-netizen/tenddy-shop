@@ -29,6 +29,7 @@ import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import ProductDetailView from '@/components/ProductDetailView';
+import VersionBadge from '@/components/VersionBadge';
 
 interface TenantCatalogViewProps {
   tenant: Tenant;
@@ -1439,8 +1440,11 @@ export default function TenantCatalogView({
       )}
 
       {/* Footer Minimalista */}
-      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400">
+      <footer className="mt-12 border-t border-slate-200 bg-white py-6 text-center text-xs text-slate-400 space-y-2">
         <p>© {new Date().getFullYear()} {tenant.name} — Plataforma B2B impulsada por tenddy.</p>
+        <div className="flex justify-center">
+          <VersionBadge className="bg-slate-50 border-slate-200 text-slate-500" />
+        </div>
       </footer>
     </div>
   );

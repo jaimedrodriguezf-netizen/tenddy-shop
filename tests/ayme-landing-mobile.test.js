@@ -86,4 +86,11 @@ assert.ok(tenantLibContent.includes("select('id, name, slug"), 'getTenantCatalog
 assert.ok(tenantLibContent.includes("delete sanitized.admin_password_hash"), 'sanitizeTenant debe eliminar defensivamente admin_password_hash');
 console.log('✅ 12. Escalabilidad & Leads: Proyección SQL de columnas y captura de leads en formulario de contacto verificadas.');
 
+// 13. VersionBadge en pie de página de Landing personalizada y Catálogo estándar
+assert.ok(landingContent.includes('<VersionBadge'), 'TenantLandingView debe renderizar el VersionBadge en su footer');
+const catalogViewPath = path.join(__dirname, '..', 'src', 'components', 'TenantCatalogView.tsx');
+const catalogViewContent = fs.readFileSync(catalogViewPath, 'utf8');
+assert.ok(catalogViewContent.includes('<VersionBadge'), 'TenantCatalogView debe renderizar el VersionBadge en su footer');
+console.log('✅ 13. VersionBadge: Version visible en el pie de pagina de landing personalizada y catalogo estandar verificado.');
+
 console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');
