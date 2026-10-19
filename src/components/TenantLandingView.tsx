@@ -79,11 +79,13 @@ export default function TenantLandingView({
   const logoHeight = (theme as any)?.logo_height || 42;
 
   // Canales de Contacto & Redes Sociales Oficiales
+  const aymePhoneFallback = tenant.slug === 'ayme-pet' ? '0998722324' : '';
   const social = (landing as any)?.social_links || (theme as any)?.social_links || {};
-  const rawWhatsapp = social.whatsapp_main || selectedBranch?.phone_whatsapp || landing.whatsapp_default || '';
-  const { international: mainWhatsapp, display: displayPhone } = normalizeEcuadorPhone(rawWhatsapp || '0998722324');
+  const rawWhatsapp = social.whatsapp_main || selectedBranch?.phone_whatsapp || landing.whatsapp_default || (tenant as any)?.phone_number || aymePhoneFallback;
+  const { international: mainWhatsapp, display: displayPhone } = normalizeEcuadorPhone(rawWhatsapp);
   const urgentWhatsapp = social.whatsapp_urgent ? normalizeEcuadorPhone(social.whatsapp_urgent).international : mainWhatsapp;
-  const defaultWelcomeMsg = social.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su portal web oficial y deseo cotizar envases plásticos.`;
+  const defaultQuoteSubject = tenant.industry_type === 'plastics' || tenant.slug === 'ayme-pet' ? 'envases plásticos' : 'productos';
+  const defaultWelcomeMsg = social.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su portal web oficial y deseo cotizar ${defaultQuoteSubject}.`;
 
   const totalCartPackages = getTotalPackages(tenant.id);
 
@@ -315,7 +317,7 @@ export default function TenantLandingView({
               )
             ) : (
               <>
-                <span>🏭 <strong>{tenant.name}</strong> | Solutions in Packaging</span>
+                <span>🏭 <strong>{tenant.name}</strong>{tenant.slug === 'ayme-pet' ? ' | Solutions in Packaging' : ''}</span>
                 <span className="hidden md:inline">•</span>
                 <span className="hidden md:inline">📦 <strong>Ventas Mayoristas & Moldes</strong></span>
                 <span className="hidden sm:inline">•</span>
@@ -709,7 +711,7 @@ export default function TenantLandingView({
                   <span>WhatsApp: {displayPhone}</span>
                 </a>
                 <div className="text-[11px] text-slate-500 text-center">
-                  <span>{tenant.name} • Solutions in Packaging</span>
+                  <span>{tenant.name} • {(landing as any)?.subtitle || (tenant.slug === 'ayme-pet' ? 'Solutions in Packaging' : 'Plataforma B2B')}</span>
                 </div>
               </div>
             </div>
@@ -774,7 +776,9 @@ export default function TenantLandingView({
                   pointerEvents: introOpacity > 0.1 ? 'auto' : 'none',
                 }}
               >
-                <span className="step-phase-tag text-[10px] sm:text-xs">AYME INDUSTRIAS PET • PACKAGING</span>
+                <span className="step-phase-tag text-[10px] sm:text-xs">
+                  {tenant.slug === 'ayme-pet' ? 'AYME INDUSTRIAS PET • PACKAGING' : `${tenant.name.toUpperCase()} • B2B`}
+                </span>
                 <h1 className="step-card-title" style={{ fontSize: 'clamp(1.35rem, 4vw, 2.4rem)' }}>
                   TECNOLOGÍA EN <br />
                   <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--accent)', textTransform: 'none' }}>
@@ -1086,7 +1090,7 @@ export default function TenantLandingView({
                       <div>
                         <div className="flex items-center justify-between text-[10px] sm:text-xs mb-1">
                           <span className="font-semibold truncate max-w-[65%]" style={{ color: primaryColor }}>
-                            {categories.find((c) => c.id === product.category_id)?.name || 'Envase PET'}
+                            {categories.find((c) => c.id === product.category_id)?.name || (tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? 'Envase PET' : 'General')}
                           </span>
                           <span className="text-slate-400 font-mono text-[9px] sm:text-[11px]">{product.sku}</span>
                         </div>
@@ -1392,16 +1396,29 @@ export default function TenantLandingView({
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Tipo de Envase o Servicio Requerido</label>
+                  <label className="form-label">
+                    {tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? 'Tipo de Envase o Servicio Requerido' : 'Tipo de Requerimiento'}
+                  </label>
                   <select
                     className="form-select"
                     value={contactReqType}
                     onChange={(e) => setContactReqType(e.target.value)}
                   >
-                    <option value="Cotización General de Envases">📦 Cotización General de Envases</option>
-                    <option value="Fabricación de Molde Personalizado">📐 Fabricación de Molde Personalizado 3D</option>
-                    <option value="Solicitud de Muestras Físicas">🧪 Solicitud de Kit de Muestras Físicas</option>
-                    <option value="Maquila de Soplado en Volumen">🏭 Maquila de Soplado en Alto Volumen</option>
+                    {tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? (
+                      <>
+                        <option value="Cotización General de Envases">📦 Cotización General de Envases</option>
+                        <option value="Fabricación de Molde Personalizado">📐 Fabricación de Molde Personalizado 3D</option>
+                        <option value="Solicitud de Muestras Físicas">🧪 Solicitud de Kit de Muestras Físicas</option>
+                        <option value="Maquila de Soplado en Volumen">🏭 Maquila de Soplado en Alto Volumen</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Cotización Mayorista de Productos">📦 Cotización Mayorista de Productos</option>
+                        <option value="Pedidos Especiales y Personalizados">📐 Pedidos Especiales y Personalizados</option>
+                        <option value="Solicitud de Muestras Comerciales">🧪 Solicitud de Muestras Comerciales</option>
+                        <option value="Distribución y Despacho Masivo">🏭 Distribución y Despacho Masivo</option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -1442,12 +1459,14 @@ export default function TenantLandingView({
                   allowFullScreen={false}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
-                  title="Ubicación Planta AYME INDUSTRIAS PET en Llano Grande, Quito"
+                  title={`Ubicación Planta ${tenant.name}`}
                 />
                 <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>📍 Llano Grande, Quito</span>
+                  <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>
+                    📍 {landing.plant_location || landing.address || (tenant.slug === 'ayme-pet' ? 'Llano Grande, Quito' : 'Ecuador')}
+                  </span>
                   <a
-                    href="https://maps.google.com/?q=Llano+Grande,+Quito,+Ecuador"
+                    href={(landing as any)?.maps_url || (landing.address ? `https://maps.google.com/?q=${encodeURIComponent(landing.address)}` : (tenant.slug === 'ayme-pet' ? 'https://maps.google.com/?q=Llano+Grande,+Quito,+Ecuador' : 'https://maps.google.com/?q=Ecuador'))}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}
@@ -1462,7 +1481,7 @@ export default function TenantLandingView({
                   {tenant.name}
                 </h4>
                 <p style={{ color: 'var(--accent-light)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.85rem' }}>
-                  Solutions in Packaging
+                  {(landing as any)?.subtitle || (tenant.slug === 'ayme-pet' ? 'Solutions in Packaging' : tenant.industry_type || 'Comercio & Fabricación B2B')}
                 </p>
 
                 <ul className="contact-channels-list" style={{ marginBottom: 0 }}>
@@ -1471,7 +1490,7 @@ export default function TenantLandingView({
                     <div className="channel-text-box">
                       <h5>Planta de Fabricación</h5>
                       <span style={{ fontSize: '0.85rem' }}>
-                        {landing.address || 'Llano Grande, Sector Calderón, Quito - Ecuador'}
+                        {landing.address || (tenant.slug === 'ayme-pet' ? 'Llano Grande, Sector Calderón, Quito - Ecuador' : (tenant as any)?.address || 'Ecuador')}
                       </span>
                     </div>
                   </li>
@@ -1489,7 +1508,7 @@ export default function TenantLandingView({
                     <div className="channel-text-box">
                       <h5>Ventas & Cotizaciones</h5>
                       <span style={{ fontSize: '0.85rem' }}>
-                        {landing.email || (tenant as any)?.email || 'ventas@aymeindustriaspet.com'}
+                        {landing.email || (tenant as any)?.email || (tenant.slug === 'ayme-pet' ? 'ventas@aymeindustriaspet.com' : `info@${tenant.slug}.com`)}
                       </span>
                     </div>
                   </li>
@@ -1511,7 +1530,7 @@ export default function TenantLandingView({
                   ¿Su línea de producción requiere envases urgentes? Escríbanos directamente a planta.
                 </p>
                 <a
-                  href={buildEcuadorWhatsAppUrl(urgentWhatsapp, `⚡ PEDIDO URGENTE: Requiero despacho inmediato de envases PET para línea de producción en planta.`)}
+                  href={buildEcuadorWhatsAppUrl(urgentWhatsapp, `⚡ PEDIDO URGENTE: Requiero despacho inmediato de ${tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? 'envases PET' : 'productos'} para línea de producción en planta.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-accent btn-block"
@@ -1531,7 +1550,7 @@ export default function TenantLandingView({
           <div className="footer-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <p className="copyright-text" style={{ margin: 0 }}>
-                © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados. Solutions in Packaging.
+                © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados{tenant.slug === 'ayme-pet' ? '. Solutions in Packaging.' : '.'}
               </p>
               {/* Redes Sociales Oficiales B2B (Sanitizadas contra XSS) */}
               {(safeExternalUrl(social.linkedin) || safeExternalUrl(social.facebook) || safeExternalUrl(social.instagram) || safeExternalUrl(social.tiktok) || safeExternalUrl(social.youtube)) && (

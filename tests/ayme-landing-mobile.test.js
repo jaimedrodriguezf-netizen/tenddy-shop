@@ -99,4 +99,24 @@ assert.ok(catalogViewContent.includes('isAdminMenuOpen'), 'TenantCatalogView deb
 assert.ok(catalogViewContent.includes('bottom-4 right-4 sm:bottom-6 sm:right-6 z-40'), 'TenantCatalogView debe tener el botón de WhatsApp flotante a la derecha');
 console.log('✅ 14. Paridad UI: Perfil admin en cabecera y WhatsApp flotante a la derecha en catalogo estandar verificados.');
 
+// 15. Desacoplamiento de parches: Limpieza de ayme-001.svg y utilidad hasValidProductImage
+const productImagePath = path.join(__dirname, '..', 'src', 'lib', 'product-image.ts');
+const productImageContent = fs.readFileSync(productImagePath, 'utf8');
+assert.ok(productImageContent.includes('export function hasValidProductImage'), 'product-image.ts debe exportar hasValidProductImage');
+assert.ok(productImageContent.includes('export function getProductPrimaryImage'), 'product-image.ts debe exportar getProductPrimaryImage');
+console.log('✅ 15. Desacoplamiento: Utilidad product-image centralizada y validada sin parches dispersos.');
+
+// 16. Dinamismo en AppearanceTab
+const appearanceTabPath = path.join(__dirname, '..', 'src', 'components', 'AppearanceTab.tsx');
+const appearanceTabContent = fs.readFileSync(appearanceTabPath, 'utf8');
+assert.ok(appearanceTabContent.includes('tenant.slug === \'ayme-pet\' ? \'0998722324\''), 'AppearanceTab debe aplicar fallback de 0998722324 exclusivamente a ayme-pet');
+assert.ok(appearanceTabContent.includes('${tenant.slug}'), 'AppearanceTab debe generar placeholders dinamicos con el slug del tenant');
+console.log('✅ 16. Apariencia: Placeholders y fallbacks dinamicos desacoplados verificados.');
+
+// 17. Limpieza de archivos muertos y dinamismo de ubicación/tag en TenantLandingView
+assert.strictEqual(fs.existsSync(path.join(__dirname, '..', 'src', 'components', 'AymeOriginalLanding.tsx')), false, 'AymeOriginalLanding.tsx debe haber sido eliminado');
+assert.strictEqual(fs.existsSync(path.join(__dirname, '..', 'src', 'lib', 'ayme-html.ts')), false, 'ayme-html.ts debe haber sido eliminado');
+assert.ok(landingContent.includes('tenant.slug === \'ayme-pet\' ? \'AYME INDUSTRIAS PET • PACKAGING\''), 'El Hero debe dinamizar el tag según tenant.slug');
+console.log('✅ 17. Desacoplamiento final: Archivos muertos eliminados y landing desacoplada verificados.');
+
 console.log('\n🎉 TODOS LOS TESTS DE OPTIMIZACIÓN MÓVIL PASARON AL 100%');

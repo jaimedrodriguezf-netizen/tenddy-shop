@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart';
 import { Tenant, Branch } from '@/lib/types';
+import { getProductPrimaryImage } from '@/lib/product-image';
 
 interface CartDrawerProps {
   tenant: Tenant;
@@ -260,7 +261,7 @@ export default function CartDrawer({
                           <div className="flex items-start gap-3">
                             <div className="w-14 h-14 rounded-lg bg-slate-900 flex items-center justify-center p-1.5 border border-slate-800 shrink-0">
                               <img
-                                src={item.product.images?.[0] && (!item.product.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics') ? item.product.images[0] : '/assets/placeholder-product.svg'}
+                                src={getProductPrimaryImage(item.product.images, tenant)}
                                 alt={item.product.name}
                                 className="max-h-full max-w-full object-contain"
                               />

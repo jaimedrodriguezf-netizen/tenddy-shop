@@ -880,12 +880,11 @@ export default function AdminDashboardView({
               <>
                 <button
                   onClick={() => setActiveTab('categories')}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
+                  className="hidden md:flex bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg items-center gap-1.5 transition-colors cursor-pointer border border-slate-200"
                   title="Gestionar y crear categorías de tu catálogo"
                 >
                   <Tag className="w-3.5 h-3.5 text-sky-600" />
-                  <span className="hidden sm:inline">Categorías</span>
-                  <span className="sm:hidden">Categorías</span>
+                  <span>Categorías</span>
                   <span className="text-[10px] bg-slate-200 text-slate-700 px-1.5 py-0.2 rounded-full font-mono font-bold">
                     {categories.length}
                   </span>
@@ -925,11 +924,11 @@ export default function AdminDashboardView({
                 setSupportModalInitialTab('new');
                 setIsSupportModalOpen(true);
               }}
-              className="text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="hidden sm:flex text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg transition-colors items-center gap-1.5 cursor-pointer"
               title="Abrir mesa de ayuda y requerimientos"
             >
               <LifeBuoy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="hidden sm:inline">Mesa de Ayuda</span>
+              <span>Mesa de Ayuda</span>
             </button>
 
             <Link

@@ -34,6 +34,7 @@ import CartDrawer from '@/components/CartDrawer';
 import ProductDetailView from '@/components/ProductDetailView';
 import VersionBadge from '@/components/VersionBadge';
 import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
+import { hasValidProductImage, getProductPrimaryImage } from '@/lib/product-image';
 
 interface TenantCatalogViewProps {
   tenant: Tenant;
@@ -88,9 +89,10 @@ export default function TenantCatalogView({
   const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
 
   // Canales de Contacto & Redes Sociales Oficiales
+  const aymePhoneFallback = tenant.slug === 'ayme-pet' ? '0998722324' : '';
   const social = (tenant.landing_config as any)?.social_links || (tenant.theme_config as any)?.social_links || {};
-  const rawWhatsapp = social.whatsapp_main || selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default || '';
-  const { international: mainWhatsapp, display: displayPhone } = normalizeEcuadorPhone(rawWhatsapp || '0998722324');
+  const rawWhatsapp = social.whatsapp_main || selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default || (tenant as any)?.phone_number || aymePhoneFallback;
+  const { international: mainWhatsapp, display: displayPhone } = normalizeEcuadorPhone(rawWhatsapp);
   const defaultWelcomeMsg = social.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su catálogo web oficial y deseo cotizar productos.`;
 
   const logoHeight = (tenant.theme_config as any)?.logo_height || 36;
@@ -1325,8 +1327,7 @@ export default function TenantCatalogView({
             {filteredProducts.slice(0, visibleCount).map((p) => {
               const packSize = p.units_per_package || 100;
               const minQty = p.min_order_qty || packSize;
-              const hasValidImage = p.images && p.images.length > 0 && p.images[0] && (!p.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics');
-              const imageSrc = hasValidImage ? p.images[0] : '/assets/placeholder-product.svg';
+              const imageSrc = getProductPrimaryImage(p.images, tenant);
               const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(p.slug || p.sku?.toLowerCase() || p.id)}`;
 
               return (

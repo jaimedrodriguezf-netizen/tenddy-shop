@@ -48,7 +48,10 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [colorExtractionFeedback, setColorExtractionFeedback] = useState<string | null>(null);
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
   const [logoHeight, setLogoHeight] = useState<number>((tenant.theme_config as any)?.logo_height || 38);
-  const defaultTopBarText = `🏭 ${tenant.name || 'AYME INDUSTRIAS PET'} | Solutions in Packaging • 📦 Ventas Mayoristas & Fabricación de Moldes • 📱 WhatsApp Comercial: ${tenant.landing_config?.display_phone || '0998722324'}`;
+  const aymePhoneFallback = tenant.slug === 'ayme-pet' ? '0998722324' : '';
+  const defaultTopBarText = tenant.slug === 'ayme-pet'
+    ? `🏭 ${tenant.name || 'AYME INDUSTRIAS PET'} | Solutions in Packaging • 📦 Ventas Mayoristas & Fabricación de Moldes • 📱 WhatsApp Comercial: ${tenant.landing_config?.display_phone || '0998722324'}`
+    : `🏭 ${tenant.name} • 📦 Ventas & Cotizaciones • 📱 WhatsApp: ${tenant.landing_config?.display_phone || (tenant as any)?.phone_number || ''}`;
   const [showTopBar, setShowTopBar] = useState<boolean>(
     tenant.landing_config?.show_top_bar ?? (tenant.theme_config as any)?.show_top_bar ?? true
   );
@@ -59,13 +62,14 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   // Canales de Contacto & Redes Sociales B2B (Ecuador)
   const initialSocial = (tenant.landing_config as any)?.social_links || (tenant.theme_config as any)?.social_links || {};
   const [whatsappMain, setWhatsappMain] = useState<string>(
-    initialSocial.whatsapp_display || initialSocial.whatsapp_main || tenant.landing_config?.display_phone || '0998722324'
+    initialSocial.whatsapp_display || initialSocial.whatsapp_main || tenant.landing_config?.display_phone || (tenant as any)?.phone_number || aymePhoneFallback
   );
   const [whatsappUrgent, setWhatsappUrgent] = useState<string>(
     initialSocial.whatsapp_urgent || ''
   );
+  const defaultQuoteSubject = tenant.industry_type === 'plastics' || tenant.slug === 'ayme-pet' ? 'envases plásticos' : 'productos';
   const [whatsappWelcomeMsg, setWhatsappWelcomeMsg] = useState<string>(
-    initialSocial.whatsapp_welcome_msg || `¡Hola ${tenant.name || 'AYME INDUSTRIAS PET'}! Vengo desde su portal web oficial y deseo cotizar envases plásticos.`
+    initialSocial.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su portal web oficial y deseo cotizar ${defaultQuoteSubject}.`
   );
   const [linkedinUrl, setLinkedinUrl] = useState<string>(initialSocial.linkedin || '');
   const [facebookUrl, setFacebookUrl] = useState<string>(initialSocial.facebook || '');
@@ -959,7 +963,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                 rows={2}
                 value={topBarText}
                 onChange={(e) => setTopBarText(e.target.value)}
-                placeholder="Ej: 🏭 AYME INDUSTRIAS PET | Solutions in Packaging • 📦 Ventas Mayoristas • 📱 WhatsApp: 0998722324"
+                placeholder={`Ej: 🏭 ${tenant.name} • 📦 Ventas & Cotizaciones • 📱 WhatsApp: ${whatsappMain || '09...'}`}
                 className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all resize-none font-sans"
               />
 
@@ -1110,7 +1114,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   type="url"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
-                  placeholder="https://linkedin.com/company/ayme-industrias-pet"
+                  placeholder={`https://linkedin.com/company/${tenant.slug}`}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
                 />
               </div>
@@ -1123,7 +1127,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   type="url"
                   value={facebookUrl}
                   onChange={(e) => setFacebookUrl(e.target.value)}
-                  placeholder="https://facebook.com/aymeindustriaspet"
+                  placeholder={`https://facebook.com/${tenant.slug}`}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
                 />
               </div>
@@ -1136,7 +1140,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   type="url"
                   value={instagramUrl}
                   onChange={(e) => setInstagramUrl(e.target.value)}
-                  placeholder="https://instagram.com/aymeindustriaspet"
+                  placeholder={`https://instagram.com/${tenant.slug}`}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
                 />
               </div>
@@ -1149,7 +1153,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   type="url"
                   value={tiktokUrl}
                   onChange={(e) => setTiktokUrl(e.target.value)}
-                  placeholder="https://tiktok.com/@aymeindustriaspet"
+                  placeholder={`https://tiktok.com/@${tenant.slug}`}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
                 />
               </div>
@@ -1162,7 +1166,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   type="url"
                   value={youtubeUrl}
                   onChange={(e) => setYoutubeUrl(e.target.value)}
-                  placeholder="https://youtube.com/@aymeindustriaspet"
+                  placeholder={`https://youtube.com/@${tenant.slug}`}
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
                 />
               </div>

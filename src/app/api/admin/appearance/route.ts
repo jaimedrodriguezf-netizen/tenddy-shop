@@ -57,7 +57,7 @@ export async function PATCH(request: Request) {
     // Obtener configuración actual
     const { data: currentTenant, error: fetchErr } = await admin
       .from('tenants')
-      .select('theme_config, landing_config')
+      .select('slug, theme_config, landing_config')
       .eq('id', tenant_id)
       .single();
 
@@ -132,8 +132,8 @@ export async function PATCH(request: Request) {
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.landing_config?.show_best_sellers ?? true),
       show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.landing_config?.show_featured_ratings ?? true),
       social_links: updatedSocialLinks,
-      whatsapp_default: updatedSocialLinks.whatsapp_main || currentTenant.landing_config?.whatsapp_default || '593998722324',
-      display_phone: updatedSocialLinks.whatsapp_display || currentTenant.landing_config?.display_phone || '0998722324',
+      whatsapp_default: updatedSocialLinks.whatsapp_main || currentTenant.landing_config?.whatsapp_default || (currentTenant.slug === 'ayme-pet' ? '593998722324' : ''),
+      display_phone: updatedSocialLinks.whatsapp_display || currentTenant.landing_config?.display_phone || (currentTenant.slug === 'ayme-pet' ? '0998722324' : ''),
     };
 
     const updatePayload: Record<string, unknown> = {

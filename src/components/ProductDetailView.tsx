@@ -26,6 +26,7 @@ import {
 import { Product, Tenant, Branch, Category } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
+import { hasValidProductImage } from '@/lib/product-image';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -66,7 +67,7 @@ export default function ProductDetailView({
   const discountPercent = Math.max(15, Math.round(((originalPrice - basePrice) / originalPrice) * 100));
 
   // Imágenes multi-ángulo
-  const images = (product.images && product.images.length > 0 && (!product.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics'))
+  const images = hasValidProductImage(product.images, tenant)
     ? product.images
     : ['/assets/placeholder-product.svg'];
 

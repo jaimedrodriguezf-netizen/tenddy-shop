@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import writeXlsxFile from 'write-excel-file/browser';
 import { Tenant, Category, Product } from '@/lib/types';
+import { hasValidProductImage } from '@/lib/product-image';
 import { translateErrorMessage } from '@/lib/error-translator';
 
 interface ProductsManagerViewProps {
@@ -843,7 +844,7 @@ export default function ProductsManagerView({
                         {/* Imagen Miniatura */}
                         <td className="py-3 px-3 text-center">
                           <div className="w-10 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto p-0.5 flex items-center justify-center shadow-2xs">
-                            {p.images && p.images[0] && (!p.images[0].includes('ayme-001.svg') || tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics') ? (
+                            {hasValidProductImage(p.images, tenant) ? (
                               <img
                                 src={getOptimizedThumbnail(p.images[0])}
                                 alt={p.name}
