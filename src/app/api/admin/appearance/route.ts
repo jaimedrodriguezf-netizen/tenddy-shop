@@ -22,6 +22,28 @@ function sanitizeHttpUrl(url: any, fallback = ''): string {
   return fallback;
 }
 
+function sanitizeMapsEmbedUrl(url: any): string | null {
+  if (typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  // Blindaje estricto: admitir exclusivamente dominios oficiales de Google Maps para inserción en iframes
+  if (/^https:\/\/(www\.)?google\.com\/maps\/embed(\?|\/|$)/i.test(trimmed) || /^https:\/\/maps\.google\.com\/(maps\/embed|maps\?)/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
+function sanitizeMapsLinkUrl(url: any): string | null {
+  if (typeof url !== 'string') return null;
+  const trimmed = url.trim();
+  if (!trimmed) return null;
+  // Protección contra open redirect: validar que apunte a Google Maps legítimo
+  if (/^https:\/\/(www\.)?(google\.com\/maps|maps\.google\.com|maps\.app\.goo\.gl|goo\.gl\/maps)(\/|\?|$)/i.test(trimmed)) {
+    return trimmed;
+  }
+  return null;
+}
+
 // Actualizar apariencia y configuración del Tenant
 export async function PATCH(request: Request) {
   try {
@@ -40,6 +62,12 @@ export async function PATCH(request: Request) {
       hero_image_url,
       show_services,
       show_branches,
+      plant_location,
+      address,
+      email,
+      hours,
+      maps_url,
+      maps_embed_url,
     } = body;
 
     if (!tenant_id) {
@@ -134,6 +162,12 @@ export async function PATCH(request: Request) {
       social_links: updatedSocialLinks,
       whatsapp_default: updatedSocialLinks.whatsapp_main || currentTenant.landing_config?.whatsapp_default || (currentTenant.slug === 'ayme-pet' ? '593998722324' : ''),
       display_phone: updatedSocialLinks.whatsapp_display || currentTenant.landing_config?.display_phone || (currentTenant.slug === 'ayme-pet' ? '0998722324' : ''),
+      plant_location: plant_location !== undefined ? (typeof plant_location === 'string' ? plant_location.trim().slice(0, 120) : '') : currentTenant.landing_config?.plant_location,
+      address: address !== undefined ? (typeof address === 'string' ? address.trim().slice(0, 300) : '') : currentTenant.landing_config?.address,
+      email: email !== undefined ? (typeof email === 'string' ? email.trim().slice(0, 120) : '') : currentTenant.landing_config?.email,
+      hours: hours !== undefined ? (typeof hours === 'string' ? hours.trim().slice(0, 150) : '') : currentTenant.landing_config?.hours,
+      maps_url: maps_url !== undefined ? sanitizeMapsLinkUrl(maps_url) : currentTenant.landing_config?.maps_url,
+      maps_embed_url: maps_embed_url !== undefined ? sanitizeMapsEmbedUrl(maps_embed_url) : currentTenant.landing_config?.maps_embed_url,
     };
 
     const updatePayload: Record<string, unknown> = {

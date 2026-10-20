@@ -17,7 +17,8 @@ import {
   Wand2,
   Megaphone,
   MessageCircle,
-  Share2
+  Share2,
+  MapPin
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
 import { extractColorsFromImage, hexToRgb, rgbToHex } from '@/lib/color-extractor';
@@ -78,6 +79,27 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [youtubeUrl, setYoutubeUrl] = useState<string>(initialSocial.youtube || '');
   const [showFloatingWhatsapp, setShowFloatingWhatsapp] = useState<boolean>(
     initialSocial.show_floating_whatsapp ?? true
+  );
+
+  // Ubicación de Planta, Fábrica & Horarios
+  const isAyme = tenant.slug === 'ayme-pet';
+  const [plantLocation, setPlantLocation] = useState<string>(
+    tenant.landing_config?.plant_location || (isAyme ? 'Llano Grande, Quito' : '')
+  );
+  const [address, setAddress] = useState<string>(
+    tenant.landing_config?.address || (tenant as any)?.address || (isAyme ? 'Llano Grande, Sector Calderón, Quito - Ecuador' : '')
+  );
+  const [contactEmail, setContactEmail] = useState<string>(
+    tenant.landing_config?.email || (tenant as any)?.email || (isAyme ? 'ventas@aymeindustriaspet.com' : '')
+  );
+  const [hours, setHours] = useState<string>(
+    tenant.landing_config?.hours || 'Lun a Vie: 8:00 AM - 5:30 PM | Sábados: 8:30 AM - 1:00 PM'
+  );
+  const [mapsUrl, setMapsUrl] = useState<string>(
+    (tenant.landing_config as any)?.maps_url || ''
+  );
+  const [mapsEmbedUrl, setMapsEmbedUrl] = useState<string>(
+    (tenant.landing_config as any)?.maps_embed_url || ''
   );
   const [uploadingLogo, setUploadingLogo] = useState(false);
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
@@ -273,6 +295,12 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           show_branches: showBranches,
           show_best_sellers: showBestSellers,
           show_featured_ratings: showFeaturedRatings,
+          plant_location: plantLocation,
+          address: address,
+          email: contactEmail,
+          hours: hours,
+          maps_url: mapsUrl,
+          maps_embed_url: mapsEmbedUrl,
         }),
       });
 
@@ -1170,6 +1198,115 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
                 />
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bloque: Ubicación de Planta, Fábrica & Horarios */}
+      <div className="space-y-4">
+        <div>
+          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-slate-500" />
+            Ubicación de Planta, Fábrica & Horarios
+          </h4>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Configura la dirección física, ciudad de planta, horarios de atención y el mapa interactivo de Google Maps para tus clientes.
+          </p>
+        </div>
+
+        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                📍 Ciudad / Sector de Planta
+              </label>
+              <input
+                type="text"
+                value={plantLocation}
+                onChange={(e) => setPlantLocation(e.target.value)}
+                placeholder="Ej: Llano Grande, Quito"
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Se muestra en la cabecera de ubicación y en el pie de mapa.
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                ✉️ Correo Oficial de Ventas & Cotizaciones
+              </label>
+              <input
+                type="email"
+                value={contactEmail}
+                onChange={(e) => setContactEmail(e.target.value)}
+                placeholder="Ej: ventas@aymeindustriaspet.com"
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Correo corporativo visible en la sección de contacto.
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              🏭 Dirección Física Completa de la Planta
+            </label>
+            <input
+              type="text"
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Ej: Llano Grande, Sector Calderón, Quito - Ecuador"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">
+              ⏰ Horarios de Atención en Planta
+            </label>
+            <input
+              type="text"
+              value={hours}
+              onChange={(e) => setHours(e.target.value)}
+              placeholder="Ej: Lun a Vie: 8:00 AM - 5:30 PM | Sábados: 8:30 AM - 1:00 PM"
+              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                🗺️ Enlace Externo a Google Maps (Opcional)
+              </label>
+              <input
+                type="url"
+                value={mapsUrl}
+                onChange={(e) => setMapsUrl(e.target.value)}
+                placeholder="https://maps.google.com/?q=..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs font-mono text-[11px]"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                Enlace al que se redirige al pulsar &quot;Ver en Google Maps ↗&quot;.
+              </span>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                📍 Iframe / Embed de Google Maps (Opcional)
+              </label>
+              <input
+                type="text"
+                value={mapsEmbedUrl}
+                onChange={(e) => setMapsEmbedUrl(e.target.value)}
+                placeholder="https://www.google.com/maps/embed?pb=..."
+                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs font-mono text-[11px]"
+              />
+              <span className="text-[10px] text-slate-400 mt-1 block">
+                URL embed para mostrar el mapa interactivo de tu fábrica.
+              </span>
             </div>
           </div>
         </div>

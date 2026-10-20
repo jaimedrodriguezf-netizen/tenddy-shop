@@ -24,6 +24,7 @@
 *.png
 !public/*.png
 !public/assets/*.png
+!public/assets/**/*.png
 
 # debug
 npm-debug.log*

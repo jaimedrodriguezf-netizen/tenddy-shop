@@ -98,7 +98,8 @@ export default async function AdminPage({ params }: AdminPageProps) {
         .from('quotes')
         .select('*')
         .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false }),
+        .order('created_at', { ascending: false })
+        .limit(100),
       admin
         .from('tenant_members')
         .select('id, full_name, email, phone, role, is_active, created_at, branch_id')

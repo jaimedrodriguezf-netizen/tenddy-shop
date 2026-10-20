@@ -137,7 +137,27 @@ export const useCartStore = create<CartStore>()(
     }),
     {
       name: 'tenddy-b2b-cart',
-      partialize: (state) => ({ items: state.items }),
+      // Optimización de cuota de localStorage: serializar solo los atributos esenciales de cada producto
+      partialize: (state) => ({
+        items: state.items.map((item) => ({
+          ...item,
+          product: {
+            id: item.product.id,
+            tenant_id: item.product.tenant_id,
+            slug: item.product.slug,
+            name: item.product.name,
+            sku: item.product.sku,
+            units_per_package: item.product.units_per_package,
+            min_order_qty: item.product.min_order_qty,
+            images: item.product.images?.slice(0, 1) || [],
+            price_tiers: item.product.price_tiers || [],
+            attributes: {
+              badge: item.product.attributes?.badge,
+              specs: item.product.attributes?.specs,
+            },
+          } as Product,
+        })),
+      }),
     }
   )
 );

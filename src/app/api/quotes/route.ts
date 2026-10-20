@@ -44,10 +44,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, quote: { quote_number: 'COT-BOT-DETECTED' } });
     }
 
-    // 3. Trampa de velocidad (Time-trap): un humano tarda al menos 3 a 5 segundos en llenar el formulario
+    // 3. Trampa de velocidad (Time-trap): un humano tarda al menos 3 a 5 segundos en llenar el formulario.
+    // Tolerancia defensiva ante sesgo de reloj (clock skew): solo descartar si el lapso transcurrido
+    // es estrictamente positivo pero menor a 1500ms (envío sobrehumano). Si timeElapsedMs < 0 (reloj del cliente adelantado),
+    // se admite para no descartar falsamente a clientes reales.
     if (_form_rendered_at && typeof _form_rendered_at === 'number') {
       const timeElapsedMs = Date.now() - _form_rendered_at;
-      if (timeElapsedMs < 1500) {
+      if (timeElapsedMs >= 0 && timeElapsedMs < 1500) {
         // Envió en menos de 1.5 segundos -> descartado por automatización sobrehumana
         return NextResponse.json({ success: true, quote: { quote_number: 'COT-FAST-DISMISSED' } });
       }
@@ -112,8 +115,9 @@ export async function POST(request: Request) {
       }
     }
 
-    // Generar consecutivo amigable (e.g. COT-2026-XXXX)
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    // Generar consecutivo amigable y robusto con alta cardinalidad (e.g. COT-2026-834921)
+    // 6 dígitos aleatorios (100.000 a 999.999) para prevenir colisiones bajo alta concurrencia
+    const randomSuffix = Math.floor(100000 + Math.random() * 900000);
     const quote_number = `COT-${new Date().getFullYear()}-${randomSuffix}`;
 
     const { data: quote, error } = await admin

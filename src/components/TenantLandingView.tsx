@@ -16,7 +16,9 @@ import {
   X,
   User,
   SlidersHorizontal,
-  LogOut
+  LogOut,
+  Play,
+  Pause
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
@@ -50,6 +52,9 @@ export default function TenantLandingView({
   isAdmin = false,
 }: TenantLandingViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedCapacity, setSelectedCapacity] = useState<string>('all');
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [calculatorUnits, setCalculatorUnits] = useState<number>(1000);
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState<boolean>(false);
@@ -60,8 +65,31 @@ export default function TenantLandingView({
 
   // Motor de Secuencia de Scroll Interactiva (Hero Dinámico)
   const trackRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [scrollProgress, setScrollProgress] = useState<number>(0);
   const [frameIndex, setFrameIndex] = useState<number>(1);
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(true);
+
+  const toggleVideoPlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
+
+  const scrollToPhase = (targetProgressRatio: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const trackTop = rect.top + scrollTop;
+    const totalScrollable = rect.height - window.innerHeight;
+    if (totalScrollable <= 0) return;
+    const targetScroll = trackTop + totalScrollable * targetProgressRatio;
+    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+  };
 
   // Formulario de Contacto B2B
   const [contactName, setContactName] = useState<string>('');
@@ -72,6 +100,20 @@ export default function TenantLandingView({
   const [contactMessage, setContactMessage] = useState<string>('');
   const [isSubmittingContact, setIsSubmittingContact] = useState<boolean>(false);
   const formRenderedAt = useRef<number>(Date.now());
+
+  // Modal Interactivo de Requerimiento Técnico de Servicios Industriales
+  const [activeServiceModal, setActiveServiceModal] = useState<{
+    id: string;
+    title: string;
+    tag: string;
+  } | null>(null);
+  const [serviceOptionType, setServiceOptionType] = useState<string>('Botella PET Estándar');
+  const [serviceCapacity, setServiceCapacity] = useState<string>('500 ml');
+  const [serviceVolume, setServiceVolume] = useState<string>('5.000 a 10.000 uds/mes');
+  const [serviceCustomerName, setServiceCustomerName] = useState<string>('');
+  const [serviceCustomerCompany, setServiceCustomerCompany] = useState<string>('');
+  const [serviceCustomerPhone, setServiceCustomerPhone] = useState<string>('');
+  const [serviceNotes, setServiceNotes] = useState<string>('');
 
   const { openCart, addItem, getTotalPackages } = useCartStore();
 
@@ -88,6 +130,31 @@ export default function TenantLandingView({
   const defaultWelcomeMsg = social.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su portal web oficial y deseo cotizar ${defaultQuoteSubject}.`;
 
   const totalCartPackages = getTotalPackages(tenant.id);
+
+  // Fallbacks y valores corporativos centralizados (desacoplamiento de ternarios dispersos)
+  const isAyme = tenant.slug === 'ayme-pet';
+  const heroTag = tenant.slug === 'ayme-pet' ? 'AYME INDUSTRIAS PET • PACKAGING' : `${tenant.name.toUpperCase()} • B2B`;
+  const tenantDefaults = useMemo(() => ({
+    plantLocation: landing.plant_location || landing.address || (isAyme ? 'Llano Grande, Quito' : 'Ecuador'),
+    address: landing.address || (isAyme ? 'Llano Grande, Sector Calderón, Quito - Ecuador' : (tenant as any)?.address || 'Ecuador'),
+    email: landing.email || (tenant as any)?.email || (isAyme ? 'ventas@aymeindustriaspet.com' : `info@${tenant.slug}.com`),
+    subtitle: (landing as any)?.subtitle || (isAyme ? 'Solutions in Packaging' : tenant.industry_type || 'Comercio & Fabricación B2B'),
+    urgentProductType: isAyme || tenant.industry_type === 'plastics' ? 'envases PET' : 'productos',
+    contactReqLabel: isAyme || tenant.industry_type === 'plastics' ? 'Tipo de Envase o Servicio Requerido' : 'Tipo de Requerimiento',
+    contactOptions: isAyme || tenant.industry_type === 'plastics'
+      ? [
+          { value: 'Cotización General de Envases', label: '📦 Cotización General de Envases' },
+          { value: 'Fabricación de Molde Personalizado', label: '📐 Fabricación de Molde Personalizado 3D' },
+          { value: 'Solicitud de Muestras Físicas', label: '🧪 Solicitud de Kit de Muestras Físicas' },
+          { value: 'Maquila de Soplado en Volumen', label: '🏭 Maquila de Soplado en Alto Volumen' },
+        ]
+      : [
+          { value: 'Cotización Mayorista de Productos', label: '📦 Cotización Mayorista de Productos' },
+          { value: 'Pedidos Especiales y Personalizados', label: '📐 Pedidos Especiales y Personalizados' },
+          { value: 'Solicitud de Muestras Comerciales', label: '🧪 Solicitud de Muestras Comerciales' },
+          { value: 'Distribución y Despacho Masivo', label: '🏭 Distribución y Despacho Masivo' },
+        ],
+  }), [tenant, landing, isAyme]);
 
   // Colores corporativos configurados
   const primaryColor = theme?.primary_color || '#A61C2E';
@@ -120,6 +187,17 @@ export default function TenantLandingView({
       if (!trackRef.current) return;
       const rect = trackRef.current.getBoundingClientRect();
       const windowHeight = window.innerHeight;
+
+      // Optimización de rendimiento: silenciar bucle si el track está fuera del viewport
+      if (rect.bottom < 0) {
+        targetProgress = 1;
+        return;
+      }
+      if (rect.top > windowHeight) {
+        targetProgress = 0;
+        return;
+      }
+
       const totalScrollable = rect.height - windowHeight;
       if (totalScrollable <= 0) return;
       const scrolled = -rect.top;
@@ -142,7 +220,8 @@ export default function TenantLandingView({
 
     const onScroll = () => {
       calculateProgress();
-      if (!rafId) {
+      // Solo encender rAF si hay diferencia de progreso pendiente (ahorra CPU fuera del Hero)
+      if (!rafId && Math.abs(targetProgress - currentProgress) >= 0.001) {
         rafId = requestAnimationFrame(tick);
       }
     };
@@ -193,33 +272,143 @@ export default function TenantLandingView({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Bloqueo de scroll de fondo y tecla Escape para modales interactivos (WCAG 2.1)
+  useEffect(() => {
+    const isModalOpen = Boolean(activeServiceModal || quickViewProduct);
+    if (!isModalOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setActiveServiceModal(null);
+        setQuickViewProduct(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [activeServiceModal, quickViewProduct]);
+
   // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
   const [visibleCount, setVisibleCount] = useState<number>(24);
-  const [prevCategory, setPrevCategory] = useState<string>(selectedCategory);
-  if (prevCategory !== selectedCategory) {
-    setPrevCategory(selectedCategory);
+  const [prevFilters, setPrevFilters] = useState<string>(`${selectedCategory}_${selectedCapacity}`);
+  const currentFilters = `${selectedCategory}_${selectedCapacity}`;
+  if (prevFilters !== currentFilters) {
+    setPrevFilters(currentFilters);
     setVisibleCount(24);
   }
 
   const filteredProducts = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const normalizeSearchToken = (str: string) => str.toLowerCase().replace(/[\s\-_.]/g, '');
+    const normTargetCap = selectedCapacity !== 'all' ? normalizeSearchToken(selectedCapacity) : '';
+
     return products.filter((p) => {
       const matchesCategory = selectedCategory === 'all' || p.category_id === selectedCategory;
-      if (!query) return matchesCategory;
+      if (!matchesCategory) return false;
 
+      // Matching inteligente y tolerante de capacidades industriales (ej: 500ml = 500 ml, 1000ml = 1L)
+      if (selectedCapacity !== 'all') {
+        const specs = p.attributes?.specs || {};
+        const normSpecsCap = specs.capacidad ? normalizeSearchToken(String(specs.capacidad)) : '';
+        const normName = normalizeSearchToken(p.name);
+
+        const matchesCap =
+          normSpecsCap.includes(normTargetCap) ||
+          normName.includes(normTargetCap) ||
+          (normTargetCap === '1000ml' && (normSpecsCap.includes('1l') || normName.includes('1l') || normName.includes('1litro'))) ||
+          (normTargetCap === '4000ml' && (normSpecsCap.includes('4l') || normSpecsCap.includes('galon') || normName.includes('4l') || normName.includes('galon')));
+
+        if (!matchesCap) return false;
+      }
+
+      if (!query) return true;
+
+      const specs = p.attributes?.specs || {};
       const nameMatch = p.name.toLowerCase().includes(query);
       const descMatch = p.description?.toLowerCase().includes(query) ?? false;
       const skuMatch = p.sku?.toLowerCase().includes(query) ?? false;
-      const specsMatch = p.attributes?.specs
-        ? Object.values(p.attributes.specs).some((val) =>
-            String(val).toLowerCase().includes(query)
-          )
-        : false;
-      return matchesCategory && (nameMatch || descMatch || skuMatch || specsMatch);
+      const specsMatch = Object.values(specs).some((val) =>
+        (typeof val === 'string' || typeof val === 'number') &&
+        String(val).toLowerCase().includes(query)
+      );
+      return nameMatch || descMatch || skuMatch || specsMatch;
     });
-  }, [products, selectedCategory, searchQuery]);
+  }, [products, selectedCategory, selectedCapacity, searchQuery]);
 
   const displayedProducts = filteredProducts.slice(0, visibleCount);
+
+  // Helper centralizado para registrar leads de cotización en Supabase (/api/quotes)
+  const persistLeadQuote = (params: {
+    customerName: string;
+    companyName?: string;
+    phone?: string;
+    city?: string;
+    notes: string;
+    productName: string;
+    renderedAt?: number;
+  }) => {
+    try {
+      fetch('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenant.id,
+          branch_id: selectedBranch?.id || branches[0]?.id || null,
+          customer_name: params.customerName.trim() || 'Cliente B2B',
+          company_name: params.companyName?.trim() || undefined,
+          customer_phone: params.phone?.trim() || 'No proporcionado',
+          delivery_city: params.city?.trim() || undefined,
+          notes: params.notes.trim(),
+          items: [
+            {
+              name: params.productName,
+              product_name: params.productName,
+              units_per_package: 1,
+              packages_count: 1,
+              total_units: 1,
+            },
+          ],
+          _form_rendered_at: params.renderedAt,
+        }),
+      }).catch((err) => console.error('Error no bloqueante al registrar lead:', err));
+    } catch {
+      // Ignorar para garantizar la redirección del cliente
+    }
+  };
+
+  const handleServiceModalSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeServiceModal) return;
+
+    let msg = `🏭 *SOLICITUD DE SERVICIO INDUSTRIAL - ${tenant.name.toUpperCase()}*\n\n`;
+    msg += `⚙️ *Servicio:* ${activeServiceModal.title}\n`;
+    msg += `📦 *Tipo de Requerimiento:* ${serviceOptionType}\n`;
+    msg += `📏 *Capacidad / Boca:* ${serviceCapacity}\n`;
+    msg += `📊 *Volumen Estimado:* ${serviceVolume}\n`;
+    if (serviceCustomerName.trim()) msg += `👤 *Contacto:* ${serviceCustomerName.trim()}\n`;
+    if (serviceCustomerCompany.trim()) msg += `🏢 *Empresa:* ${serviceCustomerCompany.trim()}\n`;
+    if (serviceCustomerPhone.trim()) msg += `📱 *Teléfono:* ${serviceCustomerPhone.trim()}\n`;
+    if (serviceNotes.trim()) msg += `📝 *Notas / Requerimiento:* ${serviceNotes.trim()}\n`;
+
+    // Persistir lead de servicio de forma asíncrona
+    persistLeadQuote({
+      customerName: serviceCustomerName,
+      companyName: serviceCustomerCompany,
+      phone: serviceCustomerPhone,
+      notes: `Servicio: ${activeServiceModal.title} - ${serviceOptionType} (${serviceCapacity}) - Vol: ${serviceVolume}. ${serviceNotes}`,
+      productName: `Servicio: ${activeServiceModal.title}`,
+    });
+
+    const url = buildEcuadorWhatsAppUrl(mainWhatsapp, msg);
+    setActiveServiceModal(null);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleWhatsAppQuote = (productName?: string) => {
     let msg = defaultWelcomeMsg;
@@ -238,32 +427,15 @@ export default function TenantLandingView({
     setIsSubmittingContact(true);
 
     // 1. Persistir el lead en la base de datos de forma asíncrona (resiliencia ante fallos de WhatsApp)
-    try {
-      fetch('/api/quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tenant_id: tenant.id,
-          branch_id: selectedBranch?.id || branches[0]?.id || null,
-          customer_name: contactName.trim(),
-          company_name: contactCompany.trim() || undefined,
-          customer_phone: contactPhone.trim(),
-          delivery_city: contactCity.trim() || undefined,
-          notes: contactMessage.trim() || `Requerimiento: ${contactReqType}`,
-          items: [
-            {
-              product_name: contactReqType || 'Cotización General de Envases',
-              units_per_package: 1,
-              packages_count: 1,
-              total_units: 1,
-            },
-          ],
-          _form_rendered_at: formRenderedAt.current,
-        }),
-      }).catch((err) => console.error('Error no bloqueante al registrar lead:', err));
-    } catch {
-      // Ignorar para garantizar la redirección del cliente
-    }
+    persistLeadQuote({
+      customerName: contactName,
+      companyName: contactCompany,
+      phone: contactPhone,
+      city: contactCity,
+      notes: contactMessage.trim() || `Requerimiento: ${contactReqType}`,
+      productName: contactReqType || 'Cotización General de Envases',
+      renderedAt: formRenderedAt.current,
+    });
 
     // 2. Redirigir a WhatsApp de ventas
     let text = `🏭 *SOLICITUD DE COTIZACIÓN B2B - ${tenant.name}*\n\n`;
@@ -330,35 +502,19 @@ export default function TenantLandingView({
         {/* Header Principal Oficial */}
         <header className="site-header" id="site-header">
           <div className="container header-inner">
-            {tenant.logo_url ? (
-              <Link
-                href={`/store/${tenant.slug}`}
-                className="brand-logo-link"
-                title={tenant.name}
-              >
-                <img
-                  src={tenant.logo_url}
-                  alt={tenant.name}
-                  loading="eager"
-                  className="brand-logo-img"
-                  style={{ height: `${logoHeight}px` }}
-                />
-              </Link>
-            ) : (
-              <Link
-                href={`/store/${tenant.slug}`}
-                className="brand-logo-link"
-                title={tenant.name}
-              >
-                <img
-                  src="/assets/logo.png"
-                  alt={tenant.name}
-                  loading="eager"
-                  className="brand-logo-img"
-                  style={{ height: `${logoHeight}px` }}
-                />
-              </Link>
-            )}
+            <Link
+              href={`/store/${tenant.slug}`}
+              className="brand-logo-link"
+              title={tenant.name}
+            >
+              <img
+                src={tenant.logo_url || '/assets/logo.png'}
+                alt={tenant.name}
+                loading="eager"
+                className="brand-logo-img"
+                style={{ height: `${logoHeight}px` }}
+              />
+            </Link>
 
             <nav className="main-navigation">
               <ul className="main-nav-links">
@@ -475,7 +631,7 @@ export default function TenantLandingView({
               </button>
 
               <a
-                href={`https://wa.me/${mainWhatsapp}?text=¡Hola%20${encodeURIComponent(tenant.name)}!%20Quisiera%20cotizar%20envases%20plásticos%20para%20mi%20empresa.`}
+                href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Quisiera cotizar ${tenantDefaults.urgentProductType} para mi empresa.`)}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="btn btn-whatsapp"
@@ -711,7 +867,7 @@ export default function TenantLandingView({
                   <span>WhatsApp: {displayPhone}</span>
                 </a>
                 <div className="text-[11px] text-slate-500 text-center">
-                  <span>{tenant.name} • {(landing as any)?.subtitle || (tenant.slug === 'ayme-pet' ? 'Solutions in Packaging' : 'Plataforma B2B')}</span>
+                  <span>{tenant.name} • {tenantDefaults.subtitle}</span>
                 </div>
               </div>
             </div>
@@ -726,6 +882,7 @@ export default function TenantLandingView({
         <div className="scroll-sequence-sticky">
           {/* Video de Fondo Industrial Continuo */}
           <video
+            ref={videoRef}
             autoPlay
             muted
             loop
@@ -742,7 +899,6 @@ export default function TenantLandingView({
             }}
           >
             <source src={landing.hero_video_url || '/assets/process-video.mp4'} type="video/mp4" />
-            <source src="/process-video.mp4" type="video/mp4" />
           </video>
           <div
             className="sequence-dark-vignette"
@@ -755,11 +911,26 @@ export default function TenantLandingView({
           {/* Capa UI con Telemetría y las 3 Secciones Sincronizadas */}
           <div className="sequence-ui-layer">
             {/* HUD Superior */}
-            <div className="sequence-top-hud">
-              <div className="hud-badge-active text-[10px] sm:text-xs">
-                <span>MONITOREO DE LÍNEA</span>
+            <div className="sequence-top-hud flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="hud-badge-active text-[10px] sm:text-xs">
+                  <span>MONITOREO DE LÍNEA EN TIEMPO REAL</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleVideoPlay}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-[10px] sm:text-xs font-mono font-bold text-white border border-slate-700/80 transition-all cursor-pointer shadow-xs"
+                  title={isVideoPlaying ? 'Pausar video de planta' : 'Reanudar video'}
+                >
+                  {isVideoPlaying ? (
+                    <Pause className="w-3 h-3 text-amber-400" />
+                  ) : (
+                    <Play className="w-3 h-3 text-emerald-400 fill-emerald-400" />
+                  )}
+                  <span className="hidden sm:inline">{isVideoPlaying ? 'VIDEO EN VIVO' : 'VIDEO PAUSADO'}</span>
+                </button>
               </div>
-              <div className="hidden sm:block text-[10px] sm:text-xs">
+              <div className="hidden sm:flex items-center gap-2 text-[10px] sm:text-xs text-slate-300">
                 <span>SISTEMA: BLOW-MOLD ROTARY TURBINE • 40 BAR</span>
               </div>
             </div>
@@ -777,7 +948,7 @@ export default function TenantLandingView({
                 }}
               >
                 <span className="step-phase-tag text-[10px] sm:text-xs">
-                  {tenant.slug === 'ayme-pet' ? 'AYME INDUSTRIAS PET • PACKAGING' : `${tenant.name.toUpperCase()} • B2B`}
+                  {heroTag}
                 </span>
                 <h1 className="step-card-title" style={{ fontSize: 'clamp(1.35rem, 4vw, 2.4rem)' }}>
                   TECNOLOGÍA EN <br />
@@ -795,10 +966,10 @@ export default function TenantLandingView({
                     className="btn btn-accent cursor-pointer"
                     style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                   >
-                    Ver Catálogo 2026
+                    Ver Catálogo {new Date().getFullYear()}
                   </button>
                   <a
-                    href={`https://wa.me/${mainWhatsapp}?text=¡Hola%20${encodeURIComponent(tenant.name)}!%20Quiero%20asesoría%20y%20cotización.`}
+                    href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Quiero asesoría y cotización.`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="btn btn-outline"
@@ -876,7 +1047,7 @@ export default function TenantLandingView({
                   </div>
                 </div>
                 <a
-                  href={`https://wa.me/${mainWhatsapp}?text=¡Hola%20${encodeURIComponent(tenant.name)}!%20Deseo%20cotizar%20fabricación%20en%20volumen%20de%20envases.`}
+                  href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Deseo cotizar fabricación en volumen de envases.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-whatsapp btn-block"
@@ -886,17 +1057,45 @@ export default function TenantLandingView({
                 </a>
               </article>
 
-              {/* Indicador Lateral de Progreso */}
+              {/* Indicador Lateral de Progreso Interactivo */}
               <div className="sequence-timeline-hud">
-                <span className="timeline-node">01</span>
-                <div className="timeline-track-bar">
+                <button
+                  type="button"
+                  onClick={() => scrollToPhase(0.38)}
+                  className={`timeline-node cursor-pointer transition-all bg-transparent border-0 p-1 rounded hover:text-white hover:scale-125 ${
+                    scrollProgress >= 0.22 && scrollProgress <= 0.58 ? 'text-white font-extrabold scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : 'text-white/60'
+                  }`}
+                  title="Ir a Fase 01: Inyección & Control Térmico"
+                >
+                  01
+                </button>
+                <div
+                  className="timeline-track-bar cursor-pointer group"
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const clickY = e.clientY - rect.top;
+                    const ratio = Math.max(0, Math.min(1, clickY / rect.height));
+                    // Mapear de 0-1 del track a 0.22 - 0.95 de la secuencia
+                    scrollToPhase(0.22 + ratio * 0.73);
+                  }}
+                  title="Haga clic para saltar en la secuencia"
+                >
                   <div
                     className="timeline-fill-bar"
                     id="sequence-progress-bar"
                     style={{ height: `${scrollProgress * 100}%` }}
                   />
                 </div>
-                <span className="timeline-node">02</span>
+                <button
+                  type="button"
+                  onClick={() => scrollToPhase(0.78)}
+                  className={`timeline-node cursor-pointer transition-all bg-transparent border-0 p-1 rounded hover:text-white hover:scale-125 ${
+                    scrollProgress >= 0.58 ? 'text-white font-extrabold scale-110 drop-shadow-[0_0_8px_rgba(37,211,102,0.8)]' : 'text-white/60'
+                  }`}
+                  title="Ir a Fase 02: Soplado Rotativo & Enfriamiento Criogénico"
+                >
+                  02
+                </button>
               </div>
             </div>
 
@@ -963,7 +1162,7 @@ export default function TenantLandingView({
           </div>
 
           {/* Filtros de Categorías */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 no-scrollbar">
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-3 no-scrollbar">
             <button
               type="button"
               onClick={() => setSelectedCategory('all')}
@@ -1012,6 +1211,35 @@ export default function TenantLandingView({
             })}
           </div>
 
+          {/* Filtros Rápidos por Capacidad Técnica */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-4 mb-6 no-scrollbar text-[11px]">
+            <span className="text-slate-400 font-bold uppercase tracking-wider text-[10px] mr-1 flex items-center gap-1 shrink-0">
+              <SlidersHorizontal className="w-3 h-3 text-slate-400" />
+              <span>Capacidad:</span>
+            </span>
+            {[
+              { id: 'all', label: 'Todas' },
+              { id: '60ml', label: '60 ml (2 Oz)' },
+              { id: '250ml', label: '250 ml' },
+              { id: '500ml', label: '500 ml' },
+              { id: '1000ml', label: '1 Litro' },
+              { id: '4000ml', label: '1 Galón (4L)' },
+            ].map((cap) => (
+              <button
+                key={cap.id}
+                type="button"
+                onClick={() => setSelectedCapacity(cap.id)}
+                className={`px-3 py-1 rounded-lg font-medium whitespace-nowrap transition-all cursor-pointer border ${
+                  selectedCapacity === cap.id
+                    ? 'bg-slate-900 text-white border-slate-900 font-bold shadow-2xs'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                {cap.label}
+              </button>
+            ))}
+          </div>
+
           {/* Grid de Productos Oficial */}
           {filteredProducts.length === 0 ? (
             <div className="text-center py-16 px-6 max-w-xl mx-auto rounded-3xl border bg-white border-slate-200 shadow-sm">
@@ -1052,9 +1280,13 @@ export default function TenantLandingView({
                     key={product.id}
                     className="product-card group"
                   >
-                    <Link
-                      href={productHref}
+                    <div
+                      onClick={() => {
+                        setQuickViewProduct(product);
+                        setCalculatorUnits((product.units_per_package || 100) * 5);
+                      }}
                       className="product-img-box cursor-pointer block relative aspect-square w-full bg-slate-50 overflow-hidden"
+                      title="Ver ficha técnica y calculadora de fardos"
                     >
                       {badge && (
                         <span className="product-badge" style={{ backgroundColor: primaryColor }}>
@@ -1070,21 +1302,14 @@ export default function TenantLandingView({
                           decoding="async"
                           onError={(e: any) => {
                             e.target.onerror = null;
-                            e.target.style.display = 'none';
-                            const parent = e.target.parentElement;
-                            if (parent && !parent.querySelector('.product-fallback-icon')) {
-                              const fallback = document.createElement('div');
-                              fallback.className = 'product-fallback-icon text-3xl sm:text-5xl py-8 sm:py-12 text-center text-slate-300 w-full h-full flex items-center justify-center';
-                              fallback.innerText = '♳';
-                              parent.appendChild(fallback);
-                            }
+                            e.target.src = '/assets/placeholder-product.svg';
                           }}
                           className="product-img w-full h-full object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
                         <div className="text-3xl sm:text-5xl py-8 sm:py-12 text-center text-slate-300">♳</div>
                       )}
-                    </Link>
+                    </div>
 
                     <div className="p-2 sm:p-4 flex flex-col flex-1 justify-between">
                       <div>
@@ -1124,15 +1349,19 @@ export default function TenantLandingView({
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-1.5">
-                          <Link
-                            href={productHref}
-                            className="btn btn-outline"
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setQuickViewProduct(product);
+                              setCalculatorUnits((product.units_per_package || 100) * 5);
+                            }}
+                            className="btn btn-outline cursor-pointer"
                             style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
-                            title="Ver Ficha Técnica"
+                            title="Ver Ficha Técnica y Calculadora de Fardos"
                           >
                             <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             <span className="hidden sm:inline">Ficha</span>
-                          </Link>
+                          </button>
                           <button
                             type="button"
                             onClick={() => addItem(product)}
@@ -1192,108 +1421,147 @@ export default function TenantLandingView({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Servicio 1 */}
-              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-48 relative overflow-hidden bg-slate-900">
-                  <img
-                    src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-2149182258-612x612.webp/:/cr=t:0%25,l:5.67%25,w:88.67%25,h:100%25/rs=w:612,h:460,cg:true"
-                    alt="Soplado e Inyección de Envases"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                    onError={(e: any) => {
-                      e.target.onerror = null;
-                      e.target.src = '/hero-machine.jpg';
-                    }}
-                  />
-                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
-                    01 • SOPLADO & INYECCIÓN
+              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div className="h-48 relative overflow-hidden bg-slate-900">
+                    <img
+                      src="/assets/services/service-01.webp"
+                      alt="Soplado e Inyección de Envases"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => {
+                        e.target.onerror = null;
+                        e.target.src = '//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-2149182258-612x612.webp/:/cr=t:0%25,l:5.67%25,w:88.67%25,h:100%25/rs=w:612,h:460,cg:true';
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                      01 • SOPLADO & INYECCIÓN
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-bold text-lg mb-2 text-slate-900">
+                      Diseño, desarrollo y fabricación de envases PET, tapas y accesorios en PP
+                    </h3>
+                    <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                      Producción rotativa en alta cadencia para alimentos, bebidas, farma y químicos con cuello PCO 28mm y 38mm libre de deformaciones.
+                    </p>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2 text-slate-900">
-                    Diseño, desarrollo y fabricación de envases PET, tapas y accesorios en PP
-                  </h3>
-                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                    Producción rotativa en alta cadencia para alimentos, bebidas, farma y químicos con cuello PCO 28mm y 38mm libre de deformaciones.
-                  </p>
+                <div className="p-6 pt-0">
                   <button
                     type="button"
-                    onClick={() => handleWhatsAppQuote('Servicio de Soplado de Envases PET')}
-                    className="btn btn-accent btn-block"
+                    onClick={() => {
+                      setServiceOptionType('Botella PET Estándar');
+                      setServiceCapacity('500 ml / 28mm PCO');
+                      setServiceVolume('10.000 a 25.000 uds/mes');
+                      setActiveServiceModal({
+                        id: 'soplado',
+                        title: 'Diseño, desarrollo y fabricación de envases PET, tapas y accesorios en PP',
+                        tag: '01 • SOPLADO & INYECCIÓN',
+                      });
+                    }}
+                    className="btn btn-accent btn-block cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Cotizar Fabricación</span>
+                    <span>Configurar y Cotizar</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
               {/* Servicio 2 */}
-              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-48 relative overflow-hidden bg-slate-900">
-                  <img
-                    src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-1669778843-2048x2048.webp/:/cr=t:0%25,l:5.68%25,w:88.65%25,h:100%25/rs=w:730,h:549,cg:true"
-                    alt="Tapas, liners y accesorios"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                    onError={(e: any) => {
-                      e.target.onerror = null;
-                      e.target.src = '/hero-machine.jpg';
-                    }}
-                  />
-                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
-                    02 • TAPAS & ACCESORIOS
+              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div className="h-48 relative overflow-hidden bg-slate-900">
+                    <img
+                      src="/assets/services/service-02.webp"
+                      alt="Tapas, liners y accesorios"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => {
+                        e.target.onerror = null;
+                        e.target.src = '//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-1669778843-2048x2048.webp/:/cr=t:0%25,l:5.68%25,w:88.65%25,h:100%25/rs=w:730,h:549,cg:true';
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                      02 • TAPAS & ACCESORIOS
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-bold text-lg mb-2 text-slate-900">
+                      Proveedores de tapas, liners y accesorios para envases plásticos
+                    </h3>
+                    <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                      Suministro masivo de tapas de seguridad inviolable, liners de inducción para hermeticidad total, atomizadores y bombas dosificadoras.
+                    </p>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2 text-slate-900">
-                    Proveedores de tapas, liners y accesorios para envases plásticos
-                  </h3>
-                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                    Suministro masivo de tapas de seguridad inviolable, liners de inducción para hermeticidad total, atomizadores y bombas dosificadoras.
-                  </p>
+                <div className="p-6 pt-0">
                   <button
                     type="button"
-                    onClick={() => handleWhatsAppQuote('Suministro de Tapas y Liners')}
-                    className="btn btn-accent btn-block"
+                    onClick={() => {
+                      setServiceOptionType('Tapas de Seguridad Inviolable');
+                      setServiceCapacity('Rosca 28mm PCO 1881');
+                      setServiceVolume('20.000 uds/fardo');
+                      setActiveServiceModal({
+                        id: 'tapas',
+                        title: 'Proveedores de tapas, liners y accesorios para envases plásticos',
+                        tag: '02 • TAPAS & ACCESORIOS',
+                      });
+                    }}
+                    className="btn btn-accent btn-block cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Cotizar Tapas & Accesorios</span>
+                    <span>Configurar y Cotizar</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
 
               {/* Servicio 3 */}
-              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow">
-                <div className="h-48 relative overflow-hidden bg-slate-900">
-                  <img
-                    src="//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/blob-9c30011.png/:/cr=t:0%25,l:12.59%25,w:74.81%25,h:100%25/rs=w:730,h:549,cg:true"
-                    alt="Moldes 3D y Matricería"
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-cover"
-                    onError={(e: any) => {
-                      e.target.onerror = null;
-                      e.target.src = '/hero-machine.jpg';
-                    }}
-                  />
-                  <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
-                    03 • INGENIERÍA DE MOLDES
+              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+                <div>
+                  <div className="h-48 relative overflow-hidden bg-slate-900">
+                    <img
+                      src="/assets/services/service-03.png"
+                      alt="Moldes 3D y Matricería"
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => {
+                        e.target.onerror = null;
+                        e.target.src = '//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/blob-9c30011.png/:/cr=t:0%25,l:12.59%25,w:74.81%25,h:100%25/rs=w:730,h:549,cg:true';
+                      }}
+                    />
+                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
+                      03 • INGENIERÍA DE MOLDES
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-bold text-lg mb-2 text-slate-900">
+                      Personalización de proyectos, matricería 3D y moldes exclusivos
+                    </h3>
+                    <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                      Modelado CAD 3D para moldes exclusivos de tu marca en aluminio aeronáutico refrigerado con optimización de gramaje y resistencia.
+                    </p>
                   </div>
                 </div>
-                <div className="p-6">
-                  <h3 className="font-bold text-lg mb-2 text-slate-900">
-                    Personalización de proyectos, matricería 3D y moldes exclusivos
-                  </h3>
-                  <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                    Modelado CAD 3D para moldes exclusivos de tu marca en aluminio aeronáutico refrigerado con optimización de gramaje y resistencia.
-                  </p>
+                <div className="p-6 pt-0">
                   <button
                     type="button"
-                    onClick={() => handleWhatsAppQuote('Desarrollo de Molde Exclusivo 3D')}
-                    className="btn btn-accent btn-block"
+                    onClick={() => {
+                      setServiceOptionType('Desarrollo de Molde Exclusivo 3D');
+                      setServiceCapacity('Diseño a medida según muestra');
+                      setServiceVolume('Matriz 1 a 4 cavidades');
+                      setActiveServiceModal({
+                        id: 'moldes',
+                        title: 'Personalización de proyectos, matricería 3D y moldes exclusivos',
+                        tag: '03 • INGENIERÍA DE MOLDES',
+                      });
+                    }}
+                    className="btn btn-accent btn-block cursor-pointer flex items-center justify-center gap-2"
                   >
-                    <span>Solicitar Molde 3D</span>
+                    <span>Configurar y Cotizar</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -1304,18 +1572,18 @@ export default function TenantLandingView({
             <div className="mt-8 sm:mt-16 bg-slate-50 rounded-2xl p-4 sm:p-8 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 text-center">
               <div>
                 <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">🏆</div>
-                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Normas Técnicas</h4>
-                <p className="text-xs sm:text-sm text-slate-500">Cumplimiento de estándares de inocuidad y BPM para contacto alimentario y farmacéutico.</p>
+                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Inocuidad & BPM</h4>
+                <p className="text-xs sm:text-sm text-slate-500">Resina 100% virgen certificada para contacto alimentario y farmacéutico sin migración.</p>
               </div>
               <div>
-                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">♻️</div>
-                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Compromiso Sostenible</h4>
-                <p className="text-xs sm:text-sm text-slate-500">PET 100% reciclable con opciones de resina PCR grado alimenticio (rPET).</p>
+                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">⚙️</div>
+                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Alta Cadencia Rotativa</h4>
+                <p className="text-xs sm:text-sm text-slate-500">Capacidad de +12.000 BPH y mecanizado CNC de moldes con diseño exclusivo.</p>
               </div>
               <div>
-                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">⚡</div>
-                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Respuesta Inmediata</h4>
-                <p className="text-xs sm:text-sm text-slate-500">Línea directa de atención y despacho rápido por WhatsApp: {displayPhone}.</p>
+                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">🚛</div>
+                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Logística & Despacho Nacional</h4>
+                <p className="text-xs sm:text-sm text-slate-500">Entregas paletizadas seguras a todo el Ecuador y retiro directo en planta Quito.</p>
               </div>
             </div>
           </div>
@@ -1397,28 +1665,18 @@ export default function TenantLandingView({
 
                 <div className="form-group">
                   <label className="form-label">
-                    {tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? 'Tipo de Envase o Servicio Requerido' : 'Tipo de Requerimiento'}
+                    {tenantDefaults.contactReqLabel}
                   </label>
                   <select
                     className="form-select"
                     value={contactReqType}
                     onChange={(e) => setContactReqType(e.target.value)}
                   >
-                    {tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? (
-                      <>
-                        <option value="Cotización General de Envases">📦 Cotización General de Envases</option>
-                        <option value="Fabricación de Molde Personalizado">📐 Fabricación de Molde Personalizado 3D</option>
-                        <option value="Solicitud de Muestras Físicas">🧪 Solicitud de Kit de Muestras Físicas</option>
-                        <option value="Maquila de Soplado en Volumen">🏭 Maquila de Soplado en Alto Volumen</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Cotización Mayorista de Productos">📦 Cotización Mayorista de Productos</option>
-                        <option value="Pedidos Especiales y Personalizados">📐 Pedidos Especiales y Personalizados</option>
-                        <option value="Solicitud de Muestras Comerciales">🧪 Solicitud de Muestras Comerciales</option>
-                        <option value="Distribución y Despacho Masivo">🏭 Distribución y Despacho Masivo</option>
-                      </>
-                    )}
+                    {tenantDefaults.contactOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -1452,21 +1710,22 @@ export default function TenantLandingView({
               {/* Mapa Interactivo de Google Maps - Llano Grande, Quito */}
               <div className="google-maps-container" style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)', boxShadow: 'var(--shadow-md)' }}>
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.45524675!3d-0.11467465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"
+                  src={(landing as any)?.maps_embed_url || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.45524675!3d-0.11467465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"}
                   width="100%"
                   height="240"
                   style={{ border: 0, display: 'block' }}
                   allowFullScreen={false}
                   loading="lazy"
+                  sandbox="allow-scripts allow-same-origin allow-popups"
                   referrerPolicy="no-referrer-when-downgrade"
                   title={`Ubicación Planta ${tenant.name}`}
                 />
                 <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
                   <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>
-                    📍 {landing.plant_location || landing.address || (tenant.slug === 'ayme-pet' ? 'Llano Grande, Quito' : 'Ecuador')}
+                    📍 {tenantDefaults.plantLocation}
                   </span>
                   <a
-                    href={(landing as any)?.maps_url || (landing.address ? `https://maps.google.com/?q=${encodeURIComponent(landing.address)}` : (tenant.slug === 'ayme-pet' ? 'https://maps.google.com/?q=Llano+Grande,+Quito,+Ecuador' : 'https://maps.google.com/?q=Ecuador'))}
+                    href={(landing as any)?.maps_url || `https://maps.google.com/?q=${encodeURIComponent(tenantDefaults.plantLocation)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}
@@ -1481,7 +1740,7 @@ export default function TenantLandingView({
                   {tenant.name}
                 </h4>
                 <p style={{ color: 'var(--accent-light)', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.85rem' }}>
-                  {(landing as any)?.subtitle || (tenant.slug === 'ayme-pet' ? 'Solutions in Packaging' : tenant.industry_type || 'Comercio & Fabricación B2B')}
+                  {tenantDefaults.subtitle}
                 </p>
 
                 <ul className="contact-channels-list" style={{ marginBottom: 0 }}>
@@ -1490,7 +1749,7 @@ export default function TenantLandingView({
                     <div className="channel-text-box">
                       <h5>Planta de Fabricación</h5>
                       <span style={{ fontSize: '0.85rem' }}>
-                        {landing.address || (tenant.slug === 'ayme-pet' ? 'Llano Grande, Sector Calderón, Quito - Ecuador' : (tenant as any)?.address || 'Ecuador')}
+                        {tenantDefaults.address}
                       </span>
                     </div>
                   </li>
@@ -1508,7 +1767,7 @@ export default function TenantLandingView({
                     <div className="channel-text-box">
                       <h5>Ventas & Cotizaciones</h5>
                       <span style={{ fontSize: '0.85rem' }}>
-                        {landing.email || (tenant as any)?.email || (tenant.slug === 'ayme-pet' ? 'ventas@aymeindustriaspet.com' : `info@${tenant.slug}.com`)}
+                        {tenantDefaults.email}
                       </span>
                     </div>
                   </li>
@@ -1530,7 +1789,7 @@ export default function TenantLandingView({
                   ¿Su línea de producción requiere envases urgentes? Escríbanos directamente a planta.
                 </p>
                 <a
-                  href={buildEcuadorWhatsAppUrl(urgentWhatsapp, `⚡ PEDIDO URGENTE: Requiero despacho inmediato de ${tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics' ? 'envases PET' : 'productos'} para línea de producción en planta.`)}
+                  href={buildEcuadorWhatsAppUrl(urgentWhatsapp, `⚡ PEDIDO URGENTE: Requiero despacho inmediato de ${tenantDefaults.urgentProductType} para línea de producción en planta.`)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="btn btn-accent btn-block"
@@ -1597,6 +1856,339 @@ export default function TenantLandingView({
           </div>
         </div>
       </footer>
+
+      {/* Modal QuickView Interactivo de Ficha Técnica & Calculadora de Fardos */}
+      {quickViewProduct && (() => {
+        const specs = quickViewProduct.attributes?.specs || {};
+        const packSize = quickViewProduct.units_per_package || 100;
+        const fardosCalculados = Math.max(1, Math.ceil(calculatorUnits / packSize));
+        const totalUnits = fardosCalculados * packSize;
+        const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(quickViewProduct.slug || quickViewProduct.sku?.toLowerCase() || quickViewProduct.id)}`;
+
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
+            onClick={() => setQuickViewProduct(null)}
+          >
+            <div
+              className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header Modal */}
+              <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 text-slate-800 px-2 py-0.5 rounded">
+                    {quickViewProduct.sku || 'REF TÉCNICA'}
+                  </span>
+                  <span className="text-xs font-semibold text-slate-500">
+                    {categories.find((c) => c.id === quickViewProduct.category_id)?.name || 'Envase Industrial'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQuickViewProduct(null)}
+                  className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Contenido en 2 Columnas */}
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-start">
+                  {/* Foto del Producto */}
+                  <div className="sm:col-span-5 bg-slate-50 rounded-2xl border border-slate-200 p-4 aspect-square flex items-center justify-center relative overflow-hidden">
+                    {quickViewProduct.images && quickViewProduct.images[0] ? (
+                      <img
+                        src={quickViewProduct.images[0]}
+                        alt={quickViewProduct.name}
+                        className="w-full h-full object-contain filter drop-shadow-sm"
+                      />
+                    ) : (
+                      <div className="text-5xl text-slate-300">♳</div>
+                    )}
+                    {quickViewProduct.attributes?.badge && (
+                      <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
+                        {quickViewProduct.attributes.badge}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Datos Técnicos */}
+                  <div className="sm:col-span-7 space-y-3">
+                    <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
+                      {quickViewProduct.name}
+                    </h2>
+                    {quickViewProduct.description && (
+                      <p className="text-xs text-slate-600 leading-relaxed">
+                        {quickViewProduct.description}
+                      </p>
+                    )}
+
+                    {/* Especificaciones */}
+                    <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                      <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                        <span className="text-[10px] text-slate-400 block font-medium">Empaque</span>
+                        <span className="font-bold text-slate-800">{packSize} uds / fardo</span>
+                      </div>
+                      {Object.entries(specs).slice(0, 5).map(([k, v]) => (
+                        <div key={k} className="bg-slate-50 p-2 rounded-xl border border-slate-100">
+                          <span className="text-[10px] text-slate-400 block font-medium capitalize">{k.replace('_', ' ')}</span>
+                          <span className="font-bold text-slate-800 truncate block">{String(v)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Calculadora Interactiva de Fardos en Tiempo Real */}
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-4 sm:p-5 text-white space-y-3 shadow-md">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-base sm:text-lg">🧮</span>
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-bold text-white">
+                          Calculadora de Volumen & Fardos
+                        </h4>
+                        <p className="text-[10px] text-slate-400">
+                          Calcule el embalaje industrial según sus requerimientos mensuales.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <div className="flex-1 min-w-[140px]">
+                      <label className="text-[10px] text-slate-300 font-bold block mb-1">
+                        Unidades requeridas:
+                      </label>
+                      <input
+                        type="number"
+                        min={packSize}
+                        max={1000000}
+                        step={packSize}
+                        value={calculatorUnits}
+                        onChange={(e) => setCalculatorUnits(Math.max(packSize, Math.min(1000000, Number(e.target.value) || packSize)))}
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-700 text-white font-mono font-bold text-sm focus:outline-none focus:border-red-500"
+                      />
+                    </div>
+                    {/* Botones rápidos */}
+                    <div className="flex items-end gap-1.5 pt-4">
+                      {[-500, +500, +1000].map((delta) => (
+                        <button
+                          key={delta}
+                          type="button"
+                          onClick={() => setCalculatorUnits((prev) => Math.max(packSize, Math.min(1000000, prev + delta)))}
+                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-mono font-bold text-slate-200 cursor-pointer"
+                        >
+                          {delta > 0 ? `+${delta}` : delta}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Resumen de cálculo en vivo */}
+                  <div className="bg-black/30 rounded-xl p-3 border border-white/10 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-slate-400 text-[11px] block">Despacho optimizado:</span>
+                      <strong className="text-amber-300 text-sm font-mono">
+                        {fardosCalculados} {fardosCalculados === 1 ? 'fardo' : 'fardos'}
+                      </strong>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-slate-400 text-[11px] block">Total de envases:</span>
+                      <strong className="text-white text-sm font-mono">
+                        {totalUnits.toLocaleString()} unidades
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Acciones del Modal */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      addItem(quickViewProduct, fardosCalculados);
+                      setQuickViewProduct(null);
+                      openCart();
+                    }}
+                    className="btn btn-outline flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs cursor-pointer"
+                  >
+                    <ShoppingCart className="w-4 h-4" />
+                    <span>Agregar ({fardosCalculados} fardos) al Cotizador</span>
+                  </button>
+
+                  <a
+                    href={buildEcuadorWhatsAppUrl(
+                      mainWhatsapp,
+                      `🏭 *COTIZACIÓN DE ENVASES - ${tenant.name.toUpperCase()}*\n\n` +
+                      `📦 *Producto:* ${quickViewProduct.name}\n` +
+                      `🏷️ *SKU:* ${quickViewProduct.sku || 'S/N'}\n` +
+                      `📊 *Volumen Requerido:* ${totalUnits.toLocaleString()} unidades (${fardosCalculados} fardos x ${packSize} uds)\n` +
+                      (selectedBranch ? `📍 *Sucursal / Despacho:* ${selectedBranch.name}\n` : '') +
+                      `\nSolicito confirmación de disponibilidad inmediata y costos de envío.`
+                    )}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-whatsapp flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs shadow-sm cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Cotizar por WhatsApp</span>
+                  </a>
+                </div>
+
+                <div className="text-center pt-1 border-t border-slate-100">
+                  <Link
+                    href={productHref}
+                    className="text-xs text-slate-500 hover:text-slate-800 font-semibold underline"
+                  >
+                    Ver página de producto completa y especificaciones ampliadas →
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal Interactivo de Requerimiento Técnico de Servicios Industriales */}
+      {activeServiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div
+            className="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Modal */}
+            <div className="p-5 sm:p-6 border-b border-slate-100 flex items-start justify-between bg-slate-50/80">
+              <div>
+                <span className="text-[10px] sm:text-xs font-mono font-bold tracking-wider text-rose-600 uppercase bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                  {activeServiceModal.tag}
+                </span>
+                <h3 className="font-bold text-base sm:text-lg text-slate-900 mt-1.5 leading-snug">
+                  Configuración Técnica de Requerimiento
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Complete los parámetros de su línea para recibir cotización de fábrica y asesoría técnica.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveServiceModal(null)}
+                className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-sm font-bold cursor-pointer transition-colors shrink-0"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Formulario */}
+            <form onSubmit={handleServiceModalSubmit} className="p-5 sm:p-6 space-y-4 overflow-y-auto">
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Tipo de Requerimiento / Producto</label>
+                <input
+                  type="text"
+                  value={serviceOptionType}
+                  onChange={(e) => setServiceOptionType(e.target.value)}
+                  placeholder="Ej: Botella Cilíndrica PET / Tapa Flip-top"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Capacidad / Rosca / Medida</label>
+                  <input
+                    type="text"
+                    value={serviceCapacity}
+                    onChange={(e) => setServiceCapacity(e.target.value)}
+                    placeholder="Ej: 500 ml / 28mm PCO"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-red-600"
+                    required
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Volumen Estimado</label>
+                  <input
+                    type="text"
+                    value={serviceVolume}
+                    onChange={(e) => setServiceVolume(e.target.value)}
+                    placeholder="Ej: 10.000 uds/mes"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-red-600"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-slate-100">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Su Nombre / Contacto</label>
+                  <input
+                    type="text"
+                    value={serviceCustomerName}
+                    onChange={(e) => setServiceCustomerName(e.target.value)}
+                    placeholder="Ej: Ing. Carlos V."
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-red-600"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Empresa / Razón Social</label>
+                  <input
+                    type="text"
+                    value={serviceCustomerCompany}
+                    onChange={(e) => setServiceCustomerCompany(e.target.value)}
+                    placeholder="Ej: Embotelladora Andina"
+                    className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-red-600"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Teléfono / WhatsApp de Contacto *</label>
+                <input
+                  type="tel"
+                  value={serviceCustomerPhone}
+                  onChange={(e) => setServiceCustomerPhone(e.target.value)}
+                  placeholder="Ej: 0998722324"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-red-600"
+                  required
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-700">Especificaciones Técnicas / Observaciones</label>
+                <textarea
+                  rows={2}
+                  value={serviceNotes}
+                  onChange={(e) => setServiceNotes(e.target.value)}
+                  placeholder="Detalles sobre gramaje, coloración masterbatch, moldes existentes o plazos..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-red-600"
+                />
+              </div>
+
+              <div className="pt-2 space-y-2">
+                <button
+                  type="submit"
+                  className="w-full btn btn-whatsapp flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-sm shadow-md cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Enviar Requerimiento Técnico a WhatsApp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleWhatsAppQuote(activeServiceModal.title);
+                    setActiveServiceModal(null);
+                  }}
+                  className="w-full text-center text-xs text-slate-500 hover:text-slate-800 py-1 transition-colors cursor-pointer"
+                >
+                  O chatear directo sin completar formulario ↗
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Botón Flotante de WhatsApp Comercial (Ecuador) - Ubicado a la derecha */}
       {social.show_floating_whatsapp !== false && (

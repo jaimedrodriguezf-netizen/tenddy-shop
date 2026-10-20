@@ -21,6 +21,7 @@ import {
 import { useCartStore } from '@/lib/store/cart';
 import { Tenant, Branch } from '@/lib/types';
 import { getProductPrimaryImage } from '@/lib/product-image';
+import { buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
 
 interface CartDrawerProps {
   tenant: Tenant;
@@ -48,6 +49,7 @@ export default function CartDrawer({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdQuoteNumber, setCreatedQuoteNumber] = useState<string | null>(null);
+  const [lastWhatsAppUrl, setLastWhatsAppUrl] = useState<string | null>(null);
   const isMounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -155,9 +157,16 @@ export default function CartDrawer({
 
       msg += `\n_Generado automáticamente desde el catálogo B2B de ${tenant.name}_`;
 
-      // 3. Abrir WhatsApp con parámetros de seguridad
-      const waUrl = `https://wa.me/${targetWhatsapp}?text=${encodeURIComponent(msg)}`;
-      window.open(waUrl, '_blank', 'noopener,noreferrer');
+      // 3. Normalizar número ecuatoriano y construir WhatsApp URL segura
+      const rawTargetPhone = selectedBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default || (tenant as any)?.phone_number || '';
+      const waUrl = buildEcuadorWhatsAppUrl(rawTargetPhone, msg);
+      setLastWhatsAppUrl(waUrl);
+
+      try {
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      } catch {
+        // Fallback manejado por botón en pantalla de éxito (Safari/iOS)
+      }
       clearTenantCart(tenant.id);
     } catch (err: any) {
       setErrorMsg(err.message || 'Ocurrió un error inesperado');
@@ -502,14 +511,29 @@ export default function CartDrawer({
                   </p>
                 </div>
                 <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-                  La solicitud se guardó en nuestra base de datos y se abrió WhatsApp para conectar con el asesor técnico de la planta de <strong>{selectedBranch?.city}</strong>.
+                  La solicitud se guardó en nuestra base de datos para la sucursal de <strong>{selectedBranch?.city || 'Planta'}</strong>.
                 </p>
+
+                {/* Botón directo de WhatsApp para Safari/iOS que bloquean aperturas emergentes tras fetch */}
+                {lastWhatsAppUrl && (
+                  <a
+                    href={lastWhatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full max-w-xs bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all cursor-pointer"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span>Abrir Conversación en WhatsApp</span>
+                  </a>
+                )}
+
                 <button
+                  type="button"
                   onClick={() => {
                     setStep('items');
                     closeCart();
                   }}
-                  className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-6 py-2.5 rounded-lg transition-colors cursor-pointer"
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold px-6 py-2.5 rounded-xl transition-colors cursor-pointer"
                 >
                   Continuar Explorando
                 </button>

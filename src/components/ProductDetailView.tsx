@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft,
@@ -77,38 +77,61 @@ export default function ProductDetailView({
   const [isSaved, setIsSaved] = useState(false);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
 
-  // Variantes de paquete (ej: Paquete de 5 / 10 / 15)
-  const rawPacks = specs.paquetes || specs.presentacion || '15 uds, 10 uds, 5 uds';
+  // Variantes de paquete y fardos industriales
+  const defaultPackSize = product.units_per_package || 100;
+  const isIndustrialTenant = tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics';
+  const defaultPacks = isIndustrialTenant
+    ? `Fardo x ${defaultPackSize} uds, 5 Fardos (${defaultPackSize * 5} uds), 10 Fardos (${defaultPackSize * 10} uds)`
+    : '15 uds, 10 uds, 5 uds';
+  const rawPacks = specs.paquetes || specs.presentacion || defaultPacks;
   const packOptions = rawPacks.split(/[,/•;]+/).map((s: string) => s.trim()).filter(Boolean);
-  const [selectedPack, setSelectedPack] = useState<string>(packOptions[0] || 'Paquete de 15');
+  const [selectedPack, setSelectedPack] = useState<string>(packOptions[0] || (isIndustrialTenant ? `Fardo x ${defaultPackSize} uds` : 'Paquete de 15'));
 
   // Variantes de tapa/color (ej: Tapas Negras, Tapas Blancas)
   const rawColors = specs.tapas || specs.color || specs.variante || 'Tapas Negras, Tapas Blancas';
   const colorOptions = rawColors.split(/[,/•;]+/).map((s: string) => s.trim()).filter(Boolean);
   const [selectedColor, setSelectedColor] = useState<string>(colorOptions[0] || 'Tapas Negras');
 
-  // Temporizador interactivo de Oferta de Temporada (Días:Horas:Min:Seg)
-  const [timeLeft, setTimeLeft] = useState({
-    days: 18,
-    hours: 6,
-    minutes: 33,
-    seconds: 22,
-  });
+  // Temporizador dinámico sincronizado al final del mes actual (Días:Horas:Min:Seg)
+  const calculateTimeRemaining = () => {
+    const now = new Date();
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const diff = Math.max(0, endOfMonth.getTime() - now.getTime());
+    const totalSeconds = Math.floor(diff / 1000);
+    const days = Math.floor(totalSeconds / 86400);
+    const hours = Math.floor((totalSeconds % 86400) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return { days, hours, minutes, seconds };
+  };
+
+  const [timeLeft, setTimeLeft] = useState(calculateTimeRemaining);
 
   useEffect(() => {
+    setTimeLeft(calculateTimeRemaining());
     const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        if (prev.days > 0) return { ...prev, days: prev.days - 1, hours: 23, minutes: 59, seconds: 59 };
-        return prev;
-      });
+      setTimeLeft(calculateTimeRemaining());
     }, 1000);
     return () => clearInterval(timer);
   }, []);
 
   const format2 = (n: number) => String(n).padStart(2, '0');
+
+  // Fechas dinámicas de oferta y despacho
+  const offerEndText = useMemo(() => {
+    const now = new Date();
+    const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `Termina el ${lastDayOfMonth.getDate()} ${monthNames[lastDayOfMonth.getMonth()]} a las 11:59 pm`;
+  }, []);
+
+  const deliveryEstimate = useMemo(() => {
+    const now = new Date();
+    const start = new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const end = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+    const monthNames = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
+    return `${start.getDate()} ${monthNames[start.getMonth()]} - ${end.getDate()} ${monthNames[end.getMonth()]}`;
+  }, []);
 
   // Breadcrumb comercial
   const categoryObj = categories.find((c) => c.id === product.category_id);
@@ -385,15 +408,18 @@ export default function ProductDetailView({
                     <Clock className="w-4 h-4 text-red-600 animate-spin" style={{ animationDuration: '6s' }} />
                     <span>Oferta de temporada</span>
                   </div>
-                  <div className="flex items-center gap-1 font-mono font-bold text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-200">
-                    <span>{format2(timeLeft.days)}</span>:
-                    <span>{format2(timeLeft.hours)}</span>:
-                    <span>{format2(timeLeft.minutes)}</span>:
-                    <span>{format2(timeLeft.seconds)}</span>
+                  <div
+                    className="flex items-center gap-1 font-mono font-bold text-xs text-red-600 bg-red-50 px-2 py-1 rounded-md border border-red-200"
+                    suppressHydrationWarning
+                  >
+                    <span suppressHydrationWarning>{format2(timeLeft.days)}</span>:
+                    <span suppressHydrationWarning>{format2(timeLeft.hours)}</span>:
+                    <span suppressHydrationWarning>{format2(timeLeft.minutes)}</span>:
+                    <span suppressHydrationWarning>{format2(timeLeft.seconds)}</span>
                   </div>
                 </div>
-                <div className="text-[10px] text-slate-500 text-right">
-                  Termina el 31 oct a las 11:59 pm
+                <div className="text-[10px] text-slate-500 text-right" suppressHydrationWarning>
+                  {offerEndText}
                 </div>
               </div>
 
@@ -520,7 +546,7 @@ export default function ProductDetailView({
                     </span>
                   </div>
                   <div className="text-xs text-slate-600 mt-0.5">
-                    Entrega estimada: <strong className="text-slate-900">27 oct - 25 nov</strong>
+                    Entrega estimada: <strong className="text-slate-900">{deliveryEstimate} (2 a 5 días hábiles)</strong>
                   </div>
                 </div>
               </div>
@@ -660,7 +686,7 @@ export default function ProductDetailView({
               </div>
               <div className="bg-slate-50 p-3 rounded-xl border border-slate-100 flex justify-between items-center">
                 <span className="text-slate-500 font-medium">Uso Recomendado:</span>
-                <span className="font-bold text-slate-900">Jengibre, Muestras, Jugos, Farma</span>
+                <span className="font-bold text-slate-900">{specs.uso || specs.aplicacion || 'Bebidas, Alimentos, Farma, Químicos'}</span>
               </div>
             </div>
 
