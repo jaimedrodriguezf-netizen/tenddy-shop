@@ -27,6 +27,7 @@ import { Product, Tenant, Branch, Category } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import { hasValidProductImage } from '@/lib/product-image';
+import { resolveStorefrontTokens, buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 
 interface ProductDetailViewProps {
   product: Product;
@@ -108,7 +109,6 @@ export default function ProductDetailView({
   const [timeLeft, setTimeLeft] = useState(calculateTimeRemaining);
 
   useEffect(() => {
-    setTimeLeft(calculateTimeRemaining());
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeRemaining());
     }, 1000);
@@ -137,7 +137,12 @@ export default function ProductDetailView({
   const categoryObj = categories.find((c) => c.id === product.category_id);
   const subcategory = specs.subcategoria || specs.sector || 'Cristalería y copas';
   const targetWhatsapp = currentBranch?.phone_whatsapp || tenant.landing_config?.whatsapp_default || '593998722324';
-  const totalCartPackages = getTotalPackages();
+  const totalCartPackages = getTotalPackages(tenant.id);
+
+  const primaryColor = tenant.theme_config?.primary_color || '#FB7701';
+  const secondaryColor = tenant.theme_config?.secondary_color || '#111827';
+  const themeTokens = useMemo(() => resolveStorefrontTokens(primaryColor, secondaryColor), [primaryColor, secondaryColor]);
+  const themeStyles = useMemo(() => buildStorefrontThemeCSS(primaryColor, secondaryColor), [primaryColor, secondaryColor]);
 
   const handleAddToCart = () => {
     const variantLabel = `${selectedPack} • ${selectedColor}`;
@@ -201,7 +206,10 @@ export default function ProductDetailView({
   ];
 
   return (
-    <div className="min-h-screen bg-[#F6F7F9] text-slate-900 font-sans pb-28 selection:bg-orange-500 selection:text-white">
+    <div
+      style={themeStyles}
+      className="min-h-screen bg-[#F6F7F9] text-slate-900 font-sans pb-28 selection:bg-[var(--tenant-primary)] selection:text-[var(--tenant-primary-text)]"
+    >
       {/* Drawer del Carrito Cotizador */}
       <CartDrawer
         tenant={tenant}
@@ -268,12 +276,16 @@ export default function ProductDetailView({
             <button
               type="button"
               onClick={openCart}
-              className="relative p-2 px-3 rounded-xl bg-orange-600 hover:bg-orange-500 text-white shadow-xs flex items-center gap-1.5 transition-all cursor-pointer font-bold text-xs"
+              style={{ backgroundColor: themeTokens.secondary, color: themeTokens.secondaryText }}
+              className="relative p-2 px-3 rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer font-bold text-xs hover:brightness-110 active:scale-95"
             >
               <ShoppingCart className="w-4 h-4" />
               <span className="hidden sm:inline">Carrito</span>
               {totalCartPackages > 0 && (
-                <span className="bg-white text-orange-600 font-mono font-extrabold text-[10px] px-1.5 py-0.2 rounded-full">
+                <span
+                  style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
+                  className="font-mono font-extrabold text-[10px] px-1.5 py-0.2 rounded-full shadow-2xs"
+                >
                   {totalCartPackages}
                 </span>
               )}
@@ -513,7 +525,8 @@ export default function ProductDetailView({
                 <button
                   type="button"
                   onClick={handleAddToCart}
-                  className="w-full bg-orange-600 hover:bg-orange-500 text-white font-extrabold text-sm py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all hover:scale-[1.01] cursor-pointer"
+                  style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
+                  className="w-full font-extrabold text-sm py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all hover:brightness-110 active:scale-[0.99] cursor-pointer"
                 >
                   <ShoppingCart className="w-4 h-4" />
                   <span>Agregar al Carrito ({quantity} {quantity === 1 ? 'paquete' : 'paquetes'})</span>

@@ -99,7 +99,11 @@ export default function TenantLandingView({
   const [contactReqType, setContactReqType] = useState<string>('Cotización General de Envases');
   const [contactMessage, setContactMessage] = useState<string>('');
   const [isSubmittingContact, setIsSubmittingContact] = useState<boolean>(false);
-  const formRenderedAt = useRef<number>(Date.now());
+  const formRenderedAt = useRef<number>(0);
+
+  useEffect(() => {
+    formRenderedAt.current = Date.now();
+  }, []);
 
   // Modal Interactivo de Requerimiento Técnico de Servicios Industriales
   const [activeServiceModal, setActiveServiceModal] = useState<{
@@ -115,7 +119,7 @@ export default function TenantLandingView({
   const [serviceCustomerPhone, setServiceCustomerPhone] = useState<string>('');
   const [serviceNotes, setServiceNotes] = useState<string>('');
 
-  const { openCart, addItem, getTotalPackages } = useCartStore();
+  const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
 
   const { landing_config: landing, theme_config: theme } = tenant;
   const logoHeight = (theme as any)?.logo_height || 42;
@@ -129,6 +133,7 @@ export default function TenantLandingView({
   const defaultQuoteSubject = tenant.industry_type === 'plastics' || tenant.slug === 'ayme-pet' ? 'envases plásticos' : 'productos';
   const defaultWelcomeMsg = social.whatsapp_welcome_msg || `¡Hola ${tenant.name}! Vengo desde su portal web oficial y deseo cotizar ${defaultQuoteSubject}.`;
 
+  const totalCartUnits = getTotalUnits(tenant.id);
   const totalCartPackages = getTotalPackages(tenant.id);
 
   // Fallbacks y valores corporativos centralizados (desacoplamiento de ternarios dispersos)
@@ -887,6 +892,7 @@ export default function TenantLandingView({
             muted
             loop
             playsInline
+            preload="metadata"
             poster={landing.hero_image_url || '/hero-machine.jpg'}
             id="hero-background-video"
             style={{

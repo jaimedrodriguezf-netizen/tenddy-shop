@@ -35,6 +35,7 @@ import ProductDetailView from '@/components/ProductDetailView';
 import VersionBadge from '@/components/VersionBadge';
 import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
 import { hasValidProductImage, getProductPrimaryImage } from '@/lib/product-image';
+import { resolveStorefrontTokens, buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 
 interface TenantCatalogViewProps {
   tenant: Tenant;
@@ -86,7 +87,10 @@ export default function TenantCatalogView({
 
   const totalCartUnits = getTotalUnits(tenant.id);
   const totalCartPackages = getTotalPackages(tenant.id);
-  const primaryColor = tenant.theme_config?.primary_color || '#0284c7';
+  const primaryColor = tenant.theme_config?.primary_color || '#FB7701';
+  const secondaryColor = tenant.theme_config?.secondary_color || '#111827';
+  const themeTokens = useMemo(() => resolveStorefrontTokens(primaryColor, secondaryColor), [primaryColor, secondaryColor]);
+  const themeStyles = useMemo(() => buildStorefrontThemeCSS(primaryColor, secondaryColor), [primaryColor, secondaryColor]);
 
   // Canales de Contacto & Redes Sociales Oficiales
   const aymePhoneFallback = tenant.slug === 'ayme-pet' ? '0998722324' : '';
@@ -255,7 +259,10 @@ export default function TenantCatalogView({
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-24 selection:bg-sky-500 selection:text-white">
+    <div
+      style={themeStyles}
+      className="min-h-screen bg-slate-100 text-slate-900 font-sans pb-24 selection:bg-[var(--tenant-primary)] selection:text-[var(--tenant-primary-text)]"
+    >
       {/* Drawer del Carrito Cotizador */}
       <CartDrawer
         tenant={tenant}
@@ -289,8 +296,8 @@ export default function TenantCatalogView({
               </div>
             ) : (
               <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-white text-base shadow-sm shrink-0"
-                style={{ backgroundColor: primaryColor }}
+                className="w-9 h-9 rounded-xl flex items-center justify-center font-extrabold text-base shadow-sm shrink-0"
+                style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
               >
                 {tenant.name.charAt(0)}
               </div>
@@ -335,7 +342,7 @@ export default function TenantCatalogView({
                       onClick={() => setIsAdminMenuOpen(false)}
                       className="w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 hover:bg-slate-50 text-slate-700 transition-colors"
                     >
-                      <LayoutDashboard className="w-4 h-4 text-sky-600" />
+                      <LayoutDashboard className="w-4 h-4" style={{ color: themeTokens.primary }} />
                       <span>Volver a Mi Panel</span>
                     </Link>
 
@@ -391,14 +398,19 @@ export default function TenantCatalogView({
               </a>
             )}
 
-            {/* Botón Carrito Cotizador */}
+            {/* Botón Carrito Cotizador Estilo Temu */}
             <button
               onClick={openCart}
-              className="relative p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white shadow-sm flex items-center gap-1.5 transition-all cursor-pointer"
+              style={{ backgroundColor: themeTokens.secondary, color: themeTokens.secondaryText }}
+              className="relative p-2 px-3 rounded-xl shadow-xs flex items-center gap-2 transition-all cursor-pointer font-bold text-xs hover:brightness-110 active:scale-95"
             >
               <ShoppingCart className="w-4 h-4" />
+              <span className="hidden sm:inline">Carrito</span>
               {totalCartUnits > 0 && (
-                <span className="bg-rose-500 text-white font-mono font-bold text-[10px] px-1.5 py-0.2 rounded-full">
+                <span
+                  style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
+                  className="font-mono font-bold text-[10px] px-1.5 py-0.2 rounded-full shadow-2xs"
+                >
                   {totalCartPackages}
                 </span>
               )}
@@ -406,30 +418,41 @@ export default function TenantCatalogView({
           </div>
         </div>
 
-        {/* Buscador Integrado con Dropdown de Atajos y Categorías */}
+        {/* Buscador Integrado Temu-Style con Botón de Búsqueda y Dropdown */}
         <div className="max-w-7xl mx-auto px-3 sm:px-6 pb-2.5">
-          <div ref={searchContainerRef} className="relative">
-            <Search className="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onFocus={() => setIsSearchDropdownOpen(true)}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar productos, prendas, códigos SKU o colecciones..."
-              className="w-full bg-slate-100 border border-slate-200 rounded-full pl-10 pr-9 py-2 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-400 focus:outline-none transition-all shadow-2xs"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery('');
-                  setIsSearchDropdownOpen(false);
-                }}
-                className="absolute right-3 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            )}
+          <div ref={searchContainerRef} className="relative flex items-stretch">
+            <div className="relative flex-1 flex items-center">
+              <Search className="w-4 h-4 absolute left-3.5 text-slate-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onFocus={() => setIsSearchDropdownOpen(true)}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Buscar productos, prendas, códigos SKU o colecciones..."
+                className="w-full bg-slate-100 border border-slate-200 rounded-l-full sm:rounded-l-2xl pl-10 pr-9 py-2 sm:py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] focus:outline-none transition-all shadow-2xs"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setIsSearchDropdownOpen(false);
+                  }}
+                  className="absolute right-3 text-slate-400 hover:text-slate-700 text-xs font-bold cursor-pointer"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsSearchDropdownOpen(false)}
+              style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
+              className="px-4 sm:px-6 rounded-r-full sm:rounded-r-2xl font-bold text-xs sm:text-sm flex items-center gap-1.5 transition-all hover:brightness-105 active:scale-98 shadow-xs cursor-pointer shrink-0"
+            >
+              <Search className="w-3.5 h-3.5 hidden sm:inline" />
+              <span>Buscar</span>
+            </button>
 
             {/* Dropdown Flotante de Sugerencias y Selección de Categorías */}
             {isSearchDropdownOpen && (
@@ -501,7 +524,7 @@ export default function TenantCatalogView({
                 <div>
                   <div className="flex items-center justify-between text-slate-400 text-[11px] font-bold uppercase tracking-wider mb-2">
                     <div className="flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-sky-500" />
+                      <Layers className="w-3.5 h-3.5" style={{ color: themeTokens.primary }} />
                       <span>Seleccionar Categoría</span>
                     </div>
                     <span className="text-[10px] text-slate-400 font-normal">
@@ -531,7 +554,7 @@ export default function TenantCatalogView({
                           <Sparkles className="w-3.5 h-3.5 text-slate-700" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <span className="font-bold text-xs block truncate">Todas las Prendas</span>
+                          <span className="font-bold text-xs block truncate">Todos los Productos</span>
                           <span className="text-[10px] opacity-75 font-mono block -mt-0.5">
                             {products.length} productos
                           </span>
@@ -558,9 +581,18 @@ export default function TenantCatalogView({
                               }}
                               className={`w-full flex items-center gap-2.5 p-2 rounded-xl border text-left transition-all cursor-pointer ${
                                 isSelected
-                                  ? 'bg-sky-50 border-sky-300 text-sky-950 font-bold'
+                                  ? 'font-bold'
                                   : 'bg-slate-50 hover:bg-slate-100 border-slate-200/80 text-slate-800'
                               }`}
+                              style={
+                                isSelected
+                                  ? {
+                                      backgroundColor: themeTokens.primaryLight,
+                                      borderColor: themeTokens.primaryBorder,
+                                      color: themeTokens.primary,
+                                    }
+                                  : undefined
+                              }
                             >
                               <div className="w-7 h-7 rounded-full overflow-hidden bg-white border border-slate-200 shrink-0 flex items-center justify-center p-0.5">
                                 {rc.image_url ? (
@@ -599,9 +631,18 @@ export default function TenantCatalogView({
                                         setSearchQuery('');
                                         setIsSearchDropdownOpen(false);
                                       }}
+                                      style={
+                                        isSubSelected
+                                          ? {
+                                              backgroundColor: themeTokens.primary,
+                                              borderColor: themeTokens.primary,
+                                              color: themeTokens.primaryText,
+                                            }
+                                          : undefined
+                                      }
                                       className={`px-2 py-0.5 rounded-md text-[10px] font-medium border transition-colors cursor-pointer ${
                                         isSubSelected
-                                          ? 'bg-sky-600 text-white border-sky-600 font-bold'
+                                          ? 'font-bold'
                                           : 'bg-white hover:bg-slate-100 text-slate-600 border-slate-200'
                                       }`}
                                     >
@@ -631,13 +672,18 @@ export default function TenantCatalogView({
             <button
               type="button"
               onClick={() => setIsMegaMenuOpen(!isMegaMenuOpen)}
+              style={
+                isMegaMenuOpen
+                  ? { backgroundColor: themeTokens.secondary, color: themeTokens.secondaryText }
+                  : undefined
+              }
               className={`px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
                 isMegaMenuOpen
-                  ? 'bg-slate-900 text-white shadow-xs'
+                  ? 'shadow-xs'
                   : 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200/80'
               }`}
             >
-              <Layers className="w-3.5 h-3.5 text-sky-600" />
+              <Layers className="w-3.5 h-3.5" style={{ color: isMegaMenuOpen ? themeTokens.secondaryText : themeTokens.primary }} />
               <span>Categorías</span>
               <ChevronDown
                 className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -651,10 +697,19 @@ export default function TenantCatalogView({
                 setSelectedCategory('all');
                 setIsMegaMenuOpen(false);
               }}
+              style={
+                selectedCategory === 'all'
+                  ? {
+                      backgroundColor: themeTokens.primary,
+                      color: themeTokens.primaryText,
+                      boxShadow: `0 2px 8px ${themeTokens.primaryLight}`,
+                    }
+                  : undefined
+              }
               className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
                 selectedCategory === 'all'
-                  ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'shadow-xs'
+                  : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/80'
               }`}
             >
               🔥 Todos los Productos
@@ -696,22 +751,34 @@ export default function TenantCatalogView({
               </button>
             )}
 
-            {categories.filter((c) => !c.parent_id).map((c) => (
-              <button
-                key={c.id}
-                onClick={() => {
-                  setSelectedCategory(c.id);
-                  setIsMegaMenuOpen(false);
-                }}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                  selectedCategory === c.id || activeRootCategory?.id === c.id
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                {c.name}
-              </button>
-            ))}
+            {categories.filter((c) => !c.parent_id).map((c) => {
+              const isSelected = selectedCategory === c.id || activeRootCategory?.id === c.id;
+              return (
+                <button
+                  key={c.id}
+                  onClick={() => {
+                    setSelectedCategory(c.id);
+                    setIsMegaMenuOpen(false);
+                  }}
+                  style={
+                    isSelected
+                      ? {
+                          backgroundColor: themeTokens.primary,
+                          color: themeTokens.primaryText,
+                          boxShadow: `0 2px 8px ${themeTokens.primaryLight}`,
+                        }
+                      : undefined
+                  }
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    isSelected
+                      ? 'shadow-xs font-bold'
+                      : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200/80'
+                  }`}
+                >
+                  {c.name}
+                </button>
+              );
+            })}
           </div>
 
           {/* Sub-barra de Subcategorías (Nivel 2) */}
@@ -741,9 +808,17 @@ export default function TenantCatalogView({
                     key={sub.id}
                     type="button"
                     onClick={() => setSelectedCategory(sub.id)}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: themeTokens.primary,
+                            color: themeTokens.primaryText,
+                          }
+                        : undefined
+                    }
                     className={`px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-sky-600 text-white shadow-xs font-bold'
+                        ? 'shadow-xs font-bold'
                         : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
@@ -756,21 +831,34 @@ export default function TenantCatalogView({
 
           {/* Sub-barra reactiva de 3er Nivel (Nivel 3) */}
           {availableThirdLevel.length > 0 && activeSubCategory && (
-            <div className="flex items-center gap-1.5 pt-1.5 pb-1 overflow-x-auto text-[11px] border-t border-slate-100/80 scrollbar-none bg-sky-50/40 -mx-3 sm:-mx-6 px-3 sm:px-6">
-              <span className="text-[10px] font-extrabold text-sky-800 uppercase tracking-wider shrink-0 mr-1 flex items-center gap-0.5">
-                <CornerDownRight className="w-3 h-3 text-sky-600" />
+            <div
+              style={{ backgroundColor: themeTokens.primaryLight }}
+              className="flex items-center gap-1.5 pt-1.5 pb-1 overflow-x-auto text-[11px] border-t border-slate-100/80 scrollbar-none -mx-3 sm:-mx-6 px-3 sm:px-6"
+            >
+              <span
+                style={{ color: themeTokens.primary }}
+                className="text-[10px] font-extrabold uppercase tracking-wider shrink-0 mr-1 flex items-center gap-0.5"
+              >
+                <CornerDownRight className="w-3 h-3" />
                 <span>{activeSubCategory.name}</span>
-                <ChevronRight className="w-3 h-3 text-sky-400" />
+                <ChevronRight className="w-3 h-3 opacity-60" />
               </span>
 
               <button
                 type="button"
                 onClick={() => setSelectedCategory(activeSubCategory.id)}
-                className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                style={
                   selectedCategory === activeSubCategory.id
-                    ? 'bg-sky-700 text-white shadow-xs font-bold'
-                    : 'bg-sky-100/80 text-sky-800 hover:bg-sky-200/80 border border-sky-200'
-                }`}
+                    ? {
+                        backgroundColor: themeTokens.primary,
+                        color: themeTokens.primaryText,
+                      }
+                    : {
+                        color: themeTokens.primary,
+                        borderColor: themeTokens.primaryBorder,
+                      }
+                }
+                className="px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer bg-white border shadow-2xs"
               >
                 Todo en {activeSubCategory.name}
               </button>
@@ -782,9 +870,17 @@ export default function TenantCatalogView({
                     key={tl.id}
                     type="button"
                     onClick={() => setSelectedCategory(tl.id)}
+                    style={
+                      isSelected
+                        ? {
+                            backgroundColor: themeTokens.secondary,
+                            color: themeTokens.secondaryText,
+                          }
+                        : undefined
+                    }
                     className={`px-2 py-0.5 rounded-md text-[11px] font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                        ? 'shadow-xs font-bold'
                         : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'
                     }`}
                   >
@@ -804,7 +900,13 @@ export default function TenantCatalogView({
                 {/* Cabecera del Mega Menú */}
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs">
+                    <span
+                      style={{
+                        backgroundColor: themeTokens.primaryLight,
+                        color: themeTokens.primary,
+                      }}
+                      className="w-8 h-8 rounded-xl flex items-center justify-center shadow-2xs"
+                    >
                       <Layers className="w-4 h-4" />
                     </span>
                     <div>
@@ -859,9 +961,18 @@ export default function TenantCatalogView({
                             }}
                             className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer ${
                               isHovered
-                                ? 'bg-sky-50 text-sky-950 font-bold border border-sky-200/80 shadow-2xs'
+                                ? 'font-bold shadow-2xs'
                                 : 'hover:bg-slate-50 text-slate-700 border border-transparent'
                             }`}
+                            style={
+                              isHovered
+                                ? {
+                                    backgroundColor: themeTokens.primaryLight,
+                                    color: themeTokens.primary,
+                                    border: `1px solid ${themeTokens.primaryBorder}`,
+                                  }
+                                : undefined
+                            }
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
                               {root.image_url ? (
@@ -873,23 +984,29 @@ export default function TenantCatalogView({
                                   />
                                 </div>
                               ) : (
-                                <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                                  isHovered ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'
-                                }`}>
+                                <span
+                                  style={isHovered ? { backgroundColor: themeTokens.primaryLight, color: themeTokens.primary } : undefined}
+                                  className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                    isHovered ? '' : 'bg-slate-100 text-slate-600'
+                                  }`}
+                                >
                                   {root.name.charAt(0).toUpperCase()}
                                 </span>
                               )}
                               <div className="min-w-0">
                                 <span className="text-xs truncate block">{root.name}</span>
                                 <span className="text-[10px] text-slate-400 font-normal">
-                                  {subCount > 0 ? `${subCount} subcategorías` : `${rootCount} prendas`}
+                                  {subCount > 0 ? `${subCount} subcategorías` : `${rootCount} productos`}
                                 </span>
                               </div>
                             </div>
 
-                            <ChevronRight className={`w-4 h-4 shrink-0 transition-transform ${
-                              isHovered ? 'text-sky-600 translate-x-0.5' : 'text-slate-300'
-                            }`} />
+                            <ChevronRight
+                              style={isHovered ? { color: themeTokens.primary } : undefined}
+                              className={`w-4 h-4 shrink-0 transition-transform ${
+                                isHovered ? 'translate-x-0.5' : 'text-slate-300'
+                              }`}
+                            />
                           </button>
                         );
                       })}
@@ -956,7 +1073,8 @@ export default function TenantCatalogView({
                                   setSelectedCategory(activeRoot.id);
                                   setIsMegaMenuOpen(false);
                                 }}
-                                className="text-xs text-sky-600 hover:text-sky-800 font-bold underline cursor-pointer"
+                                style={{ color: themeTokens.primary }}
+                                className="text-xs font-bold underline cursor-pointer hover:brightness-90"
                               >
                                 Ver todos los productos de {activeRoot.name}
                               </button>
@@ -973,7 +1091,7 @@ export default function TenantCatalogView({
                                 return (
                                   <div
                                     key={sub.id}
-                                    className="bg-white border border-slate-200/90 rounded-2xl p-3 hover:border-sky-300 hover:shadow-xs transition-all space-y-2.5 flex flex-col justify-between"
+                                    className="bg-white border border-slate-200/90 rounded-2xl p-3 hover:shadow-xs transition-all space-y-2.5 flex flex-col justify-between"
                                   >
                                     <div>
                                       {/* Cabecera de Subcategoría (Nivel 2) */}
@@ -994,19 +1112,26 @@ export default function TenantCatalogView({
                                             />
                                           </div>
                                         ) : (
-                                          <span className="w-8 h-8 rounded-full bg-sky-50 border border-sky-100 text-sky-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-sky-100 transition-colors">
+                                          <span
+                                            style={{
+                                              backgroundColor: themeTokens.primaryLight,
+                                              borderColor: themeTokens.primaryBorder,
+                                              color: themeTokens.primary,
+                                            }}
+                                            className="w-8 h-8 rounded-full border flex items-center justify-center font-bold text-xs shrink-0 transition-colors"
+                                          >
                                             {sub.name.charAt(0).toUpperCase()}
                                           </span>
                                         )}
                                         <div className="min-w-0 flex-1">
-                                          <span className="font-extrabold text-xs text-slate-800 group-hover:text-sky-600 transition-colors block truncate">
+                                          <span className="font-extrabold text-xs text-slate-800 transition-colors block truncate">
                                             {sub.name}
                                           </span>
                                           <span className="text-[10px] text-slate-400 font-mono block -mt-0.5">
-                                            {subProductsCount} prendas
+                                            {subProductsCount} {subProductsCount === 1 ? 'producto' : 'productos'}
                                           </span>
                                         </div>
-                                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-sky-600 transition-colors shrink-0" />
+                                        <ArrowRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition-colors shrink-0" />
                                       </button>
 
                                       {/* Chips de 3er Nivel */}
@@ -1020,7 +1145,7 @@ export default function TenantCatalogView({
                                                 setSelectedCategory(tl.id);
                                                 setIsMegaMenuOpen(false);
                                               }}
-                                              className="px-2 py-0.5 bg-slate-50 hover:bg-sky-50 text-slate-600 hover:text-sky-700 border border-slate-200/70 hover:border-sky-200 rounded-md text-[10px] font-medium transition-colors cursor-pointer"
+                                              className="px-2 py-0.5 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-900 border border-slate-200/70 rounded-md text-[10px] font-medium transition-colors cursor-pointer"
                                             >
                                               {tl.name}
                                             </button>
@@ -1044,8 +1169,14 @@ export default function TenantCatalogView({
         </div>
       </header>
 
-      {/* Banner Informativo Rápido */}
-      <div className="bg-sky-600 text-white text-[11px] font-medium py-1.5 px-4 text-center">
+      {/* Banner Informativo Rápido Estilo Temu */}
+      <div
+        style={{
+          backgroundColor: themeTokens.secondary,
+          color: themeTokens.secondaryText,
+        }}
+        className="text-[11px] font-medium py-1.5 px-4 text-center border-b border-black/10"
+      >
         <span>📦 Pedidos y cotizaciones directas a fábrica por bulto, fardo o pallet con despacho nacional</span>
       </div>
 
@@ -1060,7 +1191,10 @@ export default function TenantCatalogView({
           <div className="mb-4 bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-4 shadow-xs">
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse" />
+                <span
+                  className="w-2 h-2 rounded-full animate-pulse"
+                  style={{ backgroundColor: themeTokens.primary }}
+                />
                 <span className="text-xs sm:text-sm font-extrabold text-slate-900 tracking-tight">
                   Explorar Colecciones
                 </span>
@@ -1072,7 +1206,11 @@ export default function TenantCatalogView({
                 <button
                   type="button"
                   onClick={() => setSelectedCategory('all')}
-                  className="text-[11px] font-bold text-sky-600 hover:text-sky-700 cursor-pointer flex items-center gap-1 bg-sky-50 hover:bg-sky-100 px-2 py-0.5 rounded-lg transition-colors"
+                  style={{
+                    color: themeTokens.primary,
+                    backgroundColor: themeTokens.primaryLight,
+                  }}
+                  className="text-[11px] font-bold cursor-pointer flex items-center gap-1 px-2 py-0.5 rounded-lg transition-colors hover:brightness-95"
                 >
                   <span>Ver todas</span>
                   <X className="w-3 h-3" />
@@ -1205,9 +1343,18 @@ export default function TenantCatalogView({
                     }`}
                   >
                     <div
+                      style={
+                        isSelected
+                          ? {
+                              backgroundColor: themeTokens.primaryLight,
+                              borderColor: themeTokens.primary,
+                              boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${themeTokens.primary}`,
+                            }
+                          : undefined
+                      }
                       className={`w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden transition-all p-0.5 flex items-center justify-center shadow-xs ${
                         isSelected
-                          ? 'ring-2 ring-sky-600 ring-offset-2 border-2 border-sky-600 bg-sky-50'
+                          ? 'border-2'
                           : 'bg-slate-100 border-2 border-slate-200 group-hover:border-slate-800'
                       }`}
                     >
@@ -1227,8 +1374,9 @@ export default function TenantCatalogView({
                     </div>
 
                     <span
+                      style={isSelected ? { color: themeTokens.primary } : undefined}
                       className={`text-[11px] font-semibold text-center line-clamp-2 leading-tight w-full ${
-                        isSelected ? 'font-extrabold text-sky-700' : 'text-slate-700 group-hover:text-sky-600'
+                        isSelected ? 'font-extrabold' : 'text-slate-700'
                       }`}
                     >
                       {c.name}
@@ -1289,20 +1437,36 @@ export default function TenantCatalogView({
           </div>
         )}
         {selectedCategory !== 'all' && activeCategoryObj && (
-          <div className="flex items-center justify-between bg-sky-50/90 border border-sky-200 rounded-xl px-3 py-2 mb-3 shadow-2xs animate-fade-in">
+          <div
+            style={{
+              backgroundColor: themeTokens.primaryLight,
+              borderColor: themeTokens.primaryBorder,
+            }}
+            className="flex items-center justify-between border rounded-xl px-3 py-2 mb-3 shadow-2xs animate-fade-in"
+          >
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-sky-600" />
-              <span className="text-xs font-bold text-sky-950">
-                Colección: <span className="text-sky-700">{activeCategoryObj.name}</span>
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: themeTokens.primary }}
+              />
+              <span className="text-xs font-bold text-slate-900">
+                Colección: <span style={{ color: themeTokens.primary }}>{activeCategoryObj.name}</span>
               </span>
-              <span className="text-[10px] text-sky-600 font-mono bg-sky-100/80 px-1.5 py-0.5 rounded-md font-bold">
+              <span
+                style={{
+                  color: themeTokens.primary,
+                  borderColor: themeTokens.primaryBorder,
+                }}
+                className="text-[10px] font-mono bg-white border px-1.5 py-0.5 rounded-md font-bold shadow-2xs"
+              >
                 {filteredProducts.length} {filteredProducts.length === 1 ? 'artículo' : 'artículos'}
               </span>
             </div>
             <button
               type="button"
               onClick={() => setSelectedCategory('all')}
-              className="text-xs font-bold text-sky-700 hover:text-sky-900 flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded-lg border border-sky-200 shadow-2xs transition-colors"
+              style={{ color: themeTokens.primary }}
+              className="text-xs font-bold hover:underline flex items-center gap-1 cursor-pointer bg-white px-2 py-1 rounded-lg border border-slate-200 shadow-2xs transition-colors"
             >
               <span>Ver todas</span>
               <X className="w-3.5 h-3.5" />
@@ -1364,8 +1528,14 @@ export default function TenantCatalogView({
                         <span>Top Ventas</span>
                       </div>
                     ) : (
-                      /* Badge MOQ / Volumen */
-                      <div className="absolute top-2 left-2 bg-slate-900/85 text-white font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10">
+                      /* Badge MOQ / Volumen con Color Secundario */
+                      <div
+                        style={{
+                          backgroundColor: themeTokens.secondary,
+                          color: themeTokens.secondaryText,
+                        }}
+                        className="absolute top-2 left-2 font-mono text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md backdrop-blur-xs z-10 shadow-xs"
+                      >
                         Mín: {minQty.toLocaleString()} uds
                       </div>
                     )}
@@ -1381,7 +1551,7 @@ export default function TenantCatalogView({
                   <div className="p-2.5 sm:p-3 space-y-2 flex-1 flex flex-col justify-between">
                     <div className="space-y-1.5">
                       <h3
-                        className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2 hover:text-sky-600 cursor-pointer"
+                        className="font-bold text-xs sm:text-sm text-slate-900 leading-snug line-clamp-2 cursor-pointer"
                         title={p.name}
                       >
                         <Link href={productHref} className="hover:underline">
@@ -1398,7 +1568,14 @@ export default function TenantCatalogView({
                             </span>
                           )}
                           {p.attributes?.specs?.tallas && (
-                            <span className="bg-sky-50 text-sky-700 border border-sky-100 px-1.5 py-0.5 rounded font-mono font-bold">
+                            <span
+                              style={{
+                                backgroundColor: themeTokens.primaryLight,
+                                color: themeTokens.primary,
+                                borderColor: themeTokens.primaryBorder,
+                              }}
+                              className="border px-1.5 py-0.5 rounded font-mono font-bold"
+                            >
                               📏 {p.attributes.specs.tallas}
                             </span>
                           )}
@@ -1443,7 +1620,7 @@ export default function TenantCatalogView({
                       </div>
                     </div>
 
-                    {/* Botones de Acción: Ficha Técnica y Carrito Cotizador */}
+                    {/* Botones de Acción: Ficha Técnica y Carrito Cotizador Estilo Temu */}
                     <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5">
                       <button
                         onClick={() => setModalProduct(p)}
@@ -1453,10 +1630,14 @@ export default function TenantCatalogView({
                       </button>
                       <button
                         onClick={() => handleQuickAdd(p)}
-                        className="bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        style={{
+                          backgroundColor: themeTokens.primary,
+                          color: themeTokens.primaryText,
+                        }}
+                        className="font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-all hover:brightness-110 active:scale-95 cursor-pointer shrink-0"
                         title="Agregar fardo al cotizador"
                       >
-                        <ShoppingCart className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5" />
                         <span>Cotizar</span>
                       </button>
                     </div>
@@ -1474,7 +1655,7 @@ export default function TenantCatalogView({
                   onClick={() => setVisibleCount((prev) => prev + 20)}
                   className="px-6 py-2.5 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-full border border-slate-200 shadow-xs cursor-pointer transition-all hover:scale-105"
                 >
-                  Cargar más prendas (Mostrando {visibleCount} de {filteredProducts.length})
+                  Cargar más productos (Mostrando {visibleCount} de {filteredProducts.length})
                 </button>
               </div>
             )}
@@ -1489,22 +1670,36 @@ export default function TenantCatalogView({
         <div className="fixed bottom-4 inset-x-3 z-40 max-w-md mx-auto animate-fade-in">
           <div
             onClick={openCart}
-            className="bg-slate-900 text-white p-3.5 rounded-2xl shadow-2xl flex items-center justify-between cursor-pointer border border-slate-800 hover:scale-[1.02] transition-transform"
+            style={{
+              backgroundColor: themeTokens.secondary,
+              color: themeTokens.secondaryText,
+            }}
+            className="p-3.5 rounded-2xl shadow-2xl flex items-center justify-between cursor-pointer border border-white/10 hover:scale-[1.02] transition-transform"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-500 flex items-center justify-center font-bold text-white shadow">
+              <div
+                style={{
+                  backgroundColor: themeTokens.primary,
+                  color: themeTokens.primaryText,
+                }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center font-bold shadow-xs shrink-0"
+              >
                 <ShoppingCart className="w-5 h-5" />
               </div>
               <div>
                 <div className="text-xs font-bold">Cotizador Listo</div>
-                <div className="text-[11px] text-slate-300 font-mono">
+                <div className="text-[11px] opacity-80 font-mono">
                   {totalCartUnits.toLocaleString()} unidades ({totalCartPackages} bultos)
                 </div>
               </div>
             </div>
 
             <button
-              className="bg-white text-slate-900 font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1 shadow"
+              style={{
+                backgroundColor: themeTokens.primary,
+                color: themeTokens.primaryText,
+              }}
+              className="font-bold text-xs px-4 py-2 rounded-xl flex items-center gap-1 shadow-xs hover:brightness-105 active:scale-95 transition-all"
             >
               <span>Ver Pedido</span>
               <ArrowRight className="w-3.5 h-3.5" />

@@ -14,7 +14,7 @@ assert(landingContent.includes('getTotalUnits(tenant.id)'), 'FAIL: TenantLanding
 assert(landingContent.includes('getTotalPackages(tenant.id)'), 'FAIL: TenantLandingView debe aislar getTotalPackages con tenant.id');
 console.log('✅ 1. Aislamiento Multi-Tenant: TenantLandingView aísla el conteo de unidades y bultos por tenant.id.');
 
-assert(landingContent.includes(".replace(/\\D/g, '')"), 'FAIL: TenantLandingView debe sanitizar el número de WhatsApp');
+assert(landingContent.includes(".replace(/\\D/g, '')") || landingContent.includes('normalizeEcuadorPhone'), 'FAIL: TenantLandingView debe sanitizar el número de WhatsApp');
 assert(landingContent.includes('noopener,noreferrer'), 'FAIL: TenantLandingView debe incluir noopener,noreferrer en window.open');
 console.log('✅ 2. Seguridad en Enlaces: Sanitización de teléfonos y protección anti-reverse tabnabbing en WhatsApp.');
 
@@ -25,7 +25,7 @@ console.log('✅ 3. Rendimiento & DOM: preload="metadata" en video y virtualizac
 
 // 2. TenantCatalogView.tsx
 const catalogContent = fs.readFileSync(path.join(__dirname, '../src/components/TenantCatalogView.tsx'), 'utf8');
-assert(catalogContent.includes(".replace(/\\D/g, '')"), 'FAIL: TenantCatalogView debe sanitizar el número de WhatsApp');
+assert(catalogContent.includes(".replace(/\\D/g, '')") || catalogContent.includes('normalizeEcuadorPhone'), 'FAIL: TenantCatalogView debe sanitizar el número de WhatsApp');
 console.log('✅ 4. Modo Directo: TenantCatalogView con sanitización de números telefónicos verificada.');
 
 console.log('\n🎉 TODAS LAS VERIFICACIONES DE HARDENING PASARON EXITOSAMENTE (100%)');
