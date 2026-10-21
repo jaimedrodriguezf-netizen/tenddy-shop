@@ -473,7 +473,7 @@ export default function TenantCatalogView({
                 value={searchQuery}
                 onFocus={() => setIsSearchDropdownOpen(true)}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar productos, prendas, códigos SKU o colecciones..."
+                placeholder="Buscar productos, códigos SKU o colecciones..."
                 className="w-full bg-slate-100 border border-slate-200 rounded-l-full sm:rounded-l-2xl pl-10 pr-9 py-2 sm:py-2.5 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] focus:outline-none transition-all shadow-2xs"
               />
               {searchQuery && (
@@ -1088,7 +1088,7 @@ export default function TenantCatalogView({
                               <div>
                                 <h4 className="font-extrabold text-sm text-slate-900">{activeRoot.name}</h4>
                                 <p className="text-[11px] text-slate-500">
-                                  {totalRootProducts} prendas disponibles en esta colección
+                                  {totalRootProducts} artículos disponibles en esta colección
                                 </p>
                               </div>
                             </div>
@@ -1517,7 +1517,7 @@ export default function TenantCatalogView({
                 🔥 Artículos Más Vendidos • <span className="font-semibold text-amber-800">Prendas favoritas de nuestros clientes</span>
               </span>
               <span className="text-[10px] text-amber-700 font-mono bg-white/80 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
-                {filteredProducts.length} {filteredProducts.length === 1 ? 'prenda' : 'prendas'}
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'artículo' : 'artículos'}
               </span>
             </div>
             <button
@@ -1540,7 +1540,7 @@ export default function TenantCatalogView({
                 ⭐ Colección 5 Estrellas • <span className="font-semibold text-amber-800">Prendas con máxima satisfacción de nuestros compradores</span>
               </span>
               <span className="text-[10px] text-amber-800 font-mono bg-white/90 border border-amber-200 px-2 py-0.5 rounded-md font-bold">
-                {filteredProducts.length} {filteredProducts.length === 1 ? 'prenda' : 'prendas'}
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'artículo' : 'artículos'}
               </span>
             </div>
             <button
