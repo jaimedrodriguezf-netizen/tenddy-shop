@@ -15,6 +15,7 @@ const {
   buildStorefrontThemeCSS,
   isLightColor,
   adjustBrightness,
+  isValidHexColor,
 } = require('../src/lib/theme-tokens.ts');
 
 // Caso A: Fallbacks predeterminados (Estilo Temu de fábrica)
@@ -47,6 +48,16 @@ assert(cssVars['--tenant-primary-hover'], 'FAIL: --tenant-primary-hover ausente'
 assert(cssVars['--tenant-primary-light'], 'FAIL: --tenant-primary-light ausente');
 assert(cssVars['--tenant-primary-border'], 'FAIL: --tenant-primary-border ausente');
 console.log('✅ 3. Generador CSS: Diccionario de variables --tenant-* listo para inyección en el contenedor raíz.');
+
+// Caso E: Blindaje Defense-in-Depth contra cadenas maliciosas o corruptas
+assert.strictEqual(isValidHexColor('#FB7701'), true, 'FAIL: #FB7701 debe ser válido');
+assert.strictEqual(isValidHexColor('#fff'), true, 'FAIL: #fff debe ser válido');
+assert.strictEqual(isValidHexColor('red; background: blue'), false, 'FAIL: Inyección CSS debe ser rechazada');
+assert.strictEqual(isValidHexColor('javascript:alert(1)'), false, 'FAIL: URI maliciosa debe ser rechazada');
+const safeFallbacks = resolveStorefrontTokens('invalid; injection', 'evil_payload');
+assert.strictEqual(safeFallbacks.primary, '#FB7701', 'FAIL: Valor malicioso debe hacer fallback a #FB7701');
+assert.strictEqual(safeFallbacks.secondary, '#111827', 'FAIL: Valor malicioso debe hacer fallback a #111827');
+console.log('✅ 4. Blindaje Defense-in-Depth: isValidHexColor rechaza cualquier inyección CSS no canónica.');
 
 // 2. Verificación Estricta en TenantCatalogView.tsx (Modo Estándar Temu)
 const catalogFile = path.join(__dirname, '../src/components/TenantCatalogView.tsx');

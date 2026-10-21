@@ -71,6 +71,7 @@ export default function TenantCatalogView({
   const [sortBy, setSortBy] = useState<SortOption>('recommended');
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [justAddedProductName, setJustAddedProductName] = useState<string>('');
+  const quickAddTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [prevFilters, setPrevFilters] = useState({ category: selectedCategory, search: searchQuery });
   if (prevFilters.category !== selectedCategory || prevFilters.search !== searchQuery) {
@@ -88,7 +89,12 @@ export default function TenantCatalogView({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      if (quickAddTimeoutRef.current) {
+        clearTimeout(quickAddTimeoutRef.current);
+      }
+    };
   }, []);
 
   const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
@@ -275,7 +281,10 @@ export default function TenantCatalogView({
     addItem(p, packs, 'Estándar');
     setJustAddedId(p.id);
     setJustAddedProductName(p.name);
-    setTimeout(() => {
+    if (quickAddTimeoutRef.current) {
+      clearTimeout(quickAddTimeoutRef.current);
+    }
+    quickAddTimeoutRef.current = setTimeout(() => {
       setJustAddedId((curr) => (curr === p.id ? null : curr));
     }, 1800);
   };

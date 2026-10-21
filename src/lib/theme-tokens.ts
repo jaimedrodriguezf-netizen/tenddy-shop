@@ -1,3 +1,11 @@
+/**
+ * Valida estrictamente si una cadena es un color HEX canónico (#rgb o #rrggbb)
+ */
+export function isValidHexColor(hex?: unknown): hex is string {
+  if (typeof hex !== 'string') return false;
+  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(hex.trim());
+}
+
 /** Convierte componentes RGB a código HEX #rrggbb */
 export function rgbToHex(r: number, g: number, b: number): string {
   const clamp = (val: number) => Math.max(0, Math.min(255, Math.round(val)));
@@ -5,9 +13,9 @@ export function rgbToHex(r: number, g: number, b: number): string {
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
-/** Convierte código HEX a componentes RGB */
+/** Convierte código HEX a componentes RGB con validación estricta */
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
-  if (!hex || typeof hex !== 'string') return null;
+  if (!isValidHexColor(hex)) return null;
   const clean = hex.replace('#', '').trim();
   if (clean.length === 3) {
     const r = parseInt(clean[0] + clean[0], 16);
@@ -69,8 +77,9 @@ export function resolveStorefrontTokens(
   primaryInput?: string | null,
   secondaryInput?: string | null
 ): StorefrontThemeTokens {
-  const primary = (primaryInput && primaryInput.trim()) || '#FB7701'; // Default Temu Orange si no hay
-  const secondary = (secondaryInput && secondaryInput.trim()) || '#111827'; // Default Slate 900 oscuro
+  // Blindaje Defense-in-Depth: solo colores HEX válidos son admitidos; fallback automático
+  const primary = isValidHexColor(primaryInput) ? primaryInput.trim() : '#FB7701';
+  const secondary = isValidHexColor(secondaryInput) ? secondaryInput.trim() : '#111827';
 
   const pRgb = hexToRgb(primary) || { r: 251, g: 119, b: 1 };
   const sRgb = hexToRgb(secondary) || { r: 17, g: 24, b: 39 };
