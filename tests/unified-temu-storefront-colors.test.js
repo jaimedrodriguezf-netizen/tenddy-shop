@@ -10,11 +10,9 @@ const assert = require('assert');
 console.log('🧪 Iniciando verificación de Diseño Estilo Temu y Colores Unificados...\n');
 
 // 1. Verificación de la Capa de Tokens (packages/theme-tokens/src/index.ts)
-const tokensModulePath = fs.existsSync(path.join(__dirname, '../../../packages/theme-tokens/src/index.ts'))
-  ? path.join(__dirname, '../../../packages/theme-tokens/src/index.ts')
-  : fs.existsSync(path.join(__dirname, '../src/lib/theme-tokens.ts'))
-  ? path.join(__dirname, '../src/lib/theme-tokens.ts')
-  : path.join(__dirname, '../../packages/theme-tokens/src/index.ts');
+const tokensModulePath = fs.existsSync(path.join(__dirname, '../packages/theme-tokens/src/index.ts'))
+  ? path.join(__dirname, '../packages/theme-tokens/src/index.ts')
+  : path.join(__dirname, '../src/lib/theme-tokens.ts');
 const {
   resolveStorefrontTokens,
   buildStorefrontThemeCSS,
@@ -65,9 +63,7 @@ assert.strictEqual(safeFallbacks.secondary, '#111827', 'FAIL: Valor malicioso de
 console.log('✅ 4. Blindaje Defense-in-Depth: isValidHexColor rechaza cualquier inyección CSS no canónica.');
 
 // 2. Verificación Estricta en TenantCatalogView.tsx
-const catalogFile = fs.existsSync(path.join(__dirname, '../src/components/TenantCatalogView.tsx'))
-  ? path.join(__dirname, '../src/components/TenantCatalogView.tsx')
-  : path.join(__dirname, '../apps/tenddy-shop/src/components/TenantCatalogView.tsx');
+const catalogFile = path.join(__dirname, '../src/components/TenantCatalogView.tsx');
 const catalogContent = fs.readFileSync(catalogFile, 'utf8');
 
 // Desconexión de clases fijas
@@ -99,9 +95,7 @@ assert(catalogContent.includes('Toast Flotante de Confirmación'), 'FAIL: Toast 
 console.log('✅ 6. Experiencia Temu: Header con botón de búsqueda, Hero Banner promocional, Sorting Bar y micro-interacción de compra rápida.');
 
 // 3. Verificación en ProductDetailView.tsx
-const pdpFile = fs.existsSync(path.join(__dirname, '../src/components/ProductDetailView.tsx'))
-  ? path.join(__dirname, '../src/components/ProductDetailView.tsx')
-  : path.join(__dirname, '../apps/tenddy-shop/src/components/ProductDetailView.tsx');
+const pdpFile = path.join(__dirname, '../src/components/ProductDetailView.tsx');
 const pdpContent = fs.readFileSync(pdpFile, 'utf8');
 assert(pdpContent.includes('resolveStorefrontTokens'), 'FAIL: ProductDetailView debe importar y usar resolveStorefrontTokens');
 assert(pdpContent.includes('buildStorefrontThemeCSS'), 'FAIL: ProductDetailView debe inyectar buildStorefrontThemeCSS');
