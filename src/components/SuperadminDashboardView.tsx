@@ -19,11 +19,13 @@ import {
   LogOut,
   Users,
   Eye,
-  LifeBuoy
+  LifeBuoy,
+  Database
 } from 'lucide-react';
 import SuperadminUsersManager, { B2BAccount, TenantStaffMember } from './SuperadminUsersManager';
 import SuperadminSupportManager, { SupportTicketRecord } from './SuperadminSupportManager';
 import VersionBadge from './VersionBadge';
+import DecoupleTenantModal from './DecoupleTenantModal';
 
 export interface SuperadminTenantSummary {
   id: string;
@@ -37,6 +39,8 @@ export interface SuperadminTenantSummary {
   total_quotes: number;
   total_branches: number;
   total_members: number;
+  is_decoupled?: boolean;
+  decoupled_url?: string;
 }
 
 interface SuperadminDashboardViewProps {
@@ -66,6 +70,8 @@ export default function SuperadminDashboardView({
   const [activeTab, setActiveTab] = useState<'tenants' | 'users' | 'support'>('tenants');
   const [search, setSearch] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedDecoupleTenant, setSelectedDecoupleTenant] = useState<SuperadminTenantSummary | null>(null);
+  const [isDecoupleModalOpen, setIsDecoupleModalOpen] = useState(false);
 
   const filteredTenants = tenants.filter(
     (t) =>
@@ -94,6 +100,43 @@ export default function SuperadminDashboardView({
       console.error(e);
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateDecouple = async (
+    tenantId: string,
+    isDecoupled: boolean,
+    decoupledUrl: string
+  ): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/superadmin/tenants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          is_decoupled: isDecoupled,
+          decoupled_url: decoupledUrl,
+        }),
+      });
+      if (res.ok) {
+        setTenants((prev) =>
+          prev.map((t) =>
+            t.id === tenantId
+              ? { ...t, is_decoupled: isDecoupled, decoupled_url: decoupledUrl }
+              : t
+          )
+        );
+        if (selectedDecoupleTenant?.id === tenantId) {
+          setSelectedDecoupleTenant((prev) =>
+            prev ? { ...prev, is_decoupled: isDecoupled, decoupled_url: decoupledUrl } : null
+          );
+        }
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Error actualizando modo de desacople:', err);
+      return false;
     }
   };
 
@@ -197,7 +240,7 @@ export default function SuperadminDashboardView({
               <Eye className="w-4 h-4 text-sky-400" />
             </div>
             <div className="text-3xl font-extrabold text-sky-400 mt-2 font-mono">
-              {totalGlobalViews.toLocaleString()}
+              {(totalGlobalViews || 0).toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-500 mt-1">Visitas en todas las tiendas</div>
           </div>
@@ -241,7 +284,7 @@ export default function SuperadminDashboardView({
               <Package className="w-4 h-4 text-indigo-400" />
             </div>
             <div className="text-3xl font-extrabold text-indigo-400 mt-2 font-mono">
-              {totalGlobalUnitsQuoted.toLocaleString()}
+              {(totalGlobalUnitsQuoted || 0).toLocaleString()}
             </div>
             <div className="text-[11px] text-slate-500 mt-1">Unidades en demanda</div>
           </div>
@@ -305,7 +348,7 @@ export default function SuperadminDashboardView({
                       <td className="py-3.5 px-4">
                         <span className="inline-flex items-center gap-1.5 font-mono font-bold text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full text-[11px]">
                           <Eye className="w-3 h-3" />
-                          {t.views_count.toLocaleString()} visitas
+                          {(t.views_count || 0).toLocaleString()} visitas
                         </span>
                       </td>
 
@@ -318,21 +361,48 @@ export default function SuperadminDashboardView({
                       </td>
 
                       <td className="py-3.5 px-4">
-                        {t.is_active ? (
-                          <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            Activa
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1.5 text-rose-400 font-semibold text-[11px]">
-                            <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
-                            Suspendida
-                          </span>
-                        )}
+                        <div className="flex flex-col gap-1 items-start">
+                          {t.is_active ? (
+                            <span className="inline-flex items-center gap-1.5 text-emerald-400 font-semibold text-[11px]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              Activa
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 text-rose-400 font-semibold text-[11px]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                              Suspendida
+                            </span>
+                          )}
+
+                          {t.is_decoupled && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-purple-300 bg-purple-500/15 border border-purple-500/30 px-2 py-0.5 rounded-full"
+                              title={t.decoupled_url ? `Redirige a: ${t.decoupled_url}` : 'Base/Instancia Dedicada'}
+                            >
+                              <span>⚡ Desacoplada</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedDecoupleTenant(t);
+                              setIsDecoupleModalOpen(true);
+                            }}
+                            className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+                              t.is_decoupled
+                                ? 'text-purple-300 hover:text-white bg-purple-500/20 hover:bg-purple-500/30 border-purple-500/40 shadow-sm'
+                                : 'bg-slate-900 hover:bg-slate-800 text-purple-400 hover:text-purple-300 border-slate-800'
+                            }`}
+                            title="Desacoplar / Exportar a Base Dedicada"
+                          >
+                            <Database className="w-3.5 h-3.5" />
+                          </button>
+
                           <Link
                             href={`/store/${t.slug}`}
                             target="_blank"
@@ -391,6 +461,17 @@ export default function SuperadminDashboardView({
             />
           </div>
         )}
+
+        {/* MODAL DE GRADUACIÓN / DESACOPLED INSTANCE */}
+        <DecoupleTenantModal
+          tenant={selectedDecoupleTenant}
+          isOpen={isDecoupleModalOpen}
+          onClose={() => {
+            setIsDecoupleModalOpen(false);
+            setSelectedDecoupleTenant(null);
+          }}
+          onUpdateTenant={handleUpdateDecouple}
+        />
       </main>
     </div>
   );

@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { getTenantByHostOrSlug, getTenantCatalog } from '@/lib/tenant';
 import { verifySuperadminToken, verifyTenantAdminToken } from '@/lib/session';
@@ -33,6 +33,45 @@ export default async function ShopPage({ params }: ShopPageProps) {
     verifyTenantAdminToken(sessionCookie?.value, tenant.slug) ||
     verifySuperadminToken(isSuperadminCookie?.value);
 
+  // Modo Desacoplado: Redirección hacia tienda externa o portal independiente
+  const isDecoupled = Boolean((tenant.theme_config as any)?.is_decoupled);
+  const rawDecoupledUrl = (tenant.theme_config as any)?.decoupled_url?.trim();
+  const decoupledUrl = rawDecoupledUrl
+    ? rawDecoupledUrl.startsWith('http://') || rawDecoupledUrl.startsWith('https://') || rawDecoupledUrl.startsWith('/')
+      ? rawDecoupledUrl
+      : `https://${rawDecoupledUrl}`
+    : '';
+
+  // Redireccionar visitantes públicos a la tienda personalizada dedicada
+  if (isDecoupled && decoupledUrl && !isAdmin) {
+    redirect(decoupledUrl);
+  }
+
+  // Banner informativo visible únicamente para administradores en tiendas desacopladas
+  const decoupledAdminBanner = isDecoupled && decoupledUrl && isAdmin ? (
+    <aside aria-label="Aviso de Modo Desacoplado" className="bg-amber-950/80 border-b border-amber-500/30 text-amber-200 text-xs py-2 px-4 flex items-center justify-between gap-3 sticky top-0 z-50 backdrop-blur-md">
+      <div className="flex items-center gap-2">
+        <span className="font-bold uppercase tracking-wider bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2 py-0.5 rounded text-[10px]">
+          Modo Desacoplado Activo
+        </span>
+        <span>
+          Los clientes públicos son redirigidos a:{' '}
+          <a
+            href={decoupledUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline font-mono font-bold text-amber-300 hover:text-white"
+          >
+            {decoupledUrl}
+          </a>
+        </span>
+      </div>
+      <span className="text-[11px] text-amber-300/70 hidden sm:inline">
+        Vista de auditoría administrativa
+      </span>
+    </aside>
+  ) : null;
+
   // Cargar catálogo dinámico desde Supabase
   const { categories, products, branches } = await getTenantCatalog(tenant.id);
   const storeTemplate = (tenant.theme_config as any)?.store_template || 'catalog';
@@ -40,6 +79,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
   if (storeTemplate === 'landing') {
     return (
       <>
+        {decoupledAdminBanner}
         <ViewTracker tenantId={tenant.id} />
         <TenantLandingView
           tenant={tenant}
@@ -55,6 +95,7 @@ export default async function ShopPage({ params }: ShopPageProps) {
   // Plantilla Predeterminada: Catálogo ágil enfocado 100% en productos y categorías
   return (
     <>
+      {decoupledAdminBanner}
       <ViewTracker tenantId={tenant.id} />
       <TenantCatalogView
         tenant={tenant}

@@ -14,7 +14,7 @@ export async function PATCH(request: Request) {
     }
 
     const body = await request.json();
-    const { tenant_id, is_active, store_template, custom_landing_unlocked } = body;
+    const { tenant_id, is_active, store_template, custom_landing_unlocked, is_decoupled, decoupled_url } = body;
 
     if (!tenant_id) {
       return NextResponse.json({ error: 'Falta tenant_id' }, { status: 400 });
@@ -27,7 +27,12 @@ export async function PATCH(request: Request) {
       updates.is_active = is_active;
     }
 
-    if (store_template !== undefined || custom_landing_unlocked !== undefined) {
+    if (
+      store_template !== undefined ||
+      custom_landing_unlocked !== undefined ||
+      is_decoupled !== undefined ||
+      decoupled_url !== undefined
+    ) {
       const { data: currentTenant } = await admin
         .from('tenants')
         .select('theme_config')
@@ -39,6 +44,8 @@ export async function PATCH(request: Request) {
         ...currentTheme,
         ...(store_template ? { store_template } : {}),
         ...(custom_landing_unlocked !== undefined ? { custom_landing_unlocked } : {}),
+        ...(is_decoupled !== undefined ? { is_decoupled: Boolean(is_decoupled) } : {}),
+        ...(decoupled_url !== undefined ? { decoupled_url: typeof decoupled_url === 'string' ? decoupled_url.trim() : '' } : {}),
       };
     }
 

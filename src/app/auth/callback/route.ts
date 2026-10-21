@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { getAdminClient } from '@/lib/supabase';
 import { cookies } from 'next/headers';
-import { createTenantAdminToken } from '@/lib/session';
+import { createSuperadminToken, createTenantAdminToken } from '@/lib/session';
 
 // Helper para calcular el origen público real detrás de proxies inversos con Whitelist estricta contra Host Header Injection (CWE-644)
 function getSafeOrigin(request: Request): string {
@@ -105,6 +105,31 @@ export async function GET(request: Request) {
       const fullName = data.user.user_metadata?.full_name || email?.split('@')[0] || 'Usuario Google';
 
       const admin = getAdminClient();
+
+      // 0. Acceso Superadmin: Si el usuario es el dueño de la plataforma (Superadmin global)
+      const isSuperadminUser =
+        email === 'jaimedrodriguezf@gmail.com' ||
+        data.user.app_metadata?.role === 'superadmin' ||
+        data.user.user_metadata?.role === 'superadmin';
+
+      if (isSuperadminUser) {
+        // Redirigir siempre a la Torre de Control Superadmin, salvo que haya especificado una tienda particular
+        const targetPath =
+          next && next !== '/' && next !== '/registro' && next !== '/admin'
+            ? next
+            : '/superadmin';
+
+        const redirectRes = NextResponse.redirect(`${safeOrigin}${targetPath}`);
+        const token = createSuperadminToken();
+        redirectRes.cookies.set('tenddy_superadmin_session', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 60 * 60 * 24 * 7,
+          path: '/',
+        });
+        return redirectRes;
+      }
 
       // 1. Si el destino es /admin (Acceso inteligente automático desde el botón Admin)
       // Detectar automáticamente a qué tienda pertenece este usuario en tenant_members
