@@ -74,7 +74,11 @@ assert(catalogContent.includes('themeTokens.primary'), 'FAIL: Debe aplicar theme
 assert(catalogContent.includes('themeTokens.secondary'), 'FAIL: Debe aplicar themeTokens.secondary en elementos secundarios');
 assert(catalogContent.includes('title="Agregar fardo al cotizador"'), 'FAIL: Botón de cotización directa presente');
 assert(catalogContent.includes('Cargar más productos'), 'FAIL: Paginación progresiva debe usar término universal "productos"');
-console.log('✅ 6. Experiencia Temu: Header con botón de búsqueda, píldoras activas, cards densas y badges unificados.');
+assert(catalogContent.includes('Precios de Fábrica por Fardo, Bulto & Pallet'), 'FAIL: Hero Banner promocional Temu presente');
+assert(catalogContent.includes('setSortBy'), 'FAIL: Barra de ordenamiento interactiva presente');
+assert(catalogContent.includes('¡Agregado!'), 'FAIL: Micro-interacción táctil en botón cotizar presente');
+assert(catalogContent.includes('Toast Flotante de Confirmación'), 'FAIL: Toast flotante no intrusivo presente');
+console.log('✅ 6. Experiencia Temu: Header con botón de búsqueda, Hero Banner promocional, Sorting Bar y micro-interacción de compra rápida.');
 
 // 3. Verificación en ProductDetailView.tsx
 const pdpFile = path.join(__dirname, '../src/components/ProductDetailView.tsx');

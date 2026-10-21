@@ -26,7 +26,10 @@ import {
   CornerDownRight,
   User,
   SlidersHorizontal,
-  LogOut
+  LogOut,
+  Check,
+  Clock,
+  Truck
 } from 'lucide-react';
 import { Tenant, Branch, Category, Product } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
@@ -63,6 +66,11 @@ export default function TenantCatalogView({
   const [visibleCount, setVisibleCount] = useState<number>(20);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState<boolean>(false);
   const adminMenuRef = useRef<HTMLDivElement>(null);
+
+  type SortOption = 'recommended' | 'bestsellers' | 'min_qty_asc' | 'rating' | 'name_asc';
+  const [sortBy, setSortBy] = useState<SortOption>('recommended');
+  const [justAddedId, setJustAddedId] = useState<string | null>(null);
+  const [justAddedProductName, setJustAddedProductName] = useState<string>('');
 
   const [prevFilters, setPrevFilters] = useState({ category: selectedCategory, search: searchQuery });
   if (prevFilters.category !== selectedCategory || prevFilters.search !== searchQuery) {
@@ -159,10 +167,10 @@ export default function TenantCatalogView({
     return new Set(getCategoryAndDescendantIds(selectedCategory));
   }, [selectedCategory, getCategoryAndDescendantIds]);
 
-  // Filtrado reactivo en vivo optimizado con useMemo en O(P)
+  // Filtrado y ordenamiento reactivo en vivo optimizado con useMemo en O(P log P)
   const filteredProducts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    return products.filter((p) => {
+    const list = products.filter((p) => {
       const matchesCategory =
         selectedCategory === 'all'
           ? true
@@ -184,7 +192,31 @@ export default function TenantCatalogView({
         (p.description && p.description.toLowerCase().includes(q))
       );
     });
-  }, [products, selectedCategory, searchQuery, selectedCategoryDescendantSet]);
+
+    // Ordenamiento ágil estilo Temu
+    return list.sort((a, b) => {
+      if (sortBy === 'bestsellers') {
+        const aTop = isBestSeller(a) ? 1 : 0;
+        const bTop = isBestSeller(b) ? 1 : 0;
+        if (bTop !== aTop) return bTop - aTop;
+        return (b.name.length * 9 % 150) - (a.name.length * 9 % 150);
+      }
+      if (sortBy === 'min_qty_asc') {
+        const aMin = a.min_order_qty || a.units_per_package || 100;
+        const bMin = b.min_order_qty || b.units_per_package || 100;
+        return aMin - bMin;
+      }
+      if (sortBy === 'rating') {
+        const aStar = isFiveStar(a) ? 1 : 0;
+        const bStar = isFiveStar(b) ? 1 : 0;
+        return bStar - aStar;
+      }
+      if (sortBy === 'name_asc') {
+        return a.name.localeCompare(b.name);
+      }
+      return 0;
+    });
+  }, [products, selectedCategory, searchQuery, selectedCategoryDescendantSet, sortBy]);
 
   // Identificar la categoría raíz activa con protección contra ciclos
   const activeRootCategory = useMemo(() => {
@@ -241,7 +273,11 @@ export default function TenantCatalogView({
     const minQty = p.min_order_qty || packSize;
     const packs = Math.ceil(minQty / packSize);
     addItem(p, packs, 'Estándar');
-    openCart();
+    setJustAddedId(p.id);
+    setJustAddedProductName(p.name);
+    setTimeout(() => {
+      setJustAddedId((curr) => (curr === p.id ? null : curr));
+    }, 1800);
   };
 
   // VISTA PÁGINA COMPLETA DE PRODUCTO (CERO MODAL)
@@ -1185,6 +1221,78 @@ export default function TenantCatalogView({
           ========================================================================= */}
       <main className="max-w-7xl mx-auto px-2.5 sm:px-6 py-4">
         {/* =========================================================================
+            HERO PROMO BANNER TEMU-STYLE (VENTA DIRECTA DE FÁBRICA)
+            ========================================================================= */}
+        <section
+          style={{
+            background: `linear-gradient(135deg, ${themeTokens.primary} 0%, ${themeTokens.secondary} 100%)`,
+          }}
+          className="mb-4 rounded-3xl p-4 sm:p-6 text-white shadow-md relative overflow-hidden animate-fade-in border border-white/10"
+        >
+          {/* Formas geométricas difusas de fondo */}
+          <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+          <div className="absolute right-1/4 -top-10 w-32 h-32 rounded-full bg-white/10 blur-xl pointer-events-none" />
+
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="bg-white/20 backdrop-blur-md text-white font-extrabold text-[10px] sm:text-xs px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-2xs">
+                  <Flame className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
+                  <span>Venta Mayorista Directa</span>
+                </span>
+                <span className="bg-black/25 backdrop-blur-md text-white/90 text-[10px] sm:text-xs font-mono px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Clock className="w-3 h-3 text-yellow-300" />
+                  <span>Despachos del día hasta las 14:00</span>
+                </span>
+              </div>
+
+              <h2 className="text-lg sm:text-2xl font-black tracking-tight leading-tight">
+                Precios de Fábrica por Fardo, Bulto & Pallet
+              </h2>
+
+              <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
+                Abastece tu negocio directamente con {tenant.name}. Precios escalonados por volumen, catálogo con stock real y confirmación inmediata por WhatsApp.
+              </p>
+
+              {/* Sellos de Confianza Rápidos */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 pt-1 text-[11px] text-white/90 font-medium">
+                <span className="flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Calidad Garantizada</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Package className="w-3.5 h-3.5 text-sky-200" />
+                  <span>Empaque Industrial Protegido</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <Truck className="w-3.5 h-3.5 text-amber-200" />
+                  <span>Cobertura a Todo el País</span>
+                </span>
+              </div>
+            </div>
+
+            {/* Micro-callout con botón WhatsApp rápido */}
+            {mainWhatsapp && (
+              <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-white/15">
+                <div className="text-left sm:text-right">
+                  <span className="block text-[10px] uppercase font-bold text-white/70">Atención Personalizada</span>
+                  <span className="font-extrabold text-sm text-white font-mono">{displayPhone || 'WhatsApp Directo'}</span>
+                </div>
+                <a
+                  href={buildEcuadorWhatsAppUrl(mainWhatsapp, defaultWelcomeMsg)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                >
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>Hablar con un Asesor</span>
+                </a>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* =========================================================================
             BARRA DE COLECCIONES CON FOTOS CIRCULARES
             ========================================================================= */}
         {categories.length > 0 && (
@@ -1487,6 +1595,110 @@ export default function TenantCatalogView({
           </div>
         ) : (
           <>
+            {/* =========================================================================
+                BARRA DE ORDENAMIENTO Y FILTROS TEMU (SORTING BAR)
+                ========================================================================= */}
+            <div className="flex items-center justify-between gap-2 mb-3 px-1 overflow-x-auto scrollbar-none py-1 border-b border-slate-200/70">
+              <div className="flex items-center gap-1 shrink-0">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1 mr-1">
+                  <SlidersHorizontal className="w-3 h-3" />
+                  <span className="hidden sm:inline">Ordenar:</span>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setSortBy('recommended')}
+                  style={
+                    sortBy === 'recommended'
+                      ? {
+                          backgroundColor: themeTokens.primaryLight,
+                          borderColor: themeTokens.primaryBorder,
+                          color: themeTokens.primary,
+                        }
+                      : undefined
+                  }
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                    sortBy === 'recommended'
+                      ? 'shadow-2xs'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Recomendados
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSortBy('bestsellers')}
+                  style={
+                    sortBy === 'bestsellers'
+                      ? {
+                          backgroundColor: themeTokens.primaryLight,
+                          borderColor: themeTokens.primaryBorder,
+                          color: themeTokens.primary,
+                        }
+                      : undefined
+                  }
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1 ${
+                    sortBy === 'bestsellers'
+                      ? 'shadow-2xs'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  <Flame className="w-3 h-3 text-amber-500 fill-amber-500" />
+                  <span>Más Vendidos</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setSortBy('min_qty_asc')}
+                  style={
+                    sortBy === 'min_qty_asc'
+                      ? {
+                          backgroundColor: themeTokens.primaryLight,
+                          borderColor: themeTokens.primaryBorder,
+                          color: themeTokens.primary,
+                        }
+                      : undefined
+                  }
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                    sortBy === 'min_qty_asc'
+                      ? 'shadow-2xs'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Menor Volumen
+                </button>
+
+                {showFeaturedRatings && (
+                  <button
+                    type="button"
+                    onClick={() => setSortBy('rating')}
+                    style={
+                      sortBy === 'rating'
+                        ? {
+                            backgroundColor: themeTokens.primaryLight,
+                            borderColor: themeTokens.primaryBorder,
+                            color: themeTokens.primary,
+                          }
+                        : undefined
+                    }
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer border flex items-center gap-1 ${
+                      sortBy === 'rating'
+                        ? 'shadow-2xs'
+                        : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+                    <span>Mejor Calificados</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="text-[11px] font-mono text-slate-400 shrink-0 hidden sm:block">
+                {filteredProducts.length} {filteredProducts.length === 1 ? 'artículo' : 'artículos'}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 sm:gap-4">
             {filteredProducts.slice(0, visibleCount).map((p) => {
               const packSize = p.units_per_package || 100;
@@ -1630,15 +1842,33 @@ export default function TenantCatalogView({
                       </button>
                       <button
                         onClick={() => handleQuickAdd(p)}
-                        style={{
-                          backgroundColor: themeTokens.primary,
-                          color: themeTokens.primaryText,
-                        }}
-                        className="font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-all hover:brightness-110 active:scale-95 cursor-pointer shrink-0"
+                        style={
+                          justAddedId === p.id
+                            ? {
+                                backgroundColor: '#10B981',
+                                color: '#ffffff',
+                              }
+                            : {
+                                backgroundColor: themeTokens.primary,
+                                color: themeTokens.primaryText,
+                              }
+                        }
+                        className={`font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 ${
+                          justAddedId === p.id ? 'scale-105' : 'hover:brightness-110'
+                        }`}
                         title="Agregar fardo al cotizador"
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Cotizar</span>
+                        {justAddedId === p.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5" />
+                            <span>¡Agregado!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Cotizar</span>
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -1703,6 +1933,30 @@ export default function TenantCatalogView({
             >
               <span>Ver Pedido</span>
               <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Flotante de Confirmación Temu-Style */}
+      {justAddedId && (
+        <div className="fixed top-20 inset-x-4 z-50 max-w-sm mx-auto animate-in fade-in slide-in-from-top-3 duration-200 pointer-events-none">
+          <div className="bg-slate-900/95 text-white backdrop-blur-md px-4 py-3 rounded-2xl shadow-2xl border border-slate-800 flex items-center justify-between gap-3 pointer-events-auto">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                <Check className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-extrabold text-white truncate">¡Agregado al Cotizador!</p>
+                <p className="text-[10px] text-slate-300 truncate">{justAddedProductName}</p>
+              </div>
+            </div>
+            <button
+              onClick={openCart}
+              style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
+              className="text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-xs cursor-pointer hover:brightness-110 shrink-0"
+            >
+              Ver Carrito
             </button>
           </div>
         </div>
