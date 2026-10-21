@@ -1280,9 +1280,9 @@ export default function TenantCatalogView({
               </div>
             </div>
 
-            {/* Micro-callout con botón WhatsApp rápido */}
+            {/* Micro-callout con botón WhatsApp rápido adaptado a móvil */}
             {mainWhatsapp && (
-              <div className="shrink-0 flex sm:flex-col items-center sm:items-end justify-between gap-2 pt-2 md:pt-0 border-t md:border-t-0 border-white/15">
+              <div className="shrink-0 flex flex-col sm:flex-row md:flex-col items-stretch sm:items-center md:items-end justify-between gap-2.5 pt-2.5 md:pt-0 border-t md:border-t-0 border-white/15 w-full md:w-auto">
                 <div className="text-left sm:text-right">
                   <span className="block text-[10px] uppercase font-bold text-white/70">Atención Personalizada</span>
                   <span className="font-extrabold text-sm text-white font-mono">{displayPhone || 'WhatsApp Directo'}</span>
@@ -1291,7 +1291,7 @@ export default function TenantCatalogView({
                   href={buildEcuadorWhatsAppUrl(mainWhatsapp, defaultWelcomeMsg)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+                  className="bg-white hover:bg-slate-100 text-slate-900 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg transition-all hover:scale-102 active:scale-95 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap w-full sm:w-auto"
                 >
                   <MessageCircle className="w-4 h-4 text-emerald-600" />
                   <span>Hablar con un Asesor</span>
@@ -1979,11 +1979,11 @@ export default function TenantCatalogView({
         </div>
       </footer>
 
-      {/* Botón Flotante de WhatsApp Comercial (Ecuador) - Ubicado a la derecha */}
+      {/* Botón Flotante de WhatsApp Comercial (Ecuador) - Elevación inteligente sobre el carrito móvil */}
       {social.show_floating_whatsapp !== false && (
         <aside
           aria-label="Atención por WhatsApp"
-          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 sm:gap-3 group animate-fade-in"
+          className={`fixed ${totalCartUnits > 0 ? 'bottom-22 sm:bottom-6' : 'bottom-4 sm:bottom-6'} right-4 sm:right-6 z-40 flex items-center gap-2 sm:gap-3 group animate-fade-in transition-all duration-300`}
         >
           <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-none whitespace-nowrap">
             ¿Cotizamos por WhatsApp? 💬
