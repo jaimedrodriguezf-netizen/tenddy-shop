@@ -8,10 +8,10 @@ Sistema dinámico de tokens visuales y rediseño de alta conversión estilo Temu
 - S4: Unificación visual integral que garantice legibilidad, contraste cromático y accesibilidad en todos los estados interactivos (hover, active, focus, selection).
 
 ## Tasks
-- [x] T1 (S2, S3): Diseñar e implementar utilidad de tokens de diseño dinámicos para `primary_color` y `secondary_color` con cálculo de contraste y variantes (hover, light, border) para CSS Variables. (Commit: pending)
-- [x] T2 (S1, S2, S3, S4): Refactorizar `TenantCatalogView.tsx` eliminando clases estáticas `sky-*` y aplicando el diseño Temu unificado con variables de color en header, buscador y barra de categorías. (Commit: pending)
-- [x] T3 (S1, S2, S3, S4): Rediseñar las tarjetas de producto (Product Card) en `TenantCatalogView.tsx` con densidad estilo Temu, badges jerarquizados por color primario/secundario y CTA directo de cotización. (Commit: pending)
-- [x] T4 (S1, S2, S3, S4): Escribir tests automatizados que verifiquen la absorción dinámica de colores primario y secundario, ausencia de estilos fijos y renderizado de tokens Temu. (Commit: pending)
+- [x] T1 (S2, S3): Diseñar e implementar utilidad de tokens de diseño dinámicos para `primary_color` y `secondary_color` con cálculo de contraste y variantes (hover, light, border) para CSS Variables. (Commit: 00de30b)
+- [x] T2 (S1, S2, S3, S4): Refactorizar `TenantCatalogView.tsx` eliminando clases estáticas `sky-*` y aplicando el diseño Temu unificado con variables de color en header, buscador y barra de categorías. (Commit: 00de30b)
+- [x] T3 (S1, S2, S3, S4): Rediseñar las tarjetas de producto (Product Card) en `TenantCatalogView.tsx` con densidad estilo Temu, badges jerarquizados por color primario/secundario y CTA directo de cotización. (Commit: 00de30b)
+- [x] T4 (S1, S2, S3, S4): Escribir tests automatizados que verifiquen la absorción dinámica de colores primario y secundario, ausencia de estilos fijos y renderizado de tokens Temu. (Commit: 00de30b)
 
 ## Evidencia de Verificación
 - **Tokens Dinámicos (`src/lib/theme-tokens.ts`)**: Genera variables `--tenant-primary` y `--tenant-secondary` con variantes cromáticas (hover, 10% opacity light, 28% opacity border) y contraste perceptual según luminancia ITU-R BT.601 (`#ffffff` o `#0f172a`).
