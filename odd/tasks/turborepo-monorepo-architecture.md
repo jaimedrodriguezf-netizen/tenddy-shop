@@ -9,11 +9,11 @@ Ecosistema monorepo para desacoplar el SaaS multi-tenant de Tenddy (`apps/tenddy
 - S5: Garantizar que cada app compile y corra de forma autónoma con scripts de ejecución claros y pedagógicos.
 
 ## Tasks
-- [x] T1 (S1): Configurar la raíz del monorepo con workspaces en `package.json` y pipeline de compilación en `turbo.json`. (Commit: pending)
-- [x] T2 (S2): Migrar el código del SaaS multi-tenant a `apps/tenddy-shop/` y verificar su compilación y ejecución. (Commit: pending)
-- [x] T3 (S3): Crear `packages/theme-tokens/` como paquete interno compartido y vincularlo en `apps/tenddy-shop`. (Commit: pending)
-- [x] T4 (S4): Crear la app independiente `apps/landing-ayme-pet/` consumiendo la API de Tenddy. (Commit: pending)
-- [x] T5 (S5): Ejecutar tests automatizados, verificar builds independientes y documentar comandos de uso. (Commit: pending)
+- [x] T1 (S1): Configurar la raíz del monorepo con workspaces en `package.json` y pipeline de compilación en `turbo.json`. (Commit: 225900c)
+- [x] T2 (S2): Migrar el código del SaaS multi-tenant a `apps/tenddy-shop/` y verificar su compilación y ejecución. (Commit: 225900c)
+- [x] T3 (S3): Crear `packages/theme-tokens/` como paquete interno compartido y vincularlo en `apps/tenddy-shop`. (Commit: 225900c)
+- [x] T4 (S4): Crear la app independiente `apps/landing-ayme-pet/` consumiendo la API de Tenddy. (Commit: 225900c)
+- [x] T5 (S5): Ejecutar tests automatizados, verificar builds independientes y documentar comandos de uso. (Commit: 225900c)
 
 ## Evidencia de Verificación
 - **Orquestación Monorepo**: Configurado `packageManager: npm@11.19.0`, `workspaces: ["apps/*", "packages/*"]` y `turbo.json` v2 en la raíz.
