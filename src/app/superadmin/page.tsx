@@ -26,14 +26,16 @@ export default async function SuperadminPage() {
   try {
     const admin = getAdminClient();
 
-    // Consultar métricas, usuarios y tickets de soporte en paralelo
-    const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes, ticketsRes] = await Promise.all([
+    // Consultar métricas, usuarios, productos con imágenes, dominios y tickets de soporte en paralelo
+    const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes, ticketsRes, storageRes, domainsRes] = await Promise.all([
       admin.from('tenants').select('id, slug, name, industry_type, is_active, views_count, created_at, theme_config').order('created_at', { ascending: false }),
       admin.from('quotes').select('id, tenant_id, estimated_total, items'),
-      admin.from('products').select('id, tenant_id'),
+      admin.from('products').select('id, tenant_id, images'),
       admin.from('b2b_accounts').select('*').order('created_at', { ascending: false }),
       admin.from('tenant_members').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
       admin.from('support_tickets').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
+      admin.storage.from('support-attachments').list('', { limit: 1000 }).catch(() => ({ data: [] })),
+      admin.from('tenant_domains').select('tenant_id, domain, is_primary'),
     ]);
 
     const rawTenants = tenantsRes.data || [];
@@ -42,11 +44,39 @@ export default async function SuperadminPage() {
     const rawBuyers = (accountsRes.data || []) as B2BAccount[];
     const rawStaff = (staffRes.data || []) as TenantStaffMember[];
     const rawTickets = (ticketsRes.data || []) as SupportTicketRecord[];
+    const rawStorageFiles = (storageRes && 'data' in storageRes && Array.isArray(storageRes.data)) ? storageRes.data : [];
+    const rawDomains = domainsRes?.data || [];
+
+    // Mapear dominios públicos principales por tenant
+    const domainsByTenant: Record<string, string> = {};
+    rawDomains.forEach((d: any) => {
+      if (d.is_primary) {
+        domainsByTenant[d.tenant_id] = d.domain;
+      } else if (!domainsByTenant[d.tenant_id]) {
+        domainsByTenant[d.tenant_id] = d.domain;
+      }
+    });
+
+    // Calcular desglose de imágenes por producto y tenant
+    let totalGlobalImages = 0;
+    const imagesByTenant: Record<string, number> = {};
+
+    rawProducts.forEach((p: any) => {
+      const rawImgs = p.images;
+      const imgList = Array.isArray(rawImgs) ? rawImgs : rawImgs ? [rawImgs] : [];
+      const validImgs = imgList.filter(Boolean);
+      const count = validImgs.length;
+      totalGlobalImages += count;
+      if (p.tenant_id) {
+        imagesByTenant[p.tenant_id] = (imagesByTenant[p.tenant_id] || 0) + count;
+      }
+    });
 
     // Calcular métricas agregadas por tenant de forma defensiva
     const tenantsSummary: SuperadminTenantSummary[] = rawTenants.map((t) => {
       const tenantQuotes = rawQuotes.filter((q: any) => q.tenant_id === t.id);
       const tenantProducts = rawProducts.filter((p: any) => p.tenant_id === t.id);
+      const tenantImages = imagesByTenant[t.id] || 0;
 
       return {
         id: t.id,
@@ -57,9 +87,11 @@ export default async function SuperadminPage() {
         views_count: Number(t.views_count) || 0,
         created_at: t.created_at || new Date().toISOString(),
         total_products: tenantProducts.length,
+        total_images: tenantImages,
         total_quotes: tenantQuotes.length,
         total_branches: 1,
         total_members: 1,
+        primary_domain: domainsByTenant[t.id] || `${t.slug}.tenddy.shop`,
         is_decoupled: Boolean((t.theme_config as any)?.is_decoupled),
         decoupled_url: (t.theme_config as any)?.decoupled_url || '',
       };
@@ -68,6 +100,7 @@ export default async function SuperadminPage() {
     const totalGlobalQuotes = rawQuotes.length;
     const totalGlobalProducts = rawProducts.length;
     const totalB2BAccounts = rawBuyers.length;
+    const totalStorageFiles = rawStorageFiles.length;
     const totalGlobalViews = rawTenants.reduce((acc, t: any) => acc + (Number(t.views_count) || 0), 0);
     const totalGlobalUnitsQuoted = rawQuotes.reduce((acc, q: any) => {
       const items = Array.isArray(q.items) ? q.items : [];
@@ -80,6 +113,8 @@ export default async function SuperadminPage() {
         totalGlobalViews={totalGlobalViews}
         totalGlobalQuotes={totalGlobalQuotes}
         totalGlobalProducts={totalGlobalProducts}
+        totalGlobalImages={totalGlobalImages}
+        totalStorageFiles={totalStorageFiles}
         totalGlobalUnitsQuoted={totalGlobalUnitsQuoted}
         totalB2BAccounts={totalB2BAccounts}
         initialBuyers={rawBuyers}
