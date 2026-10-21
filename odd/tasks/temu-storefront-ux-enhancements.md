@@ -8,10 +8,10 @@ Hero Banner promocional, barra de ordenamiento ágil y micro-interacción de com
 - S4: Integración 100% armónica con los tokens dinámicos `--tenant-primary` y `--tenant-secondary`, manteniendo TypeScript limpio, ESLint sin errores y suite de tests al 100%.
 
 ## Tasks
-- [x] T1 (S1): Diseñar e integrar Hero Banner promocional estilo Temu con gradiente corporativo dinámico y sellos de confianza mayorista. (Commit: pending)
-- [x] T2 (S2): Implementar barra de ordenamiento reactivo (Sorting Bar) con ordenación en vivo por demanda, volumen y calificación. (Commit: pending)
-- [x] T3 (S3): Implementar micro-interacción y feedback táctil (`✓ Agregado`) en botón de cotización rápida de tarjetas de producto. (Commit: pending)
-- [x] T4 (S4): Verificar suite de tests automatizados, tsc, linter y build de producción. (Commit: pending)
+- [x] T1 (S1): Diseñar e integrar Hero Banner promocional estilo Temu con gradiente corporativo dinámico y sellos de confianza mayorista. (Commit: cc0ed5b)
+- [x] T2 (S2): Implementar barra de ordenamiento reactivo (Sorting Bar) con ordenación en vivo por demanda, volumen y calificación. (Commit: cc0ed5b)
+- [x] T3 (S3): Implementar micro-interacción y feedback táctil (`✓ Agregado`) en botón de cotización rápida de tarjetas de producto. (Commit: cc0ed5b)
+- [x] T4 (S4): Verificar suite de tests automatizados, tsc, linter y build de producción. (Commit: cc0ed5b)
 
 ## Evidencia de Verificación
 - **Hero Promo Banner Temu-Style**: Gradiente dinámico 135deg entre `--tenant-primary` y `--tenant-secondary`, sellos de Inocuidad/Calidad, empaque industrial protegido, cobertura nacional y llamado a la acción directo con asesor WhatsApp.
