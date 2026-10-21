@@ -9,17 +9,14 @@ const assert = require('assert');
 
 console.log('🧪 Iniciando verificación de Diseño Estilo Temu y Colores Unificados...\n');
 
-// 1. Verificación de la Capa de Tokens (packages/theme-tokens/src/index.ts)
-const tokensModulePath = fs.existsSync(path.join(__dirname, '../packages/theme-tokens/src/index.ts'))
-  ? path.join(__dirname, '../packages/theme-tokens/src/index.ts')
-  : path.join(__dirname, '../src/lib/theme-tokens.ts');
+// 1. Verificación de la Capa de Tokens (src/lib/theme-tokens.ts)
 const {
   resolveStorefrontTokens,
   buildStorefrontThemeCSS,
   isLightColor,
   adjustBrightness,
   isValidHexColor,
-} = require(tokensModulePath);
+} = require('../src/lib/theme-tokens.ts');
 
 // Caso A: Fallbacks predeterminados (Estilo Temu de fábrica)
 const defaultTokens = resolveStorefrontTokens();

@@ -17,7 +17,7 @@ import {
   Award,
   Factory
 } from 'lucide-react';
-import { buildStorefrontThemeCSS, resolveStorefrontTokens } from '@tenddy/theme-tokens';
+import { buildStorefrontThemeCSS, resolveStorefrontTokens } from '@/lib/theme-tokens';
 
 export default function AymeCorporateLandingPage() {
   const primaryColor = '#A61C2E';

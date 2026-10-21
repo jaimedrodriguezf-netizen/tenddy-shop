@@ -2,11 +2,6 @@
   "name": "tenddy-shop",
   "version": "0.1.12",
   "private": true,
-  "packageManager": "npm@11.19.0",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "scripts": {
     "prebuild": "node scripts/generate-version.js",
     "predev": "node scripts/generate-version.js",
@@ -15,15 +10,11 @@
     "build": "next build --webpack && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "next start",
     "lint": "eslint",
-    "test": "node tests/unified-temu-storefront-colors.test.js",
-    "turbo:build": "turbo build",
-    "turbo:dev": "turbo dev",
-    "turbo:lint": "turbo lint"
+    "test": "node tests/unified-temu-storefront-colors.test.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
-    "@tenddy/theme-tokens": "*",
     "@types/papaparse": "^5.5.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.47.0",
@@ -45,7 +36,6 @@
     "eslint-config-next": "^16.4.0",
     "puppeteer": "^25.12.0",
     "tailwindcss": "^4",
-    "turbo": "^2.11.10",
     "typescript": "^5",
     "yauzl": "^3.4.0"
   }
