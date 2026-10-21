@@ -128,13 +128,30 @@ export async function PATCH(request: Request) {
       };
     }
 
+    // Gobernanza de plantillas: 'landing' es exclusivo para tiendas autorizadas o Superadmin
+    const isCustomLandingAllowed =
+      currentTenant.slug === 'ayme-pet' ||
+      Boolean(currentTenant.theme_config?.custom_landing_unlocked);
+
+    let resolvedTemplate = currentTenant.theme_config?.store_template || 'temu';
+    if (body.store_template === 'landing') {
+      if (isCustomLandingAllowed) {
+        resolvedTemplate = 'landing';
+      } else {
+        // Bloquear asignación no autorizada de landing personalizada
+        resolvedTemplate = 'temu';
+      }
+    } else if (body.store_template === 'temu') {
+      resolvedTemplate = 'temu';
+    }
+
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),
       primary_color: sanitizeHexColor(primary_color, currentTenant.theme_config?.primary_color || '#0284c7'),
       secondary_color: sanitizeHexColor(secondary_color, currentTenant.theme_config?.secondary_color || '#a61c2e'),
       accent_color: sanitizeHexColor(accent_color, currentTenant.theme_config?.accent_color || '#0284c7'),
       landing_bg_color: sanitizeHexColor(landing_bg_color, currentTenant.theme_config?.landing_bg_color || '#020617'),
-      store_template: body.store_template || currentTenant.theme_config?.store_template || 'temu',
+      store_template: resolvedTemplate,
       logo_height: validLogoHeight,
       show_top_bar: body.show_top_bar !== undefined ? Boolean(body.show_top_bar) : (currentTenant.theme_config?.show_top_bar ?? true),
       top_bar_text: body.top_bar_text !== undefined ? String(body.top_bar_text).trim() : (currentTenant.theme_config?.top_bar_text ?? ''),

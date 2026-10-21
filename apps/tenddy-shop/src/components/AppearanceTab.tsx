@@ -18,7 +18,11 @@ import {
   Megaphone,
   MessageCircle,
   Share2,
-  MapPin
+  MapPin,
+  Lock,
+  X,
+  ExternalLink,
+  ChevronRight
 } from 'lucide-react';
 import { Tenant } from '@/lib/types';
 import { extractColorsFromImage, hexToRgb, rgbToHex } from '@/lib/color-extractor';
@@ -116,6 +120,8 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [storeTemplate, setStoreTemplate] = useState<'temu' | 'landing'>(
     (tenant.theme_config as any)?.store_template || 'temu'
   );
+  const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
+  const isCustomLandingAllowed = tenant.slug === 'ayme-pet' || Boolean((tenant.theme_config as any)?.custom_landing_unlocked);
 
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
@@ -371,26 +377,107 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           </div>
 
           <div
-            onClick={() => setStoreTemplate('landing')}
-            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
+            onClick={() => {
+              if (isCustomLandingAllowed) {
+                setStoreTemplate('landing');
+              } else {
+                setShowEnterpriseModal(true);
+              }
+            }}
+            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden ${
               storeTemplate === 'landing'
-                ? 'border-sky-500 bg-sky-50/50 shadow-sm'
+                ? 'border-indigo-500 bg-indigo-50/40 shadow-sm'
                 : 'border-slate-200 bg-white hover:border-slate-300'
             }`}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
                 🏭 Landing Corporativa (Personalizada)
+                {!isCustomLandingAllowed && <Lock className="w-3.5 h-3.5 text-indigo-600" />}
               </span>
-              <span className="text-[10px] font-bold bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full">
-                Fábrica
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                isCustomLandingAllowed
+                  ? 'bg-indigo-100 text-indigo-700'
+                  : 'bg-indigo-50 text-indigo-600 border border-indigo-200'
+              }`}>
+                {isCustomLandingAllowed ? 'Habilitada' : 'Plan Exclusivo'}
               </span>
             </div>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Diseño con video de portada, historia de la planta, sección de maquila/servicios industriales y sucursales.
+              Experiencia audiovisual a medida para fabricantes con video de maquinaria, telemetría y dominio propio.
             </p>
+            {!isCustomLandingAllowed && (
+              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-indigo-600 hover:text-indigo-800">
+                <span>Solicitar Landing con Superadmin</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Modal de Solicitud de Landing Corporativa Exclusiva */}
+        {showEnterpriseModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 text-left animate-in zoom-in-95 duration-150">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center border border-indigo-100 shadow-2xs">
+                    <Lock className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-900">Landing Corporativa a Medida</h3>
+                    <p className="text-xs text-slate-500">Servicio exclusivo para fábricas y marcas B2B</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowEnterpriseModal(false)}
+                  className="p-1 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <p className="text-xs text-slate-600 leading-relaxed">
+                El diseño de <strong>Landing Corporativa de Fábrica</strong> (con video de procesos industriales, telemetría en tiempo real y dominio exclusivo) es un desarrollo boutique implementado directamente por el equipo de ingeniería de <strong>tenddy</strong>.
+              </p>
+
+              <div className="space-y-2 bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 text-xs text-slate-700">
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <span>Producción y compresión de video de maquinaria</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <span>Despliegue en dominio propio con SSL (ej: {tenant.slug}.com)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                  <span>Sincronización en vivo con tu catálogo de tenddy</span>
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-2">
+                <a
+                  href={`https://wa.me/593998722324?text=${encodeURIComponent(`¡Hola Superadmin tenddy! Me interesa cotizar una Landing Corporativa a medida para mi empresa ${tenant.name} (tienda: ${tenant.slug}).`)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Chatear con el Superadmin por WhatsApp</span>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={() => setShowEnterpriseModal(false)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors"
+                >
+                  Continuar con Catálogo Directo Predeterminado
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bloque 1: Identidad & Color */}

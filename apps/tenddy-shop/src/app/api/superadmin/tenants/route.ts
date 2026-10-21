@@ -13,18 +13,40 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'No autorizado como Superadmin' }, { status: 401 });
     }
 
-    const { tenant_id, is_active } = await request.json();
+    const body = await request.json();
+    const { tenant_id, is_active, store_template, custom_landing_unlocked } = body;
 
-    if (!tenant_id || typeof is_active !== 'boolean') {
-      return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 });
+    if (!tenant_id) {
+      return NextResponse.json({ error: 'Falta tenant_id' }, { status: 400 });
     }
 
     const admin = getAdminClient();
+    const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+
+    if (typeof is_active === 'boolean') {
+      updates.is_active = is_active;
+    }
+
+    if (store_template !== undefined || custom_landing_unlocked !== undefined) {
+      const { data: currentTenant } = await admin
+        .from('tenants')
+        .select('theme_config')
+        .eq('id', tenant_id)
+        .single();
+
+      const currentTheme = currentTenant?.theme_config || {};
+      updates.theme_config = {
+        ...currentTheme,
+        ...(store_template ? { store_template } : {}),
+        ...(custom_landing_unlocked !== undefined ? { custom_landing_unlocked } : {}),
+      };
+    }
+
     const { data: updated, error } = await admin
       .from('tenants')
-      .update({ is_active, updated_at: new Date().toISOString() })
+      .update(updates)
       .eq('id', tenant_id)
-      .select('id, slug, name, is_active')
+      .select('id, slug, name, is_active, theme_config')
       .single();
 
     if (error) {
