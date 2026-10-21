@@ -1,0 +1,59 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad5" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#F8FAFC"/><stop offset="100%" stop-color="#EDF2F7"/></linearGradient>
+    <linearGradient id="squareGlass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#93C5FD" stop-opacity="0.85"/>
+      <stop offset="35%" stop-color="#FFFFFF" stop-opacity="0.95"/>
+      <stop offset="55%" stop-color="#DBEAFE" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#60A5FA" stop-opacity="0.9"/>
+    </linearGradient>
+    <filter id="shadow5" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.12"/></filter>
+  </defs>
+  <rect width="600" height="600" fill="url(#bgGrad5)"/>
+  <pattern id="grid5" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" stroke-width="0.8"/></pattern>
+  <rect width="600" height="600" fill="url(#grid5)"/>
+  <rect x="25" y="25" width="230" height="48" rx="6" fill="#1E293B" opacity="0.95"/>
+  <text x="38" y="45" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#38BDF8" letter-spacing="1">PLANO TÉCNICO • AYME-005</text>
+  <text x="38" y="62" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">BOTELLA CUADRADA 1.000 ML</text>
+  <g filter="url(#shadow5)">
+    <path d="M210,490 L210,210 L270,150 L270,95 L330,95 L330,150 L390,210 L390,490 Q390,510 370,510 L230,510 Q210,510 210,490 Z" fill="url(#squareGlass)" stroke="#2563EB" stroke-width="1.5"/>
+    <line x1="280" y1="210" x2="280" y2="490" stroke="#3B82F6" stroke-width="1.5" stroke-dasharray="2,2"/>
+    <path d="M225,210 L225,490" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" opacity="0.9"/>
+  </g>
+  <!-- ALTURA 235 mm -->
+  <g stroke="#A61C2E" stroke-width="1.5" fill="#A61C2E">
+    <line x1="330" y1="95" x2="480" y2="95" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="390" y1="510" x2="480" y2="510" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="470" y1="105" x2="470" y2="500"/>
+    <polygon points="470,95 466,107 474,107"/>
+    <polygon points="470,510 466,498 474,498"/>
+    <rect x="425" y="280" width="90" height="34" rx="6" fill="#A61C2E"/>
+    <text x="470" y="296" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#FED7AA" text-anchor="middle">ALTURA TOTAL</text>
+    <text x="470" y="309" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">235.0 mm</text>
+  </g>
+  <!-- BASE 78x78 mm -->
+  <g stroke="#1F2E4D" stroke-width="1.5" fill="#1F2E4D">
+    <line x1="210" y1="515" x2="210" y2="565" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="390" y1="515" x2="390" y2="565" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="220" y1="550" x2="380" y2="550"/>
+    <polygon points="210,550 222,546 222,554"/>
+    <polygon points="390,550 378,546 378,554"/>
+    <rect x="245" y="535" width="110" height="28" rx="4" fill="#1F2E4D"/>
+    <text x="300" y="553" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">BASE: 78 x 78 mm</text>
+  </g>
+  <!-- BOCA: 38 mm -->
+  <g stroke="#0284C7" stroke-width="1.5" fill="#0284C7">
+    <line x1="270" y1="90" x2="270" y2="50" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="330" y1="90" x2="330" y2="50" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="275" y1="60" x2="325" y2="60"/>
+    <polygon points="270,60 278,57 278,63"/>
+    <polygon points="330,60 322,57 322,63"/>
+    <rect x="345" y="46" width="125" height="28" rx="4" fill="#0284C7"/>
+    <text x="407" y="64" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">BOCA: 38 mm</text>
+  </g>
+  <g>
+    <rect x="25" y="525" width="145" height="50" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="35" y="545" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748B">PESO / GRAMAJE:</text>
+    <text x="35" y="563" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#A61C2E">32.0 g ± 0.5g</text>
+  </g>
+</svg>

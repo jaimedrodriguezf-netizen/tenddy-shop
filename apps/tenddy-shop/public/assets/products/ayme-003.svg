@@ -1,0 +1,75 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F8FAFC"/>
+      <stop offset="100%" stop-color="#EDF2F7"/>
+    </linearGradient>
+    <linearGradient id="amberGlass" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#B45309" stop-opacity="0.95"/>
+      <stop offset="25%" stop-color="#D97706" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#FDE68A" stop-opacity="0.75"/>
+      <stop offset="75%" stop-color="#D97706" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#92400E" stop-opacity="0.98"/>
+    </linearGradient>
+    <filter id="shadow3" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <rect width="600" height="600" fill="url(#bgGrad3)"/>
+  <pattern id="grid3" width="20" height="20" patternUnits="userSpaceOnUse">
+    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#E2E8F0" stroke-width="0.8"/>
+  </pattern>
+  <rect width="600" height="600" fill="url(#grid3)"/>
+
+  <rect x="25" y="25" width="230" height="48" rx="6" fill="#1E293B" opacity="0.95"/>
+  <text x="38" y="45" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#FBBF24" letter-spacing="1">PLANO TÉCNICO • AYME-003</text>
+  <text x="38" y="62" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF">FARMA ÁMBAR UV 120 ML</text>
+
+  <!-- Frasco Ámbar -->
+  <g filter="url(#shadow3)">
+    <path d="M235,480 Q235,500 255,500 L345,500 Q365,500 365,480 L365,270 Q365,220 325,190 L325,145 L332,145 L332,125 L268,125 L268,145 L275,145 L275,190 Q235,220 235,270 Z" fill="url(#amberGlass)" stroke="#78350F" stroke-width="1.5"/>
+    <path d="M250,270 L250,480" stroke="#FEF3C7" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+    <path d="M350,270 L350,480" stroke="#78350F" stroke-width="3" stroke-linecap="round" opacity="0.6"/>
+  </g>
+
+  <!-- ALTURA 112 mm -->
+  <g stroke="#A61C2E" stroke-width="1.5" fill="#A61C2E">
+    <line x1="335" y1="125" x2="480" y2="125" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="365" y1="500" x2="480" y2="500" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="470" y1="135" x2="470" y2="490"/>
+    <polygon points="470,125 466,137 474,137"/>
+    <polygon points="470,500 466,488 474,488"/>
+    <rect x="425" y="285" width="90" height="34" rx="6" fill="#A61C2E"/>
+    <text x="470" y="301" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#FED7AA" text-anchor="middle">ALTURA TOTAL</text>
+    <text x="470" y="314" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">112.0 mm</text>
+  </g>
+
+  <!-- DIÁMETRO Ø 49.5 mm -->
+  <g stroke="#1F2E4D" stroke-width="1.5" fill="#1F2E4D">
+    <line x1="235" y1="505" x2="235" y2="560" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="365" y1="505" x2="365" y2="560" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="245" y1="545" x2="355" y2="545"/>
+    <polygon points="235,545 247,541 247,549"/>
+    <polygon points="365,545 353,541 353,549"/>
+    <rect x="250" y="530" width="100" height="28" rx="4" fill="#1F2E4D"/>
+    <text x="300" y="548" font-family="system-ui, sans-serif" font-size="12" font-weight="800" fill="#FFFFFF" text-anchor="middle">Ø 49.5 mm</text>
+  </g>
+
+  <!-- BOCA: 28 mm DIN -->
+  <g stroke="#0284C7" stroke-width="1.5" fill="#0284C7">
+    <line x1="268" y1="120" x2="268" y2="70" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="332" y1="120" x2="332" y2="70" stroke="#94A3B8" stroke-width="1" stroke-dasharray="3,3"/>
+    <line x1="273" y1="80" x2="327" y2="80"/>
+    <polygon points="268,80 276,77 276,83"/>
+    <polygon points="332,80 324,77 324,83"/>
+    <rect x="345" y="66" width="125" height="28" rx="4" fill="#0284C7"/>
+    <text x="407" y="84" font-family="system-ui, sans-serif" font-size="11" font-weight="800" fill="#FFFFFF" text-anchor="middle">BOCA: 28 mm DIN</text>
+  </g>
+
+  <g>
+    <rect x="25" y="525" width="145" height="50" rx="6" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="1.5"/>
+    <text x="35" y="545" font-family="system-ui, sans-serif" font-size="10" font-weight="700" fill="#64748B">PESO / GRAMAJE:</text>
+    <text x="35" y="563" font-family="system-ui, sans-serif" font-size="14" font-weight="900" fill="#A61C2E">18.5 g ± 0.3g</text>
+  </g>
+</svg>
