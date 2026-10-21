@@ -9,10 +9,10 @@ Capacidad en la torre de control de Superadmin para desacoplar tenants de Tenddy
 - S5: Desarrollar pruebas automatizadas unitarias en `tests/tenant-decoupling.test.js` que certifiquen el empaquetado SQL, la sanitización y el comportamiento del modo desacoplado.
 
 ## Tasks
-- [x] T1 (S1, S4): Crear el servicio y endpoint `/api/superadmin/tenants/export/route.ts` con generación de dump SQL/JSON de tablas asociadas y blindaje de sesión superadmin.
-- [x] T2 (S2): Integrar el soporte de modo desacoplado (`is_decoupled`, `decoupled_url`) en la API de tenants `/api/superadmin/tenants/route.ts` y en la vista del Storefront `/app/store/[shopSlug]/page.tsx`.
-- [x] T3 (S3): Agregar la interfaz gráfica en `SuperadminDashboardView.tsx` con modal de graduación/desacople, descarga de dump y control de redirección.
-- [x] T4 (S5): Crear y ejecutar la suite de pruebas automatizadas `tests/tenant-decoupling.test.js` verificando exportación SQL y redirección.
+- [x] T1 (S1, S4): Crear el servicio y endpoint `/api/superadmin/tenants/export/route.ts` con generación de dump SQL/JSON de tablas asociadas y blindaje de sesión superadmin. (Commit: 40e040c)
+- [x] T2 (S2): Integrar el soporte de modo desacoplado (`is_decoupled`, `decoupled_url`) en la API de tenants `/api/superadmin/tenants/route.ts` y en la vista del Storefront `/app/store/[shopSlug]/page.tsx`. (Commit: 40e040c)
+- [x] T3 (S3): Agregar la interfaz gráfica en `SuperadminDashboardView.tsx` con modal de graduación/desacople, descarga de dump y control de redirección. (Commit: 40e040c)
+- [x] T4 (S5): Crear y ejecutar la suite de pruebas automatizadas `tests/tenant-decoupling.test.js` verificando exportación SQL y redirección. (Commit: 40e040c)
 
 ## Evidencia de Verificación
 - **Motor de Exportación Atómica**: Endpoint `/api/superadmin/tenants/export` ensambla dumps SQL autónomos con transacciones seguras `BEGIN...COMMIT` y descarga de archivos JSON/SQL para PostgreSQL/Supabase.
