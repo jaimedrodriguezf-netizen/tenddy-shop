@@ -121,11 +121,11 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   const [showBranches, setShowBranches] = useState(tenant.landing_config?.show_branches ?? true);
   const [showBestSellers, setShowBestSellers] = useState(tenant.landing_config?.show_best_sellers ?? (tenant.theme_config as any)?.show_best_sellers ?? true);
   const [showFeaturedRatings, setShowFeaturedRatings] = useState(tenant.landing_config?.show_featured_ratings ?? (tenant.theme_config as any)?.show_featured_ratings ?? true);
-  const [storeTemplate, setStoreTemplate] = useState<'temu' | 'landing'>(
-    (tenant.theme_config as any)?.store_template || 'temu'
-  );
+  // Gobernanza de Plantilla: sólo el Superadmin asigna el formato de la tienda.
+  const storeTemplate: 'temu' | 'landing' =
+    (tenant.theme_config as any)?.store_template === 'landing' ? 'landing' : 'temu';
   const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
-  const isCustomLandingAllowed = tenant.slug === 'ayme-pet' || Boolean((tenant.theme_config as any)?.custom_landing_unlocked);
+  const isCustomLandingAllowed = storeTemplate === 'landing';
 
   // Motor de Secciones Modulares de la Landing Personalizada
   const [sections, setSections] = useState<LandingSectionsConfig>(() =>
@@ -324,7 +324,6 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           primary_color: primaryColor,
           secondary_color: secondaryColor,
           landing_bg_color: landingBgColor,
-          store_template: storeTemplate,
           logo_url: logoUrl || null,
           logo_height: logoHeight,
           show_top_bar: showTopBar,
@@ -390,78 +389,69 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
         </div>
       )}
 
-      {/* Bloque 0: Selector de Plantilla */}
-      <div className="space-y-4">
+      {/* Bloque 0: Formato y Plantilla Asignada por Superadmin */}
+      <div className="space-y-3">
         <div>
           <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
             <LayoutDashboard className="w-4 h-4 text-slate-500" />
-            Plantilla y Formato de Tienda
+            Formato y Plantilla de Tienda
           </h4>
           <p className="text-xs text-slate-500 mt-0.5">
-            Selecciona la experiencia de compra para tus clientes mayoristas.
+            Configuración gobernada por el plan comercial y la administración central.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div
-            onClick={() => setStoreTemplate('temu')}
-            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer ${
-              storeTemplate === 'temu'
-                ? 'border-sky-500 bg-sky-50/50 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                🛍️ E-Commerce Directo (Catálogo Ágil y Dinámico)
-              </span>
-              <span className="text-[10px] font-bold bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full">
-                Predeterminado
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Enfocado 100% en conversión y venta rápida. Buscador superior, categorías en píldoras y grilla densa de productos sin textos de relleno.
-            </p>
-          </div>
-
-          <div
-            onClick={() => {
-              if (isCustomLandingAllowed) {
-                setStoreTemplate('landing');
-              } else {
-                setShowEnterpriseModal(true);
-              }
-            }}
-            className={`p-4 rounded-2xl border-2 transition-all cursor-pointer relative overflow-hidden ${
-              storeTemplate === 'landing'
-                ? 'border-indigo-500 bg-indigo-50/40 shadow-sm'
-                : 'border-slate-200 bg-white hover:border-slate-300'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
-                🏭 Landing Corporativa (Personalizada)
-                {!isCustomLandingAllowed && <Lock className="w-3.5 h-3.5 text-indigo-600" />}
-              </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                isCustomLandingAllowed
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'bg-indigo-50 text-indigo-600 border border-indigo-200'
-              }`}>
-                {isCustomLandingAllowed ? 'Habilitada' : 'Plan Exclusivo'}
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Experiencia audiovisual a medida para fabricantes con video de maquinaria, telemetría y dominio propio.
-            </p>
-            {!isCustomLandingAllowed && (
-              <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] font-bold text-indigo-600 hover:text-indigo-800">
-                <span>Solicitar Landing con Superadmin</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+        {storeTemplate === 'landing' ? (
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-indigo-500/30 rounded-2xl p-4 text-white flex flex-wrap items-center justify-between gap-3 shadow-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                <Layers className="w-5 h-5 text-indigo-300" />
               </div>
-            )}
+              <div>
+                <div className="text-xs font-bold flex items-center gap-2">
+                  <span>Formato Activo: Landing Corporativa B2B</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.2 rounded-full font-mono">
+                    Plan Exclusivo
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-300 mt-0.5">
+                  Tu tienda cuenta con una landing personalizada con video industrial, telemetría y catálogo. Abajo tenés el Editor de Secciones para gestionar tus contenidos.
+                </p>
+              </div>
+            </div>
+            <div className="text-[10px] font-mono text-indigo-200 bg-white/10 px-2.5 py-1 rounded-lg border border-white/15">
+              Gestionado por Superadmin
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center shrink-0">
+                <LayoutDashboard className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                  <span>Formato Activo: E-Commerce Directo Mayorista (Temu)</span>
+                  <span className="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.2 rounded-full font-mono font-bold">
+                    Predeterminado
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 mt-0.5">
+                  Catálogo dinámico optimizado para venta y cotización rápida. Abajo podés personalizar colores corporativos, logotipo y canales de contacto.
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setShowEnterpriseModal(true)}
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1.5 cursor-pointer bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl border border-indigo-200 transition-all shadow-2xs"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Solicitar Landing Corporativa</span>
+            </button>
+          </div>
+        )}
 
         {/* Modal de Solicitud de Landing Corporativa Exclusiva */}
         {showEnterpriseModal && (

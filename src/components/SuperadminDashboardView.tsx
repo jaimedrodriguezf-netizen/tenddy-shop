@@ -51,6 +51,8 @@ export interface SuperadminTenantSummary {
   primary_domain?: string;
   is_decoupled?: boolean;
   decoupled_url?: string;
+  store_template?: string;
+  custom_landing_unlocked?: boolean;
 }
 
 interface SuperadminDashboardViewProps {
@@ -110,6 +112,40 @@ export default function SuperadminDashboardView({
       if (res.ok) {
         setTenants((prev) =>
           prev.map((t) => (t.id === tenantId ? { ...t, is_active: !currentStatus } : t))
+        );
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleToggleTemplate = async (tenantId: string, currentTemplate?: string) => {
+    const nextTemplate = currentTemplate === 'landing' ? 'temu' : 'landing';
+    const isUnlocked = nextTemplate === 'landing';
+    const label = nextTemplate === 'landing' ? 'Landing Corporativa B2B' : 'E-Commerce Directo (Temu)';
+
+    if (!confirm(`¿Deseas cambiar el formato asignado para esta tienda a "${label}"?`)) return;
+
+    setIsUpdating(true);
+    try {
+      const res = await fetch('/api/superadmin/tenants', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenant_id: tenantId,
+          store_template: nextTemplate,
+          custom_landing_unlocked: isUnlocked,
+        }),
+      });
+      if (res.ok) {
+        setTenants((prev) =>
+          prev.map((t) =>
+            t.id === tenantId
+              ? { ...t, store_template: nextTemplate, custom_landing_unlocked: isUnlocked }
+              : t
+          )
         );
       }
     } catch (e) {
@@ -590,6 +626,29 @@ export default function SuperadminDashboardView({
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                                 Suspendida
                               </span>
+                            )}
+
+                            {/* Badge y Selector de Plantilla Gobernado por Superadmin */}
+                            {t.store_template === 'landing' ? (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleTemplate(t.id, t.store_template)}
+                                disabled={isUpdating}
+                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                                title="Formato: Landing Corporativa B2B (Clic de Superadmin para cambiar a Catálogo Temu)"
+                              >
+                                <span>🏭 Landing VIP</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleToggleTemplate(t.id, t.store_template)}
+                                disabled={isUpdating}
+                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-sky-300 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                                title="Formato: Catálogo Temu Estándar (Clic de Superadmin para promover a Landing Corporativa)"
+                              >
+                                <span>🛍️ Catálogo Temu</span>
+                              </button>
                             )}
 
                             {t.is_decoupled && (

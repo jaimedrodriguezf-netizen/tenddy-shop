@@ -129,22 +129,9 @@ export async function PATCH(request: Request) {
       };
     }
 
-    // Gobernanza de plantillas: 'landing' es exclusivo para tiendas autorizadas o Superadmin
-    const isCustomLandingAllowed =
-      currentTenant.slug === 'ayme-pet' ||
-      Boolean(currentTenant.theme_config?.custom_landing_unlocked);
-
-    let resolvedTemplate = currentTenant.theme_config?.store_template || 'temu';
-    if (body.store_template === 'landing') {
-      if (isCustomLandingAllowed) {
-        resolvedTemplate = 'landing';
-      } else {
-        // Bloquear asignación no autorizada de landing personalizada
-        resolvedTemplate = 'temu';
-      }
-    } else if (body.store_template === 'temu') {
-      resolvedTemplate = 'temu';
-    }
+    // Gobernanza de plantillas: la plantilla de la tienda es una decisión exclusiva del Superadmin.
+    // El administrador de tienda no puede alterar store_template desde este endpoint.
+    const resolvedTemplate = currentTenant.theme_config?.store_template === 'landing' ? 'landing' : 'temu';
 
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),

@@ -94,6 +94,8 @@ export default async function SuperadminPage() {
         primary_domain: domainsByTenant[t.id] || `${t.slug}.tenddy.shop`,
         is_decoupled: Boolean((t.theme_config as any)?.is_decoupled),
         decoupled_url: (t.theme_config as any)?.decoupled_url || '',
+        store_template: (t.theme_config as any)?.store_template || 'temu',
+        custom_landing_unlocked: Boolean((t.theme_config as any)?.custom_landing_unlocked),
       };
     });
 
