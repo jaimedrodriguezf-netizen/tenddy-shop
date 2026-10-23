@@ -22,9 +22,13 @@ import {
   Lock,
   X,
   ExternalLink,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Factory
 } from 'lucide-react';
-import { Tenant } from '@/lib/types';
+import { Tenant, LandingSectionsConfig, LandingPillarItem, resolveLandingSections } from '@/lib/types';
 import { extractColorsFromImage, hexToRgb, rgbToHex } from '@/lib/color-extractor';
 import { normalizeEcuadorPhone } from '@/lib/ecuador-phone';
 
@@ -122,6 +126,49 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
   );
   const [showEnterpriseModal, setShowEnterpriseModal] = useState(false);
   const isCustomLandingAllowed = tenant.slug === 'ayme-pet' || Boolean((tenant.theme_config as any)?.custom_landing_unlocked);
+
+  // Motor de Secciones Modulares de la Landing Personalizada
+  const [sections, setSections] = useState<LandingSectionsConfig>(() =>
+    resolveLandingSections(tenant.landing_config?.sections, tenant.name, tenant.slug)
+  );
+  const [openSectionAccordion, setOpenSectionAccordion] = useState<string | null>('hero');
+
+  const toggleSectionActive = (sectionKey: keyof LandingSectionsConfig) => {
+    setSections((prev) => ({
+      ...prev,
+      [sectionKey]: {
+        ...prev[sectionKey],
+        enabled: !prev[sectionKey].enabled,
+      },
+    }));
+  };
+
+  const updateSection = <K extends keyof LandingSectionsConfig>(
+    sectionKey: K,
+    patch: Partial<LandingSectionsConfig[K]>
+  ) => {
+    setSections((prev) => ({
+      ...prev,
+      [sectionKey]: {
+        ...prev[sectionKey],
+        ...patch,
+      },
+    }));
+  };
+
+  const updatePillarItem = (index: number, patch: Partial<LandingPillarItem>) => {
+    setSections((prev) => {
+      const newItems = [...prev.pillars.items];
+      newItems[index] = { ...newItems[index], ...patch };
+      return {
+        ...prev,
+        pillars: {
+          ...prev.pillars,
+          items: newItems,
+        },
+      };
+    });
+  };
 
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
@@ -307,6 +354,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
           hours: hours,
           maps_url: mapsUrl,
           maps_embed_url: mapsEmbedUrl,
+          sections: sections,
         }),
       });
 
@@ -1290,263 +1338,738 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
         </div>
       </div>
 
-      {/* Bloque: Ubicación de Planta, Fábrica & Horarios */}
-      <div className="space-y-4">
-        <div>
-          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-slate-500" />
-            Ubicación de Planta, Fábrica & Horarios
-          </h4>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Configura la dirección física, ciudad de planta, horarios de atención y el mapa interactivo de Google Maps para tus clientes.
-          </p>
-        </div>
+      {/* Si es Landing Personalizada: Editor Modular de 6 Secciones */}
+      {storeTemplate === 'landing' ? (
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-indigo-950 via-slate-900 to-indigo-950 p-4 rounded-2xl border border-indigo-500/30 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center shrink-0">
+                <Layers className="w-5 h-5 text-indigo-300" />
+              </div>
+              <div>
+                <h4 className="text-sm font-extrabold text-white flex items-center gap-2">
+                  <span>Editor de Secciones de la Landing Personalizada</span>
+                  <span className="text-[10px] bg-indigo-500/30 text-indigo-200 border border-indigo-400/40 px-2 py-0.5 rounded-full font-mono">
+                    6 Secciones
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Activa o desactiva con el interruptor y personaliza los textos y datos de cada sección.
+                </p>
+              </div>
+            </div>
+            <div className="text-xs text-indigo-200 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl font-mono">
+              Fábrica: {tenant.name}
+            </div>
+          </div>
 
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
+          <div className="space-y-3.5">
+            {/* 1. TOP PROMO BAR */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div
+                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'top_bar' ? null : 'top_bar')}
+                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">📢</span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                      <span>1. Barra Superior Informativa (Top Promo Bar)</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        sections.top_bar.enabled
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {sections.top_bar.enabled ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Franja superior fija con anuncios o alcance logístico</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sections.top_bar.enabled}
+                      onChange={() => toggleSectionActive('top_bar')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'top_bar' ? null : 'top_bar')}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    {openSectionAccordion === 'top_bar' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {openSectionAccordion === 'top_bar' && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Texto Informativo de la Barra:</label>
+                    <input
+                      type="text"
+                      value={sections.top_bar.text}
+                      onChange={(e) => updateSection('top_bar', { text: e.target.value })}
+                      placeholder="Ej: 🏭 Planta Industrial Calderón - Quito • Envíos Paletizados a todo el Ecuador"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Color de Fondo de la Barra:</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={sections.top_bar.bg_color || '#8C1625'}
+                        onChange={(e) => updateSection('top_bar', { bg_color: e.target.value })}
+                        className="w-8 h-8 rounded-lg border border-slate-200 cursor-pointer p-0.5 bg-white"
+                      />
+                      <input
+                        type="text"
+                        value={sections.top_bar.bg_color || '#8C1625'}
+                        onChange={(e) => updateSection('top_bar', { bg_color: e.target.value })}
+                        className="w-32 bg-white border border-slate-200 rounded-xl px-3 py-1.5 font-mono text-slate-900 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2. HEADER CORPORATIVO */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div
+                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'header' ? null : 'header')}
+                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🏢</span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                      <span>2. Cabecera Corporativa (Header)</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        sections.header.enabled
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {sections.header.enabled ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Logotipo, nombre comercial y acceso rápido a WhatsApp de ventas</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sections.header.enabled}
+                      onChange={() => toggleSectionActive('header')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'header' ? null : 'header')}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    {openSectionAccordion === 'header' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {openSectionAccordion === 'header' && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Subtítulo o Eslogan B2B:</label>
+                    <input
+                      type="text"
+                      value={sections.header.custom_subtitle || ''}
+                      onChange={(e) => updateSection('header', { custom_subtitle: e.target.value })}
+                      placeholder="Ej: Solutions in Packaging • B2B"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={sections.header.show_whatsapp_button}
+                      onChange={(e) => updateSection('header', { show_whatsapp_button: e.target.checked })}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                    />
+                    <span className="text-slate-700 font-semibold">Mostrar botón directo de WhatsApp de Ventas en la cabecera</span>
+                  </label>
+                </div>
+              )}
+            </div>
+
+            {/* 3. HERO & TELEMETRÍA */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div
+                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'hero' ? null : 'hero')}
+                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">⚡</span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                      <span>3. Portada Industrial (Hero & Telemetría)</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        sections.hero.enabled
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {sections.hero.enabled ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Títulos de impacto, badges técnicos, CTAs y telemetría de planta en vivo</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sections.hero.enabled}
+                      onChange={() => toggleSectionActive('hero')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'hero' ? null : 'hero')}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    {openSectionAccordion === 'hero' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {openSectionAccordion === 'hero' && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-4 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Badge Superior de Maquinaria / Tecnología:</label>
+                    <input
+                      type="text"
+                      value={sections.hero.badge || ''}
+                      onChange={(e) => updateSection('hero', { badge: e.target.value })}
+                      placeholder="Ej: SISTEMA: BLOW-MOLD ROTARY TURBINE • 40 BAR"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Título Principal (Línea 1):</label>
+                      <input
+                        type="text"
+                        value={sections.hero.title_main || ''}
+                        onChange={(e) => updateSection('hero', { title_main: e.target.value })}
+                        placeholder="Ej: TECNOLOGÍA EN"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500 font-bold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Título Resaltado (Línea 2):</label>
+                      <input
+                        type="text"
+                        value={sections.hero.title_highlight || ''}
+                        onChange={(e) => updateSection('hero', { title_highlight: e.target.value })}
+                        placeholder="Ej: soplado & inyección"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500 font-bold text-indigo-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Descripción Técnica del Hero:</label>
+                    <textarea
+                      rows={2}
+                      value={sections.hero.description || ''}
+                      onChange={(e) => updateSection('hero', { description: e.target.value })}
+                      placeholder="Fabricación de envases, botellas, tapas y preformas en PET y PP..."
+                      className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:border-indigo-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Texto Botón Primario (Cotización):</label>
+                      <input
+                        type="text"
+                        value={sections.hero.cta_primary_text || ''}
+                        onChange={(e) => updateSection('hero', { cta_primary_text: e.target.value })}
+                        placeholder="Ej: Solicitar Muestras & Cotización"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Texto Botón Secundario:</label>
+                      <input
+                        type="text"
+                        value={sections.hero.cta_secondary_text || ''}
+                        onChange={(e) => updateSection('hero', { cta_secondary_text: e.target.value })}
+                        placeholder="Ej: Ver Fases de Fabricación"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Sub-bloque: Telemetría de Planta */}
+                  <div className="bg-slate-900 text-white p-4 rounded-xl space-y-3 border border-slate-800">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold flex items-center gap-2">
+                        <Factory className="w-4 h-4 text-emerald-400" />
+                        <span>Widget de Telemetría de Planta en Vivo</span>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={sections.hero.show_telemetry ?? true}
+                          onChange={(e) => updateSection('hero', { show_telemetry: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <div className="w-8 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 font-mono text-[11px]">
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Nombre de Planta:</span>
+                        <input
+                          type="text"
+                          value={sections.hero.telemetry_plant_name || ''}
+                          onChange={(e) => updateSection('hero', { telemetry_plant_name: e.target.value })}
+                          placeholder="Planta Calderón"
+                          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Estado Operativo:</span>
+                        <input
+                          type="text"
+                          value={sections.hero.telemetry_status || ''}
+                          onChange={(e) => updateSection('hero', { telemetry_status: e.target.value })}
+                          placeholder="Operativa"
+                          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Cadencia Máxima:</span>
+                        <input
+                          type="text"
+                          value={sections.hero.telemetry_cadence || ''}
+                          onChange={(e) => updateSection('hero', { telemetry_cadence: e.target.value })}
+                          placeholder="+12.000 BPH"
+                          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[10px]">Material Certificado:</span>
+                        <input
+                          type="text"
+                          value={sections.hero.telemetry_material || ''}
+                          onChange={(e) => updateSection('hero', { telemetry_material: e.target.value })}
+                          placeholder="Resina PET 100% Virgen"
+                          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-slate-400 block text-[10px]">Matricería / Moldes:</span>
+                        <input
+                          type="text"
+                          value={sections.hero.telemetry_tooling || ''}
+                          onChange={(e) => updateSection('hero', { telemetry_tooling: e.target.value })}
+                          placeholder="Diseño de Moldes 3D"
+                          className="w-full bg-slate-800 border border-slate-700 rounded-lg px-2.5 py-1.5 text-white focus:outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 4. PILARES DE RESPALDO */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div
+                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'pillars' ? null : 'pillars')}
+                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">🛡️</span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                      <span>4. Pilares de Respaldo Industrial (3 Pilares)</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        sections.pillars.enabled
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {sections.pillars.enabled ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Tarjetas de inocuidad, cadencia y logística que avalan la fábrica</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sections.pillars.enabled}
+                      onChange={() => toggleSectionActive('pillars')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'pillars' ? null : 'pillars')}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    {openSectionAccordion === 'pillars' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {openSectionAccordion === 'pillars' && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3.5 text-xs">
+                  {sections.pillars.items.map((pillar, idx) => (
+                    <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
+                          Pilar #{idx + 1}
+                        </span>
+                        <input
+                          type="text"
+                          value={pillar.icon}
+                          onChange={(e) => updatePillarItem(idx, { icon: e.target.value })}
+                          placeholder="Emoji / Ícono (ej: 🏆)"
+                          className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-center text-sm"
+                        />
+                        <input
+                          type="text"
+                          value={pillar.title}
+                          onChange={(e) => updatePillarItem(idx, { title: e.target.value })}
+                          placeholder="Título del Pilar"
+                          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                      <textarea
+                        rows={2}
+                        value={pillar.desc}
+                        onChange={(e) => updatePillarItem(idx, { desc: e.target.value })}
+                        placeholder="Descripción o justificación técnica del pilar..."
+                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:border-indigo-500 resize-none text-xs"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 5. COTIZADOR & MAPA DE PLANTA */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div
+                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'rfq_and_map' ? null : 'rfq_and_map')}
+                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">📝</span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                      <span>5. Cotizador Técnico & Ubicación de Planta</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        sections.rfq_and_map.enabled
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {sections.rfq_and_map.enabled ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Formulario directo a WhatsApp y mapa interactivo de retiro en planta</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sections.rfq_and_map.enabled}
+                      onChange={() => toggleSectionActive('rfq_and_map')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'rfq_and_map' ? null : 'rfq_and_map')}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    {openSectionAccordion === 'rfq_and_map' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {openSectionAccordion === 'rfq_and_map' && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-4 text-xs">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Título de la Sección de Cotización:</label>
+                      <input
+                        type="text"
+                        value={sections.rfq_and_map.title || ''}
+                        onChange={(e) => updateSection('rfq_and_map', { title: e.target.value })}
+                        placeholder="Ej: Solicitud de Cotización & Muestras"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Subtítulo de Asistencia:</label>
+                      <input
+                        type="text"
+                        value={sections.rfq_and_map.subtitle || ''}
+                        onChange={(e) => updateSection('rfq_and_map', { subtitle: e.target.value })}
+                        placeholder="Ej: Atención directa de fábrica para pedidos por fardo o bulto..."
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-4 pt-1 border-t border-slate-200/60">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sections.rfq_and_map.show_form ?? true}
+                        onChange={(e) => updateSection('rfq_and_map', { show_form: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                      />
+                      <span className="text-slate-700 font-semibold">Habilitar Formulario B2B directo a WhatsApp</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={sections.rfq_and_map.show_map ?? true}
+                        onChange={(e) => updateSection('rfq_and_map', { show_map: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-slate-300"
+                      />
+                      <span className="text-slate-700 font-semibold">Habilitar Mapa y Retiro en Planta</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-3 pt-1">
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">Título de la Tarjeta de Ubicación:</label>
+                      <input
+                        type="text"
+                        value={sections.rfq_and_map.map_title || ''}
+                        onChange={(e) => updateSection('rfq_and_map', { map_title: e.target.value })}
+                        placeholder="Ej: Ubicación de Planta & Retiro Directo"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-700 font-semibold mb-1">URL Iframe Embed de Google Maps:</label>
+                      <input
+                        type="text"
+                        value={sections.rfq_and_map.map_embed_url || ''}
+                        onChange={(e) => updateSection('rfq_and_map', { map_embed_url: e.target.value })}
+                        placeholder="https://www.google.com/maps/embed?pb=..."
+                        className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 font-mono text-[11px] focus:outline-none focus:border-indigo-500"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">Horarios de Atención en Planta:</label>
+                        <input
+                          type="text"
+                          value={sections.rfq_and_map.schedule || ''}
+                          onChange={(e) => updateSection('rfq_and_map', { schedule: e.target.value })}
+                          placeholder="Ej: Lunes a Viernes: 08:00 - 17:30"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-700 font-semibold mb-1">Correo Oficial de Cotizaciones:</label>
+                        <input
+                          type="email"
+                          value={sections.rfq_and_map.email || ''}
+                          onChange={(e) => updateSection('rfq_and_map', { email: e.target.value })}
+                          placeholder="ventas@aymeindustriaspet.com"
+                          className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 6. FOOTER CORPORATIVO */}
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
+              <div
+                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'footer' ? null : 'footer')}
+                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
+              >
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base">⚖️</span>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
+                      <span>6. Pie de Página Corporativo (Footer)</span>
+                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
+                        sections.footer.enabled
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500'
+                      }`}>
+                        {sections.footer.enabled ? 'Activa' : 'Desactivada'}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Copyright legal de la empresa e insignia de infraestructura</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={sections.footer.enabled}
+                      onChange={() => toggleSectionActive('footer')}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'footer' ? null : 'footer')}
+                    className="p-1 text-slate-400 hover:text-slate-700"
+                  >
+                    {openSectionAccordion === 'footer' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {openSectionAccordion === 'footer' && (
+                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-semibold mb-1">Texto de Copyright & Derechos Reservados:</label>
+                    <input
+                      type="text"
+                      value={sections.footer.copyright_text || ''}
+                      onChange={(e) => updateSection('footer', { copyright_text: e.target.value })}
+                      placeholder={`© ${new Date().getFullYear()} ${tenant.name}. Solutions in Packaging. Todos los derechos reservados.`}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-slate-900 focus:outline-none focus:border-indigo-500"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 cursor-pointer pt-1">
+                    <input
+                      type="checkbox"
+                      checked={sections.footer.show_powered_by ?? true}
+                      onChange={(e) => updateSection('footer', { show_powered_by: e.target.checked })}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 border-slate-300"
+                    />
+                    <span className="text-slate-700 font-semibold">Mostrar distintivo &quot;Portal corporativo e infraestructura B2B impulsada por tenddy&quot;</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* Configuración de Catálogo Estándar (Modo Temu) */
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-slate-500" />
+              Módulos Visibles del Catálogo Mayorista
+            </h4>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Enciende o apaga secciones según tu modelo de negocio.
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                📍 Ciudad / Sector de Planta
-              </label>
+            <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all sm:col-span-2">
               <input
-                type="text"
-                value={plantLocation}
-                onChange={(e) => setPlantLocation(e.target.value)}
-                placeholder="Ej: Llano Grande, Quito"
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
+                type="checkbox"
+                checked={showBestSellers}
+                onChange={(e) => setShowBestSellers(e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer"
               />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Se muestra en la cabecera de ubicación y en el pie de mapa.
-              </span>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                ✉️ Correo Oficial de Ventas & Cotizaciones
-              </label>
-              <input
-                type="email"
-                value={contactEmail}
-                onChange={(e) => setContactEmail(e.target.value)}
-                placeholder="Ej: ventas@aymeindustriaspet.com"
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
-              />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Correo corporativo visible en la sección de contacto.
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              🏭 Dirección Física Completa de la Planta
+              <div>
+                <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <span>🔥 Sección de Artículos Más Vendidos</span>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.2 rounded-full">
+                    Recomendado para Tiendas
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Muestra la pestaña y distintivos de &quot;Más Vendidos&quot; en la tienda para que tus clientes identifiquen al instante las prendas estrella y más cotizadas.
+                </div>
+              </div>
             </label>
-            <input
-              type="text"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
-              placeholder="Ej: Llano Grande, Sector Calderón, Quito - Ecuador"
-              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
-            />
-          </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              ⏰ Horarios de Atención en Planta
+            <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all sm:col-span-2">
+              <input
+                type="checkbox"
+                checked={showFeaturedRatings}
+                onChange={(e) => setShowFeaturedRatings(e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer"
+              />
+              <div>
+                <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
+                  <span>⭐ Sección de Prendas 5 Estrellas (Mejor Calificados)</span>
+                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.2 rounded-full">
+                    Confianza & Ventas
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Muestra la pestaña &quot;5 Estrellas&quot; y las estrellas doradas de calificación máxima en tus prendas para generar confianza inmediata en tus clientes.
+                </div>
+              </div>
             </label>
-            <input
-              type="text"
-              value={hours}
-              onChange={(e) => setHours(e.target.value)}
-              placeholder="Ej: Lun a Vie: 8:00 AM - 5:30 PM | Sábados: 8:30 AM - 1:00 PM"
-              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs"
-            />
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-slate-200/60">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                🗺️ Enlace Externo a Google Maps (Opcional)
-              </label>
+            <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
               <input
-                type="url"
-                value={mapsUrl}
-                onChange={(e) => setMapsUrl(e.target.value)}
-                placeholder="https://maps.google.com/?q=..."
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs font-mono text-[11px]"
+                type="checkbox"
+                checked={showServices}
+                onChange={(e) => setShowServices(e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300"
               />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Enlace al que se redirige al pulsar &quot;Ver en Google Maps ↗&quot;.
-              </span>
-            </div>
+              <div>
+                <div className="font-bold text-xs text-slate-900">Servicios Industriales / Maquila</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Muestra la sección de diseño de moldes CNC y maquila de producción.
+                </div>
+              </div>
+            </label>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                📍 Iframe / Embed de Google Maps (Opcional)
-              </label>
+            <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
               <input
-                type="text"
-                value={mapsEmbedUrl}
-                onChange={(e) => setMapsEmbedUrl(e.target.value)}
-                placeholder="https://www.google.com/maps/embed?pb=..."
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all shadow-2xs font-mono text-[11px]"
+                type="checkbox"
+                checked={showBranches}
+                onChange={(e) => setShowBranches(e.target.checked)}
+                className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300"
               />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                URL embed para mostrar el mapa interactivo de tu fábrica.
-              </span>
-            </div>
+              <div>
+                <div className="font-bold text-xs text-slate-900">Centros de Distribución & Sucursales</div>
+                <div className="text-[11px] text-slate-500 mt-0.5">
+                  Muestra la red de plantas y teléfonos de atención comercial local.
+                </div>
+              </div>
+            </label>
           </div>
         </div>
-      </div>
-
-      {/* Bloque 2: Portada (Hero) */}
-      <div className="space-y-4">
-        <div>
-          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Type className="w-4 h-4 text-slate-500" />
-            Contenido de Portada (Hero Section)
-          </h4>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Personaliza el encabezado principal que ven tus clientes corporativos al entrar a la tienda.
-          </p>
-        </div>
-
-        <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-5 space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Título de Portada</label>
-            <input
-              type="text"
-              required
-              value={heroTitle}
-              onChange={(e) => setHeroTitle(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Subtítulo Descriptivo</label>
-            <textarea
-              rows={2}
-              value={heroSubtitle}
-              onChange={(e) => setHeroSubtitle(e.target.value)}
-              className="w-full bg-white border border-slate-200 rounded-xl p-3 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                URL de Video MP4 de Fondo (Opcional)
-              </label>
-              <input
-                type="text"
-                value={heroVideoUrl}
-                onChange={(e) => setHeroVideoUrl(e.target.value)}
-                placeholder="/assets/process-video.mp4"
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                URL de Imagen HD Alternativa
-              </label>
-              <input
-                type="text"
-                value={heroImageUrl}
-                onChange={(e) => setHeroImageUrl(e.target.value)}
-                placeholder="/assets/hero-machine.jpg"
-                className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 focus:border-slate-900 focus:outline-none transition-all"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Bloque 3: Módulos Visibles */}
-      <div className="space-y-4">
-        <div>
-          <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-slate-500" />
-            Módulos Visibles de la Tienda
-          </h4>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Enciende o apaga secciones según tu modelo de negocio.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all sm:col-span-2">
-            <input
-              type="checkbox"
-              checked={showBestSellers}
-              onChange={(e) => setShowBestSellers(e.target.checked)}
-              className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer"
-            />
-            <div>
-              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                <span>🔥 Sección de Artículos Más Vendidos</span>
-                <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.2 rounded-full">
-                  Recomendado para Tiendas
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Muestra la pestaña y distintivos de &quot;Más Vendidos&quot; en la tienda para que tus clientes identifiquen al instante las prendas estrella y más cotizadas.
-              </div>
-            </div>
-          </label>
-
-          <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all sm:col-span-2">
-            <input
-              type="checkbox"
-              checked={showFeaturedRatings}
-              onChange={(e) => setShowFeaturedRatings(e.target.checked)}
-              className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300 cursor-pointer"
-            />
-            <div>
-              <div className="font-bold text-xs text-slate-900 flex items-center gap-1.5">
-                <span>⭐ Sección de Prendas 5 Estrellas (Mejor Calificados)</span>
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.2 rounded-full">
-                  Confianza & Ventas
-                </span>
-              </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Muestra la pestaña &quot;5 Estrellas&quot; y las estrellas doradas de calificación máxima en tus prendas para generar confianza inmediata en tus clientes.
-              </div>
-            </div>
-          </label>
-
-          <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
-            <input
-              type="checkbox"
-              checked={showServices}
-              onChange={(e) => setShowServices(e.target.checked)}
-              className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300"
-            />
-            <div>
-              <div className="font-bold text-xs text-slate-900">Servicios Industriales / Maquila</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Muestra la sección de diseño de moldes CNC y maquila de producción.
-              </div>
-            </div>
-          </label>
-
-          <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
-            <input
-              type="checkbox"
-              checked={showBranches}
-              onChange={(e) => setShowBranches(e.target.checked)}
-              className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300"
-            />
-            <div>
-              <div className="font-bold text-xs text-slate-900">Centros de Distribución & Sucursales</div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
-                Muestra la red de plantas y teléfonos de atención comercial local.
-              </div>
-            </div>
-          </label>
-        </div>
-      </div>
+      )}
 
       {/* Botón de Guardado */}
       <div className="flex justify-end pt-4 border-t border-slate-200">

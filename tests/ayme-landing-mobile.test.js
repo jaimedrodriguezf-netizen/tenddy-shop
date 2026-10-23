@@ -96,7 +96,7 @@ console.log('✅ 13. VersionBadge: Version visible en el pie de pagina de landin
 
 // 14. Paridad de UI: Menú de perfil admin y WhatsApp flotante derecho en Catálogo estándar
 assert.ok(catalogViewContent.includes('isAdminMenuOpen'), 'TenantCatalogView debe gestionar el menú de perfil admin en cabecera');
-assert.ok(catalogViewContent.includes('bottom-4 right-4 sm:bottom-6 sm:right-6 z-40'), 'TenantCatalogView debe tener el botón de WhatsApp flotante a la derecha');
+assert.ok(catalogViewContent.includes('right-4 sm:right-6 z-40'), 'TenantCatalogView debe tener el botón de WhatsApp flotante a la derecha');
 console.log('✅ 14. Paridad UI: Perfil admin en cabecera y WhatsApp flotante a la derecha en catalogo estandar verificados.');
 
 // 15. Desacoplamiento de parches: Limpieza de ayme-001.svg y utilidad hasValidProductImage

@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 import { normalizeEcuadorPhone } from '@/lib/ecuador-phone';
+import { resolveLandingSections } from '@/lib/types';
 
 // Helper para sanitizar URLs de imagen (Permite URLs HTTPS/HTTP de Storage y rutas relativas locales seguras /...)
 function sanitizeImageUrl(url: unknown): string | null {
@@ -85,7 +86,7 @@ export async function PATCH(request: Request) {
     // Obtener configuración actual
     const { data: currentTenant, error: fetchErr } = await admin
       .from('tenants')
-      .select('slug, theme_config, landing_config')
+      .select('slug, name, theme_config, landing_config')
       .eq('id', tenant_id)
       .single();
 
@@ -164,6 +165,12 @@ export async function PATCH(request: Request) {
       ? sanitizeImageUrl(hero_image_url) 
       : currentTenant.landing_config?.hero_image_url;
 
+    // Normalizar y sanitizar secciones modulares de la landing personalizada
+    let updatedSections = currentTenant.landing_config?.sections;
+    if (body.sections && typeof body.sections === 'object') {
+      updatedSections = resolveLandingSections(body.sections, currentTenant.name, currentTenant.slug);
+    }
+
     const updatedLanding = {
       ...(currentTenant.landing_config || {}),
       hero_title: hero_title !== undefined ? hero_title : currentTenant.landing_config?.hero_title,
@@ -185,6 +192,7 @@ export async function PATCH(request: Request) {
       hours: hours !== undefined ? (typeof hours === 'string' ? hours.trim().slice(0, 150) : '') : currentTenant.landing_config?.hours,
       maps_url: maps_url !== undefined ? sanitizeMapsLinkUrl(maps_url) : currentTenant.landing_config?.maps_url,
       maps_embed_url: maps_embed_url !== undefined ? sanitizeMapsEmbedUrl(maps_embed_url) : currentTenant.landing_config?.maps_embed_url,
+      sections: updatedSections !== undefined ? updatedSections : currentTenant.landing_config?.sections,
     };
 
     const updatePayload: Record<string, unknown> = {

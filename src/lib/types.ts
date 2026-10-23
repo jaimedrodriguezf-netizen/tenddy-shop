@@ -53,6 +53,7 @@ export interface Tenant {
     show_services?: boolean;
     show_best_sellers?: boolean;
     show_featured_ratings?: boolean;
+    sections?: LandingSectionsConfig;
   };
   settings: {
     currency: string;
@@ -163,4 +164,203 @@ export interface Product {
   units_per_package: number;
   category_id?: string;
   price_tiers?: { min_qty: number; price: number }[];
+}
+
+export interface LandingTopBarSection {
+  enabled: boolean;
+  text: string;
+  bg_color?: string;
+}
+
+export interface LandingHeaderSection {
+  enabled: boolean;
+  show_whatsapp_button: boolean;
+  custom_subtitle?: string;
+}
+
+export interface LandingHeroSection {
+  enabled: boolean;
+  badge?: string;
+  title_main?: string;
+  title_highlight?: string;
+  description?: string;
+  cta_primary_text?: string;
+  cta_secondary_text?: string;
+  show_telemetry?: boolean;
+  telemetry_plant_name?: string;
+  telemetry_status?: string;
+  telemetry_cadence?: string;
+  telemetry_material?: string;
+  telemetry_tooling?: string;
+}
+
+export interface LandingPillarItem {
+  icon: string;
+  title: string;
+  desc: string;
+}
+
+export interface LandingPillarsSection {
+  enabled: boolean;
+  items: LandingPillarItem[];
+}
+
+export interface LandingRfqMapSection {
+  enabled: boolean;
+  title?: string;
+  subtitle?: string;
+  show_form?: boolean;
+  show_map?: boolean;
+  map_title?: string;
+  map_embed_url?: string;
+  schedule?: string;
+  email?: string;
+}
+
+export interface LandingFooterSection {
+  enabled: boolean;
+  copyright_text?: string;
+  show_powered_by?: boolean;
+}
+
+export interface LandingSectionsConfig {
+  top_bar: LandingTopBarSection;
+  header: LandingHeaderSection;
+  hero: LandingHeroSection;
+  pillars: LandingPillarsSection;
+  rfq_and_map: LandingRfqMapSection;
+  footer: LandingFooterSection;
+}
+
+export function getDefaultLandingSections(tenantName?: string, slug?: string): LandingSectionsConfig {
+  const isAyme = slug === 'ayme-pet';
+  const name = tenantName || (isAyme ? 'AYME INDUSTRIAS PET' : 'Fábrica Industrial');
+
+  return {
+    top_bar: {
+      enabled: true,
+      text: isAyme
+        ? '🏭 Planta Industrial Calderón - Quito • Envíos Paletizados a todo el Ecuador'
+        : `🏭 Planta Industrial ${name} • Envíos a todo el país`,
+      bg_color: '#8C1625',
+    },
+    header: {
+      enabled: true,
+      show_whatsapp_button: true,
+      custom_subtitle: isAyme ? 'Solutions in Packaging • B2B' : 'Producción Directa • B2B',
+    },
+    hero: {
+      enabled: true,
+      badge: 'SISTEMA: BLOW-MOLD ROTARY TURBINE • 40 BAR',
+      title_main: 'TECNOLOGÍA EN',
+      title_highlight: isAyme ? 'soplado & inyección' : 'producción y manufactura',
+      description: isAyme
+        ? 'Fabricación de envases, botellas, tapas y preformas en PET y PP con tecnología rotativa de alta velocidad para la industria alimentaria, cosmética y de limpieza.'
+        : `Fabricación y distribución a escala industrial de productos y suministros para empresas y distribuidores.`,
+      cta_primary_text: 'Solicitar Muestras & Cotización',
+      cta_secondary_text: 'Ver Fases de Fabricación',
+      show_telemetry: true,
+      telemetry_plant_name: isAyme ? 'Planta Calderón' : 'Planta Matriz',
+      telemetry_status: 'Operativa',
+      telemetry_cadence: isAyme ? '+12.000 BPH' : 'Alta Capacidad B2B',
+      telemetry_material: isAyme ? 'Resina PET 100% Virgen' : 'Materia Prima Certificada',
+      telemetry_tooling: 'Diseño de Moldes 3D',
+    },
+    pillars: {
+      enabled: true,
+      items: [
+        {
+          icon: '🏆',
+          title: 'Inocuidad & BPM',
+          desc: 'Resina 100% virgen certificada para contacto alimentario y farmacéutico sin migración.',
+        },
+        {
+          icon: '⚙️',
+          title: 'Alta Cadencia Rotativa',
+          desc: 'Capacidad de +12.000 BPH y mecanizado CNC de moldes con diseño exclusivo.',
+        },
+        {
+          icon: '🚛',
+          title: 'Logística & Despacho Nacional',
+          desc: 'Entregas paletizadas seguras a todo el Ecuador y retiro directo en planta.',
+        },
+      ],
+    },
+    rfq_and_map: {
+      enabled: true,
+      title: 'Solicitud de Cotización & Muestras',
+      subtitle: 'Atención directa de fábrica para pedidos por fardo, bulto o contenedor.',
+      show_form: true,
+      show_map: true,
+      map_title: isAyme ? 'Ubicación de Planta & Retiro Directo' : 'Planta de Fabricación y Despacho',
+      map_embed_url:
+        'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.816652458428!2d-78.4485!3d-0.0886!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMDUnMTkuMCJTIDc4wrAyNic1NC42Ilc!5e0!3m2!1ses!2sec!4v1620000000000!5m2!1ses!2sec',
+      schedule: 'Lunes a Viernes: 08:00 - 17:30',
+      email: isAyme ? 'ventas@aymeindustriaspet.com' : 'ventas@industria.com',
+    },
+    footer: {
+      enabled: true,
+      copyright_text: `© ${new Date().getFullYear()} ${name}. Todos los derechos reservados.`,
+      show_powered_by: true,
+    },
+  };
+}
+
+export function resolveLandingSections(raw?: any, tenantName?: string, slug?: string): LandingSectionsConfig {
+  const defaults = getDefaultLandingSections(tenantName, slug);
+  if (!raw || typeof raw !== 'object') return defaults;
+
+  return {
+    top_bar: {
+      enabled: raw.top_bar?.enabled !== undefined ? Boolean(raw.top_bar.enabled) : defaults.top_bar.enabled,
+      text: typeof raw.top_bar?.text === 'string' && raw.top_bar.text.trim() ? raw.top_bar.text.trim() : defaults.top_bar.text,
+      bg_color: raw.top_bar?.bg_color || defaults.top_bar.bg_color,
+    },
+    header: {
+      enabled: raw.header?.enabled !== undefined ? Boolean(raw.header.enabled) : defaults.header.enabled,
+      show_whatsapp_button: raw.header?.show_whatsapp_button !== undefined ? Boolean(raw.header.show_whatsapp_button) : defaults.header.show_whatsapp_button,
+      custom_subtitle: typeof raw.header?.custom_subtitle === 'string' && raw.header.custom_subtitle.trim() ? raw.header.custom_subtitle.trim() : defaults.header.custom_subtitle,
+    },
+    hero: {
+      enabled: raw.hero?.enabled !== undefined ? Boolean(raw.hero.enabled) : defaults.hero.enabled,
+      badge: typeof raw.hero?.badge === 'string' && raw.hero.badge.trim() ? raw.hero.badge.trim() : defaults.hero.badge,
+      title_main: typeof raw.hero?.title_main === 'string' && raw.hero.title_main.trim() ? raw.hero.title_main.trim() : defaults.hero.title_main,
+      title_highlight: typeof raw.hero?.title_highlight === 'string' && raw.hero.title_highlight.trim() ? raw.hero.title_highlight.trim() : defaults.hero.title_highlight,
+      description: typeof raw.hero?.description === 'string' && raw.hero.description.trim() ? raw.hero.description.trim() : defaults.hero.description,
+      cta_primary_text: typeof raw.hero?.cta_primary_text === 'string' && raw.hero.cta_primary_text.trim() ? raw.hero.cta_primary_text.trim() : defaults.hero.cta_primary_text,
+      cta_secondary_text: typeof raw.hero?.cta_secondary_text === 'string' && raw.hero.cta_secondary_text.trim() ? raw.hero.cta_secondary_text.trim() : defaults.hero.cta_secondary_text,
+      show_telemetry: raw.hero?.show_telemetry !== undefined ? Boolean(raw.hero.show_telemetry) : defaults.hero.show_telemetry,
+      telemetry_plant_name: typeof raw.hero?.telemetry_plant_name === 'string' && raw.hero.telemetry_plant_name.trim() ? raw.hero.telemetry_plant_name.trim() : defaults.hero.telemetry_plant_name,
+      telemetry_status: typeof raw.hero?.telemetry_status === 'string' && raw.hero.telemetry_status.trim() ? raw.hero.telemetry_status.trim() : defaults.hero.telemetry_status,
+      telemetry_cadence: typeof raw.hero?.telemetry_cadence === 'string' && raw.hero.telemetry_cadence.trim() ? raw.hero.telemetry_cadence.trim() : defaults.hero.telemetry_cadence,
+      telemetry_material: typeof raw.hero?.telemetry_material === 'string' && raw.hero.telemetry_material.trim() ? raw.hero.telemetry_material.trim() : defaults.hero.telemetry_material,
+      telemetry_tooling: typeof raw.hero?.telemetry_tooling === 'string' && raw.hero.telemetry_tooling.trim() ? raw.hero.telemetry_tooling.trim() : defaults.hero.telemetry_tooling,
+    },
+    pillars: {
+      enabled: raw.pillars?.enabled !== undefined ? Boolean(raw.pillars.enabled) : defaults.pillars.enabled,
+      items: Array.isArray(raw.pillars?.items) && raw.pillars.items.length > 0
+        ? raw.pillars.items.map((item: any, idx: number) => ({
+            icon: typeof item?.icon === 'string' && item.icon.trim() ? item.icon.trim() : defaults.pillars.items[idx]?.icon || '✨',
+            title: typeof item?.title === 'string' && item.title.trim() ? item.title.trim() : defaults.pillars.items[idx]?.title || 'Pilar de Calidad',
+            desc: typeof item?.desc === 'string' && item.desc.trim() ? item.desc.trim() : defaults.pillars.items[idx]?.desc || '',
+          }))
+        : defaults.pillars.items,
+    },
+    rfq_and_map: {
+      enabled: raw.rfq_and_map?.enabled !== undefined ? Boolean(raw.rfq_and_map.enabled) : defaults.rfq_and_map.enabled,
+      title: typeof raw.rfq_and_map?.title === 'string' && raw.rfq_and_map.title.trim() ? raw.rfq_and_map.title.trim() : defaults.rfq_and_map.title,
+      subtitle: typeof raw.rfq_and_map?.subtitle === 'string' && raw.rfq_and_map.subtitle.trim() ? raw.rfq_and_map.subtitle.trim() : defaults.rfq_and_map.subtitle,
+      show_form: raw.rfq_and_map?.show_form !== undefined ? Boolean(raw.rfq_and_map.show_form) : defaults.rfq_and_map.show_form,
+      show_map: raw.rfq_and_map?.show_map !== undefined ? Boolean(raw.rfq_and_map.show_map) : defaults.rfq_and_map.show_map,
+      map_title: typeof raw.rfq_and_map?.map_title === 'string' && raw.rfq_and_map.map_title.trim() ? raw.rfq_and_map.map_title.trim() : defaults.rfq_and_map.map_title,
+      map_embed_url: typeof raw.rfq_and_map?.map_embed_url === 'string' && raw.rfq_and_map.map_embed_url.trim() ? raw.rfq_and_map.map_embed_url.trim() : defaults.rfq_and_map.map_embed_url,
+      schedule: typeof raw.rfq_and_map?.schedule === 'string' && raw.rfq_and_map.schedule.trim() ? raw.rfq_and_map.schedule.trim() : defaults.rfq_and_map.schedule,
+      email: typeof raw.rfq_and_map?.email === 'string' && raw.rfq_and_map.email.trim() ? raw.rfq_and_map.email.trim() : defaults.rfq_and_map.email,
+    },
+    footer: {
+      enabled: raw.footer?.enabled !== undefined ? Boolean(raw.footer.enabled) : defaults.footer.enabled,
+      copyright_text: typeof raw.footer?.copyright_text === 'string' && raw.footer.copyright_text.trim() ? raw.footer.copyright_text.trim() : defaults.footer.copyright_text,
+      show_powered_by: raw.footer?.show_powered_by !== undefined ? Boolean(raw.footer.show_powered_by) : defaults.footer.show_powered_by,
+    },
+  };
 }

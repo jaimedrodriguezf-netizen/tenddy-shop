@@ -21,7 +21,7 @@ import {
   Pause
 } from 'lucide-react';
 import Link from 'next/link';
-import { Tenant, Branch, Category, Product } from '@/lib/types';
+import { Tenant, Branch, Category, Product, resolveLandingSections } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import VersionBadge from '@/components/VersionBadge';
@@ -161,14 +161,19 @@ export default function TenantLandingView({
         ],
   }), [tenant, landing, isAyme]);
 
+  // Motor de Secciones Modulares de la Landing Personalizada
+  const sections = useMemo(() =>
+    resolveLandingSections(landing.sections, tenant.name, tenant.slug),
+  [landing.sections, tenant.name, tenant.slug]);
+
   // Colores corporativos configurados
   const primaryColor = theme?.primary_color || '#A61C2E';
   const secondaryColor = theme?.secondary_color || '#8C1625';
   const landingBgColor = (theme as any)?.landing_bg_color || (tenant.slug === 'ayme-pet' ? '#0a1128' : '#020617');
 
   // Control dinámico de la mini barra superior (Top Promo Bar)
-  const showTopBar = landing.show_top_bar ?? (theme as any)?.show_top_bar ?? true;
-  const customTopBarText = landing.top_bar_text ?? (theme as any)?.top_bar_text;
+  const showTopBar = sections.top_bar.enabled && (landing.show_top_bar ?? (theme as any)?.show_top_bar ?? true);
+  const customTopBarText = sections.top_bar.text || (landing.top_bar_text ?? (theme as any)?.top_bar_text);
 
   // Detección de contraste inteligente según luminancia del fondo
   const isLightBg = (() => {
@@ -477,32 +482,33 @@ export default function TenantLandingView({
       />
 
       {/* Header Flotante Integrado sobre la Secuencia de Video (Glassmorphism Oficial) */}
-      <div className="fixed-header-wrapper" id="fixed-header-wrapper">
-        {/* Barra de Notificación Industrial Oficial Configurable */}
-        {showTopBar && (
-          <div className="top-promo-bar">
-            {customTopBarText && customTopBarText.trim() ? (
-              customTopBarText.includes('•') ? (
-                customTopBarText.split('•').map((segment: string, idx: number, arr: string[]) => (
-                  <React.Fragment key={idx}>
-                    <span className={idx > 1 ? 'hidden md:inline' : 'inline'}>{segment.trim()}</span>
-                    {idx < arr.length - 1 && <span className={idx >= 1 ? 'hidden md:inline' : 'inline'}>•</span>}
-                  </React.Fragment>
-                ))
+      {sections.header.enabled && (
+        <div className="fixed-header-wrapper" id="fixed-header-wrapper">
+          {/* Barra de Notificación Industrial Oficial Configurable */}
+          {showTopBar && (
+            <div className="top-promo-bar" style={{ backgroundColor: sections.top_bar.bg_color || secondaryColor }}>
+              {customTopBarText && customTopBarText.trim() ? (
+                customTopBarText.includes('•') ? (
+                  customTopBarText.split('•').map((segment: string, idx: number, arr: string[]) => (
+                    <React.Fragment key={idx}>
+                      <span className={idx > 1 ? 'hidden md:inline' : 'inline'}>{segment.trim()}</span>
+                      {idx < arr.length - 1 && <span className={idx >= 1 ? 'hidden md:inline' : 'inline'}>•</span>}
+                    </React.Fragment>
+                  ))
+                ) : (
+                  <span>{customTopBarText.trim()}</span>
+                )
               ) : (
-                <span>{customTopBarText.trim()}</span>
-              )
-            ) : (
-              <>
-                <span>🏭 <strong>{tenant.name}</strong>{tenant.slug === 'ayme-pet' ? ' | Solutions in Packaging' : ''}</span>
-                <span className="hidden md:inline">•</span>
-                <span className="hidden md:inline">📦 <strong>Ventas Mayoristas & Moldes</strong></span>
-                <span className="hidden sm:inline">•</span>
-                <span>📱 <strong>WhatsApp: {displayPhone}</strong></span>
-              </>
-            )}
-          </div>
-        )}
+                <>
+                  <span>🏭 <strong>{tenant.name}</strong>{tenant.slug === 'ayme-pet' ? ' | Solutions in Packaging' : ''}</span>
+                  <span className="hidden md:inline">•</span>
+                  <span className="hidden md:inline">📦 <strong>Ventas Mayoristas & Moldes</strong></span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>📱 <strong>WhatsApp: {displayPhone}</strong></span>
+                </>
+              )}
+            </div>
+          )}
 
         {/* Header Principal Oficial */}
         <header className="site-header" id="site-header">
@@ -635,19 +641,22 @@ export default function TenantLandingView({
                 )}
               </button>
 
-              <a
-                href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Quisiera cotizar ${tenantDefaults.urgentProductType} para mi empresa.`)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn btn-whatsapp"
-                style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/>
-                </svg>
-                <span className="hidden sm:inline">Cotizar por WhatsApp</span>
-                <span className="inline sm:hidden">Cotizar</span>
-              </a>
+              {/* Botón WhatsApp de Cabecera Configurable */}
+              {sections.header.show_whatsapp_button && (
+                <a
+                  href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Quisiera cotizar ${tenantDefaults.urgentProductType} para mi empresa.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-whatsapp"
+                  style={{ padding: '0.45rem 0.85rem', fontSize: '0.82rem' }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766 0-3.18-2.587-5.771-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.312.045-.698.057-2.148-.528-1.517-.613-2.508-2.143-2.584-2.245-.075-.101-.616-.818-.616-1.56 0-.742.39-1.107.528-1.258.138-.151.301-.189.402-.189.101 0 .202.002.29.006.094.005.22-.036.344.263.126.302.43 1.05.468 1.127.038.077.063.167.013.268-.05.101-.076.164-.151.252-.076.088-.16.196-.228.263-.076.076-.155.158-.067.31.088.151.393.649.843 1.049.578.514 1.066.673 1.217.749.151.075.24.063.328-.038.089-.101.378-.44.479-.592.101-.151.202-.126.34-.075.138.05 8.78 4.14 1.026.479.076.038.126.063.151.101.025.038.025.227-.119.632z"/>
+                  </svg>
+                  <span className="hidden sm:inline">Cotizar por WhatsApp</span>
+                  <span className="inline sm:hidden">Cotizar</span>
+                </a>
+              )}
 
               {/* Menú de Perfil de Administrador */}
               {isAdmin && (
@@ -879,6 +888,7 @@ export default function TenantLandingView({
           </div>
         )}
       </div>
+      )}
 
       {/* =========================================================================
            SECCIÓN INTERACTIVA: SECUENCIA DE TRANSFORMACIÓN SINCRONIZADA AL SCROLL
@@ -1810,58 +1820,60 @@ export default function TenantLandingView({
       </section>
 
       {/* Footer Corporativo Oficial */}
-      <footer className="site-footer">
-        <div className="container">
-          <div className="footer-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <p className="copyright-text" style={{ margin: 0 }}>
-                © {new Date().getFullYear()} <strong>{tenant.name}</strong>. Todos los derechos reservados{tenant.slug === 'ayme-pet' ? '. Solutions in Packaging.' : '.'}
-              </p>
-              {/* Redes Sociales Oficiales B2B (Sanitizadas contra XSS) */}
-              {(safeExternalUrl(social.linkedin) || safeExternalUrl(social.facebook) || safeExternalUrl(social.instagram) || safeExternalUrl(social.tiktok) || safeExternalUrl(social.youtube)) && (
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs">
-                  <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
-                  {safeExternalUrl(social.linkedin) && (
-                    <a href={safeExternalUrl(social.linkedin)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
-                      💼 LinkedIn
-                    </a>
-                  )}
-                  {safeExternalUrl(social.facebook) && (
-                    <a href={safeExternalUrl(social.facebook)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Facebook">
-                      📘 Facebook
-                    </a>
-                  )}
-                  {safeExternalUrl(social.instagram) && (
-                    <a href={safeExternalUrl(social.instagram)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Instagram">
-                      📸 Instagram
-                    </a>
-                  )}
-                  {safeExternalUrl(social.tiktok) && (
-                    <a href={safeExternalUrl(social.tiktok)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="TikTok">
-                      🎵 TikTok
-                    </a>
-                  )}
-                  {safeExternalUrl(social.youtube) && (
-                    <a href={safeExternalUrl(social.youtube)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="YouTube">
-                      ▶️ YouTube
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3 sm:mt-0">
-              <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400">
-                <span>🏆 Inocuidad BPM</span>
-                <span className="hidden sm:inline">•</span>
-                <span>♻️ PET 100% Reciclable</span>
-                <span className="hidden sm:inline">•</span>
-                <span>📦 Despacho Paletizado</span>
+      {sections.footer.enabled && (
+        <footer className="site-footer">
+          <div className="container">
+            <div className="footer-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <p className="copyright-text" style={{ margin: 0 }}>
+                  {sections.footer.copyright_text || `© ${new Date().getFullYear()} ${tenant.name}. Todos los derechos reservados${tenant.slug === 'ayme-pet' ? '. Solutions in Packaging.' : '.'}`}
+                </p>
+                {/* Redes Sociales Oficiales B2B (Sanitizadas contra XSS) */}
+                {(safeExternalUrl(social.linkedin) || safeExternalUrl(social.facebook) || safeExternalUrl(social.instagram) || safeExternalUrl(social.tiktok) || safeExternalUrl(social.youtube)) && (
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs">
+                    <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
+                    {safeExternalUrl(social.linkedin) && (
+                      <a href={safeExternalUrl(social.linkedin)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
+                        💼 LinkedIn
+                      </a>
+                    )}
+                    {safeExternalUrl(social.facebook) && (
+                      <a href={safeExternalUrl(social.facebook)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Facebook">
+                        📘 Facebook
+                      </a>
+                    )}
+                    {safeExternalUrl(social.instagram) && (
+                      <a href={safeExternalUrl(social.instagram)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Instagram">
+                        📸 Instagram
+                      </a>
+                    )}
+                    {safeExternalUrl(social.tiktok) && (
+                      <a href={safeExternalUrl(social.tiktok)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="TikTok">
+                        🎵 TikTok
+                      </a>
+                    )}
+                    {safeExternalUrl(social.youtube) && (
+                      <a href={safeExternalUrl(social.youtube)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="YouTube">
+                        ▶️ YouTube
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
-              <VersionBadge className="bg-slate-900 border-slate-800 text-slate-400" />
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3 sm:mt-0">
+                <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400">
+                  <span>🏆 Inocuidad BPM</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>♻️ PET 100% Reciclable</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span>📦 Despacho Paletizado</span>
+                </div>
+                <VersionBadge className="bg-slate-900 border-slate-800 text-slate-400" />
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* Modal QuickView Interactivo de Ficha Técnica & Calculadora de Fardos */}
       {quickViewProduct && (() => {
