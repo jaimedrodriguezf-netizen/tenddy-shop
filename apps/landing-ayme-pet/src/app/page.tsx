@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Package,
   MessageCircle,
@@ -37,6 +37,37 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
   const [contactProduct, setContactProduct] = useState('Envases PET 500ml');
   const [contactVolume, setContactVolume] = useState('5.000 a 10.000 uds/mes');
 
+  // Control de Smart Hide y Sólido en Header para AYME
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [isHeaderSolid, setIsHeaderSolid] = useState(false);
+
+  useEffect(() => {
+    let prevY = window.scrollY;
+
+    const handleSmartHeader = () => {
+      const currentY = window.scrollY;
+      const diff = currentY - prevY;
+
+      if (currentY <= 60) {
+        setIsHeaderVisible(true);
+        setIsHeaderSolid(false);
+      } else {
+        setIsHeaderSolid(true);
+
+        if (diff > 8 && currentY > 120) {
+          setIsHeaderVisible(false);
+        } else if (diff < -6) {
+          setIsHeaderVisible(true);
+        }
+      }
+
+      prevY = currentY;
+    };
+
+    window.addEventListener('scroll', handleSmartHeader, { passive: true });
+    return () => window.removeEventListener('scroll', handleSmartHeader);
+  }, []);
+
   const mainWhatsapp = '593998722324';
   const displayPhone = '099 872 2324';
 
@@ -57,55 +88,70 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
 
   return (
     <div style={themeStyles} className="min-h-screen bg-[#0a1128] text-slate-100 font-sans selection:bg-[#A61C2E] selection:text-white">
-      {/* 1. TOP PROMO BAR CORPORATIVA */}
-      {sections.top_bar.enabled && (
-        <div
-          style={{ backgroundColor: sections.top_bar.bg_color || '#8C1625' }}
-          className="text-white text-[11px] font-bold py-1.5 px-4 text-center border-b border-white/10 flex items-center justify-center gap-2"
-        >
-          <span>{sections.top_bar.text}</span>
-        </div>
-      )}
-
-      {/* 2. HEADER CORPORATIVO */}
-      {sections.header.enabled && (
-        <header className="sticky top-0 z-40 bg-[#0a1128]/95 backdrop-blur-md border-b border-white/10">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#A61C2E] to-[#8C1625] flex items-center justify-center font-black text-white text-lg shadow-md border border-white/20">
-                A
-              </div>
-              <div>
-                <h1 className="font-extrabold text-base tracking-tight text-white leading-tight">
-                  AYME INDUSTRIAS PET
-                </h1>
-                <p className="text-[10px] text-slate-400 font-mono">
-                  {sections.header.custom_subtitle || 'Solutions in Packaging • B2B'}
-                </p>
-              </div>
-            </div>
-
-            {sections.header.show_whatsapp_button && (
-              <div className="flex items-center gap-3">
-                <a
-                  href={`https://wa.me/${mainWhatsapp}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all hover:scale-105 active:scale-95"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span className="hidden sm:inline">WhatsApp Ventas ({displayPhone})</span>
-                  <span className="sm:hidden">Cotizar</span>
-                </a>
-              </div>
-            )}
+      {/* 1 & 2. CABECERA FLOTANTE CON SMART HIDE (OCULTA AL BAJAR, APARECE AL SUBIR) */}
+      <div
+        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+          isHeaderSolid ? 'shadow-2xl' : ''
+        }`}
+        style={{
+          transform: isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)',
+          transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
+          opacity: isHeaderVisible ? 1 : 0,
+          pointerEvents: isHeaderVisible ? 'auto' : 'none',
+        }}
+      >
+        {/* 1. TOP PROMO BAR CORPORATIVA */}
+        {sections.top_bar.enabled && (
+          <div
+            style={{ backgroundColor: sections.top_bar.bg_color || '#8C1625' }}
+            className="text-white text-[11px] font-bold py-1.5 px-4 text-center border-b border-white/10 flex items-center justify-center gap-2"
+          >
+            <span>{sections.top_bar.text}</span>
           </div>
-        </header>
-      )}
+        )}
+
+        {/* 2. HEADER CORPORATIVO */}
+        {sections.header.enabled && (
+          <header className={`backdrop-blur-md border-b border-white/10 transition-colors duration-300 ${
+            isHeaderSolid ? 'bg-[#0a1128]/98 shadow-xl' : 'bg-[#0a1128]/80'
+          }`}>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#A61C2E] to-[#8C1625] flex items-center justify-center font-black text-white text-lg shadow-md border border-white/20">
+                  A
+                </div>
+                <div>
+                  <h1 className="font-extrabold text-base tracking-tight text-white leading-tight">
+                    AYME INDUSTRIAS PET
+                  </h1>
+                  <p className="text-[10px] text-slate-400 font-mono">
+                    {sections.header.custom_subtitle || 'Solutions in Packaging • B2B'}
+                  </p>
+                </div>
+              </div>
+
+              {sections.header.show_whatsapp_button && (
+                <div className="flex items-center gap-3">
+                  <a
+                    href={`https://wa.me/${mainWhatsapp}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all hover:scale-105 active:scale-95"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    <span className="hidden sm:inline">WhatsApp Ventas ({displayPhone})</span>
+                    <span className="sm:hidden">Cotizar</span>
+                  </a>
+                </div>
+              )}
+            </div>
+          </header>
+        )}
+      </div>
 
       {/* 3. HERO DE POTENCIA INDUSTRIAL */}
       {sections.hero.enabled && (
-        <section className="relative py-16 sm:py-24 px-4 sm:px-6 border-b border-white/10 overflow-hidden">
+        <section className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 border-b border-white/10 overflow-hidden">
           <div className="absolute inset-0 bg-radial from-[#A61C2E]/20 via-transparent to-transparent pointer-events-none" />
           <div className="max-w-7xl mx-auto relative z-10 space-y-6 text-center sm:text-left sm:flex sm:items-center sm:justify-between sm:gap-10">
             <div className="space-y-4 max-w-2xl">

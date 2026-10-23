@@ -187,6 +187,43 @@ export default function TenantLandingView({
     return false;
   })();
 
+  // Control de Smart Hide y Fondo Sólido Opaco para AYME (Evita traslúcido sobre productos)
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [isHeaderSolid, setIsHeaderSolid] = useState(false);
+
+  useEffect(() => {
+    let prevY = window.scrollY;
+
+    const handleSmartHeader = () => {
+      const currentY = window.scrollY;
+      const diff = currentY - prevY;
+
+      // 1. En el Hero (<= 60px): visible y con transparencia original sobre el video
+      if (currentY <= 60) {
+        setIsHeaderVisible(true);
+        setIsHeaderSolid(false);
+      } else {
+        // 2. Fuera de la portada: fondo sólido opaco siempre para que los productos no se trasluzcan
+        setIsHeaderSolid(true);
+
+        // 3. Scroll hacia abajo (explorando catálogo): ocultar header suavemente hacia arriba
+        if (diff > 8 && currentY > 120) {
+          setIsHeaderVisible(false);
+          setIsProductsDropdownOpen(false);
+        }
+        // 4. Scroll hacia arriba (quiere volver al menú, carrito o cotizar): reaparecer al instante
+        else if (diff < -6) {
+          setIsHeaderVisible(true);
+        }
+      }
+
+      prevY = currentY;
+    };
+
+    window.addEventListener('scroll', handleSmartHeader, { passive: true });
+    return () => window.removeEventListener('scroll', handleSmartHeader);
+  }, []);
+
   // Listener para la Secuencia de Scroll con Lerp continuo a 60fps optimizado
   useEffect(() => {
     let currentProgress = 0;
@@ -481,12 +518,29 @@ export default function TenantLandingView({
         onSelectBranch={setSelectedBranch}
       />
 
-      {/* Header Flotante Integrado sobre la Secuencia de Video (Glassmorphism Oficial) */}
+      {/* Header Flotante Integrado sobre la Secuencia de Video (Smart Hide & Sólido en Scroll) */}
       {sections.header.enabled && (
-        <div className="fixed-header-wrapper" id="fixed-header-wrapper">
+        <div
+          className={`fixed-header-wrapper ${
+            isHeaderSolid ? 'scrolled solid-header shadow-2xl' : ''
+          }`}
+          id="fixed-header-wrapper"
+          style={{
+            transform: isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)',
+            transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
+            opacity: isHeaderVisible ? 1 : 0,
+            pointerEvents: isHeaderVisible ? 'auto' : 'none',
+          }}
+        >
           {/* Barra de Notificación Industrial Oficial Configurable */}
           {showTopBar && (
-            <div className="top-promo-bar" style={{ backgroundColor: sections.top_bar.bg_color || secondaryColor }}>
+            <div
+              className="top-promo-bar"
+              style={{
+                backgroundColor: sections.top_bar.bg_color || secondaryColor,
+                opacity: isHeaderSolid ? 1 : undefined,
+              }}
+            >
               {customTopBarText && customTopBarText.trim() ? (
                 customTopBarText.includes('•') ? (
                   customTopBarText.split('•').map((segment: string, idx: number, arr: string[]) => (
@@ -511,7 +565,17 @@ export default function TenantLandingView({
           )}
 
         {/* Header Principal Oficial */}
-        <header className="site-header" id="site-header">
+        <header
+          className="site-header"
+          id="site-header"
+          style={{
+            backgroundColor: isHeaderSolid ? (landingBgColor || '#0a1128') : undefined,
+            backdropFilter: isHeaderSolid ? 'blur(20px)' : undefined,
+            WebkitBackdropFilter: isHeaderSolid ? 'blur(20px)' : undefined,
+            borderBottom: isHeaderSolid ? '1px solid rgba(255, 255, 255, 0.15)' : undefined,
+            boxShadow: isHeaderSolid ? '0 10px 30px rgba(0, 0, 0, 0.7)' : undefined,
+          }}
+        >
           <div className="container header-inner">
             <Link
               href={`/store/${tenant.slug}`}
