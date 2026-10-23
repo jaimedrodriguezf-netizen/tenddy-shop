@@ -53,8 +53,6 @@ export default function TenantLandingView({
 }: TenantLandingViewProps) {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedCapacity, setSelectedCapacity] = useState<string>('all');
-  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
-  const [calculatorUnits, setCalculatorUnits] = useState<number>(1000);
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState<boolean>(false);
@@ -321,7 +319,7 @@ export default function TenantLandingView({
 
   // Bloqueo de scroll de fondo y tecla Escape para modales interactivos (WCAG 2.1)
   useEffect(() => {
-    const isModalOpen = Boolean(activeServiceModal || quickViewProduct);
+    const isModalOpen = Boolean(activeServiceModal);
     if (!isModalOpen) return;
 
     const originalOverflow = document.body.style.overflow;
@@ -330,7 +328,6 @@ export default function TenantLandingView({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setActiveServiceModal(null);
-        setQuickViewProduct(null);
       }
     };
 
@@ -339,7 +336,7 @@ export default function TenantLandingView({
       document.body.style.overflow = originalOverflow;
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeServiceModal, quickViewProduct]);
+  }, [activeServiceModal]);
 
   // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
   const [visibleCount, setVisibleCount] = useState<number>(24);
@@ -1352,13 +1349,10 @@ export default function TenantLandingView({
                     key={product.id}
                     className="product-card group"
                   >
-                    <div
-                      onClick={() => {
-                        setQuickViewProduct(product);
-                        setCalculatorUnits((product.units_per_package || 100) * 5);
-                      }}
-                      className="product-img-box cursor-pointer block relative aspect-square w-full bg-slate-50 overflow-hidden"
-                      title="Ver ficha técnica y calculadora de fardos"
+                    <Link
+                      href={productHref}
+                      className="product-img-box block relative aspect-square w-full bg-slate-50 overflow-hidden cursor-pointer"
+                      title={`Ver ficha técnica de ${product.name}`}
                     >
                       {badge && (
                         <span className="product-badge" style={{ backgroundColor: primaryColor }}>
@@ -1381,7 +1375,7 @@ export default function TenantLandingView({
                       ) : (
                         <div className="text-3xl sm:text-5xl py-8 sm:py-12 text-center text-slate-300">♳</div>
                       )}
-                    </div>
+                    </Link>
 
                     <div className="p-2 sm:p-4 flex flex-col flex-1 justify-between">
                       <div>
@@ -1421,19 +1415,15 @@ export default function TenantLandingView({
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setQuickViewProduct(product);
-                              setCalculatorUnits((product.units_per_package || 100) * 5);
-                            }}
-                            className="btn btn-outline cursor-pointer"
+                          <Link
+                            href={productHref}
+                            className="btn btn-outline cursor-pointer inline-flex items-center gap-1"
                             style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
-                            title="Ver Ficha Técnica y Calculadora de Fardos"
+                            title="Ver Ficha Técnica en página separada"
                           >
                             <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                             <span className="hidden sm:inline">Ficha</span>
-                          </button>
+                          </Link>
                           <button
                             type="button"
                             onClick={() => addItem(product)}
@@ -1930,201 +1920,6 @@ export default function TenantLandingView({
           </div>
         </footer>
       )}
-
-      {/* Modal QuickView Interactivo de Ficha Técnica & Calculadora de Fardos */}
-      {quickViewProduct && (() => {
-        const specs = quickViewProduct.attributes?.specs || {};
-        const packSize = quickViewProduct.units_per_package || 100;
-        const fardosCalculados = Math.max(1, Math.ceil(calculatorUnits / packSize));
-        const totalUnits = fardosCalculados * packSize;
-        const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(quickViewProduct.slug || quickViewProduct.sku?.toLowerCase() || quickViewProduct.id)}`;
-
-        return (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in"
-            onClick={() => setQuickViewProduct(null)}
-          >
-            <div
-              className="bg-white rounded-3xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Header Modal */}
-              <div className="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono font-bold uppercase bg-slate-200 text-slate-800 px-2 py-0.5 rounded">
-                    {quickViewProduct.sku || 'REF TÉCNICA'}
-                  </span>
-                  <span className="text-xs font-semibold text-slate-500">
-                    {categories.find((c) => c.id === quickViewProduct.category_id)?.name || 'Envase Industrial'}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setQuickViewProduct(null)}
-                  className="w-8 h-8 rounded-full bg-slate-200/80 hover:bg-slate-300 text-slate-600 flex items-center justify-center text-sm font-bold cursor-pointer transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Contenido en 2 Columnas */}
-              <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-5 items-start">
-                  {/* Foto del Producto */}
-                  <div className="sm:col-span-5 bg-slate-50 rounded-2xl border border-slate-200 p-4 aspect-square flex items-center justify-center relative overflow-hidden">
-                    {quickViewProduct.images && quickViewProduct.images[0] ? (
-                      <img
-                        src={quickViewProduct.images[0]}
-                        alt={quickViewProduct.name}
-                        className="w-full h-full object-contain filter drop-shadow-sm"
-                      />
-                    ) : (
-                      <div className="text-5xl text-slate-300">♳</div>
-                    )}
-                    {quickViewProduct.attributes?.badge && (
-                      <span className="absolute top-2 left-2 bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded shadow-xs">
-                        {quickViewProduct.attributes.badge}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Datos Técnicos */}
-                  <div className="sm:col-span-7 space-y-3">
-                    <h2 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
-                      {quickViewProduct.name}
-                    </h2>
-                    {quickViewProduct.description && (
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        {quickViewProduct.description}
-                      </p>
-                    )}
-
-                    {/* Especificaciones */}
-                    <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                      <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                        <span className="text-[10px] text-slate-400 block font-medium">Empaque</span>
-                        <span className="font-bold text-slate-800">{packSize} uds / fardo</span>
-                      </div>
-                      {Object.entries(specs).slice(0, 5).map(([k, v]) => (
-                        <div key={k} className="bg-slate-50 p-2 rounded-xl border border-slate-100">
-                          <span className="text-[10px] text-slate-400 block font-medium capitalize">{k.replace('_', ' ')}</span>
-                          <span className="font-bold text-slate-800 truncate block">{String(v)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Calculadora Interactiva de Fardos en Tiempo Real */}
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 rounded-2xl p-4 sm:p-5 text-white space-y-3 shadow-md">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base sm:text-lg">🧮</span>
-                      <div>
-                        <h4 className="text-xs sm:text-sm font-bold text-white">
-                          Calculadora de Volumen & Fardos
-                        </h4>
-                        <p className="text-[10px] text-slate-400">
-                          Calcule el embalaje industrial según sus requerimientos mensuales.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-3 pt-1">
-                    <div className="flex-1 min-w-[140px]">
-                      <label className="text-[10px] text-slate-300 font-bold block mb-1">
-                        Unidades requeridas:
-                      </label>
-                      <input
-                        type="number"
-                        min={packSize}
-                        max={1000000}
-                        step={packSize}
-                        value={calculatorUnits}
-                        onChange={(e) => setCalculatorUnits(Math.max(packSize, Math.min(1000000, Number(e.target.value) || packSize)))}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-700 text-white font-mono font-bold text-sm focus:outline-none focus:border-red-500"
-                      />
-                    </div>
-                    {/* Botones rápidos */}
-                    <div className="flex items-end gap-1.5 pt-4">
-                      {[-500, +500, +1000].map((delta) => (
-                        <button
-                          key={delta}
-                          type="button"
-                          onClick={() => setCalculatorUnits((prev) => Math.max(packSize, Math.min(1000000, prev + delta)))}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-[11px] font-mono font-bold text-slate-200 cursor-pointer"
-                        >
-                          {delta > 0 ? `+${delta}` : delta}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Resumen de cálculo en vivo */}
-                  <div className="bg-black/30 rounded-xl p-3 border border-white/10 flex items-center justify-between text-xs">
-                    <div>
-                      <span className="text-slate-400 text-[11px] block">Despacho optimizado:</span>
-                      <strong className="text-amber-300 text-sm font-mono">
-                        {fardosCalculados} {fardosCalculados === 1 ? 'fardo' : 'fardos'}
-                      </strong>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-slate-400 text-[11px] block">Total de envases:</span>
-                      <strong className="text-white text-sm font-mono">
-                        {totalUnits.toLocaleString()} unidades
-                      </strong>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Acciones del Modal */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      addItem(quickViewProduct, fardosCalculados);
-                      setQuickViewProduct(null);
-                      openCart();
-                    }}
-                    className="btn btn-outline flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs cursor-pointer"
-                  >
-                    <ShoppingCart className="w-4 h-4" />
-                    <span>Agregar ({fardosCalculados} fardos) al Cotizador</span>
-                  </button>
-
-                  <a
-                    href={buildEcuadorWhatsAppUrl(
-                      mainWhatsapp,
-                      `🏭 *COTIZACIÓN DE ENVASES - ${tenant.name.toUpperCase()}*\n\n` +
-                      `📦 *Producto:* ${quickViewProduct.name}\n` +
-                      `🏷️ *SKU:* ${quickViewProduct.sku || 'S/N'}\n` +
-                      `📊 *Volumen Requerido:* ${totalUnits.toLocaleString()} unidades (${fardosCalculados} fardos x ${packSize} uds)\n` +
-                      (selectedBranch ? `📍 *Sucursal / Despacho:* ${selectedBranch.name}\n` : '') +
-                      `\nSolicito confirmación de disponibilidad inmediata y costos de envío.`
-                    )}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-whatsapp flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs shadow-sm cursor-pointer"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span>Cotizar por WhatsApp</span>
-                  </a>
-                </div>
-
-                <div className="text-center pt-1 border-t border-slate-100">
-                  <Link
-                    href={productHref}
-                    className="text-xs text-slate-500 hover:text-slate-800 font-semibold underline"
-                  >
-                    Ver página de producto completa y especificaciones ampliadas →
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Modal Interactivo de Requerimiento Técnico de Servicios Industriales */}
       {activeServiceModal && (

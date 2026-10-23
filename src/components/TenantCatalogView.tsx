@@ -61,7 +61,6 @@ export default function TenantCatalogView({
   const [isSearchDropdownOpen, setIsSearchDropdownOpen] = useState<boolean>(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [selectedBranch, setSelectedBranch] = useState<Branch>(branches[0] || null);
   const [visibleCount, setVisibleCount] = useState<number>(20);
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState<boolean>(false);
@@ -288,20 +287,6 @@ export default function TenantCatalogView({
       setJustAddedId((curr) => (curr === p.id ? null : curr));
     }, 1800);
   };
-
-  // VISTA PÁGINA COMPLETA DE PRODUCTO (CERO MODAL)
-  if (modalProduct) {
-    return (
-      <ProductDetailView
-        product={modalProduct}
-        onBack={() => setModalProduct(null)}
-        tenant={tenant}
-        selectedBranch={selectedBranch}
-        branches={branches}
-        categories={categories}
-      />
-    );
-  }
 
   return (
     <div
@@ -1843,12 +1828,12 @@ export default function TenantCatalogView({
 
                     {/* Botones de Acción: Ficha Técnica y Carrito Cotizador Estilo Temu */}
                     <div className="pt-2 border-t border-slate-100 flex items-center gap-1.5">
-                      <button
-                        onClick={() => setModalProduct(p)}
+                      <Link
+                        href={productHref}
                         className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] py-1.5 px-2 rounded-xl transition-colors cursor-pointer text-center"
                       >
                         Ficha
-                      </button>
+                      </Link>
                       <button
                         onClick={() => handleQuickAdd(p)}
                         style={
