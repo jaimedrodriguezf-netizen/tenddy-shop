@@ -754,7 +754,7 @@ export default function AdminDashboardView({
       />
 
       {/* =========================================================================
-          1. MENÚ LATERAL DRAWER MÓVIL (Slide-over)
+          1. MENÚ LATERAL DRAWER MÓVIL (Slide-over Ergonómico y Scrolleable)
           ========================================================================= */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
@@ -762,40 +762,44 @@ export default function AdminDashboardView({
             className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
-          <aside className="relative w-72 max-w-[80vw] bg-white h-full flex flex-col justify-between z-10 shadow-2xl">
-            <div className="p-5 space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white shadow-sm text-sm shrink-0">
-                    {tenant.name.charAt(0)}
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-xs font-bold text-slate-900 truncate">
-                      {tenant.name}
-                    </h2>
-                    <span className="text-[10px] text-slate-500 font-mono block truncate">
-                      {tenant.slug}
-                    </span>
-                  </div>
+          <aside className="relative w-80 max-w-[85vw] bg-white h-full flex flex-col z-10 shadow-2xl overflow-hidden">
+            {/* Cabecera Fija del Drawer */}
+            <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white shadow-sm text-sm shrink-0">
+                  {tenant.name.charAt(0)}
                 </div>
-                <button
-                  onClick={() => setIsMobileSidebarOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div className="min-w-0">
+                  <h2 className="text-xs font-bold text-slate-900 truncate">
+                    {tenant.name}
+                  </h2>
+                  <span className="text-[10px] text-slate-500 font-mono block truncate">
+                    {tenant.slug}
+                  </span>
+                </div>
               </div>
+              <button
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                title="Cerrar menú"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
+            {/* Contenedor de Navegación con Scroll Independiente */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
               {renderNavItems()}
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2">
+            {/* Pie de Página Fijo del Drawer */}
+            <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-2 shrink-0">
               <div className="flex justify-center">
                 <VersionBadge />
               </div>
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer border border-slate-200 bg-white"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Cerrar Sesión</span>
@@ -806,11 +810,11 @@ export default function AdminDashboardView({
       )}
 
       {/* =========================================================================
-          2. MENÚ LATERAL DESKTOP (SIDEBAR)
+          2. MENÚ LATERAL DESKTOP (SIDEBAR CON SCROLL INDEPENDIENTE)
           ========================================================================= */}
-      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200/80 flex-col justify-between shrink-0 sticky top-0 h-screen z-30 shadow-sm">
-        <div className="p-5 space-y-6">
-          <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+      <aside className="hidden md:flex w-64 bg-white border-r border-slate-200/80 flex-col shrink-0 sticky top-0 h-screen z-30 shadow-sm overflow-hidden">
+        <div className="p-5 pb-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center font-bold text-white shadow-sm text-sm shrink-0">
               {tenant.name.charAt(0)}
             </div>
@@ -826,11 +830,13 @@ export default function AdminDashboardView({
               </div>
             </div>
           </div>
+        </div>
 
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {renderNavItems()}
         </div>
 
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3">
+        <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3 shrink-0">
           <div className="flex justify-center">
             <VersionBadge />
           </div>

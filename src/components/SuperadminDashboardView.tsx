@@ -265,7 +265,7 @@ export default function SuperadminDashboardView({
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 font-sans selection:bg-amber-500 selection:text-slate-950 flex flex-col md:flex-row">
       {/* =========================================================================
-          1. BARRA LATERAL MÓVIL (Slide-over Drawer)
+          1. BARRA LATERAL MÓVIL (Slide-over Drawer Ergonómico con Scroll)
           ========================================================================= */}
       {isMobileSidebarOpen && (
         <div className="fixed inset-0 z-50 md:hidden flex">
@@ -273,34 +273,65 @@ export default function SuperadminDashboardView({
             className="fixed inset-0 bg-black/80 backdrop-blur-xs transition-opacity"
             onClick={() => setIsMobileSidebarOpen(false)}
           />
-          <aside className="relative w-72 max-w-[80vw] bg-slate-950 border-r border-slate-800 h-full flex flex-col justify-between z-10 shadow-2xl p-5 space-y-6">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800/80">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-slate-950 shadow-md text-base shrink-0">
-                    ⚡
-                  </div>
-                  <div>
-                    <h2 className="text-xs font-extrabold text-white tracking-tight leading-tight">
-                      Torre de Control
-                    </h2>
-                    <span className="text-[10px] text-amber-400 font-mono block">
-                      tenddy Superadmin
-                    </span>
-                  </div>
+          <aside className="relative w-80 max-w-[85vw] bg-slate-950 border-r border-slate-800 h-full flex flex-col z-10 shadow-2xl overflow-hidden">
+            {/* Cabecera Fija del Drawer Móvil */}
+            <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-800/80 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-slate-950 shadow-md text-base shrink-0">
+                  ⚡
                 </div>
-                <button
-                  onClick={() => setIsMobileSidebarOpen(false)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+                <div>
+                  <h2 className="text-xs font-extrabold text-white tracking-tight leading-tight">
+                    Torre de Control
+                  </h2>
+                  <span className="text-[10px] text-amber-400 font-mono block">
+                    tenddy Superadmin
+                  </span>
+                </div>
               </div>
-
-              {renderNavLinks()}
+              <button
+                onClick={() => setIsMobileSidebarOpen(false)}
+                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors cursor-pointer"
+                title="Cerrar menú"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            <div className="pt-4 border-t border-slate-800/80 space-y-3">
+            {/* Navegación y Widget con Scroll Autónomo */}
+            <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-6">
+              <div className="space-y-2">
+                <span className="text-[10px] uppercase font-mono font-bold text-slate-500 tracking-wider px-2 block">
+                  Gestión Central
+                </span>
+                {renderNavLinks()}
+              </div>
+
+              {/* Widget de Resumen de Inventario en Drawer Móvil */}
+              <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 space-y-3">
+                <span className="text-[10px] uppercase font-mono font-bold text-slate-400 tracking-wider flex items-center gap-1.5">
+                  <Layers className="w-3 h-3 text-indigo-400" />
+                  <span>Volumen de Plataforma</span>
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-center">
+                  <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                    <div className="text-lg font-black text-indigo-400 font-mono">
+                      {totalGlobalProducts}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Productos</div>
+                  </div>
+                  <div className="bg-slate-950/80 p-2.5 rounded-xl border border-slate-800/80">
+                    <div className="text-lg font-black text-violet-400 font-mono">
+                      {totalGlobalImages}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-medium">Imágenes</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Pie de Página Fijo del Drawer Móvil */}
+            <div className="p-4 border-t border-slate-800/80 bg-slate-950 space-y-3 shrink-0">
               <div className="flex justify-center">
                 <VersionBadge />
               </div>
@@ -317,12 +348,12 @@ export default function SuperadminDashboardView({
       )}
 
       {/* =========================================================================
-          2. BARRA LATERAL DESKTOP (SIDEBAR FIJO)
+          2. BARRA LATERAL DESKTOP (SIDEBAR FIJO CON SCROLL INDEPENDIENTE)
           ========================================================================= */}
-      <aside className="hidden md:flex w-64 lg:w-72 bg-slate-950 border-r border-slate-800/80 flex-col justify-between shrink-0 sticky top-0 h-screen z-30 shadow-lg p-5">
-        <div className="space-y-6">
+      <aside className="hidden md:flex w-64 lg:w-72 bg-slate-950 border-r border-slate-800/80 flex-col shrink-0 sticky top-0 h-screen z-30 shadow-lg overflow-hidden">
+        <div className="p-5 pb-4 border-b border-slate-800/80 shrink-0">
           {/* Logo & Marca */}
-          <div className="flex items-center gap-3 pb-5 border-b border-slate-800/80">
+          <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-slate-950 shadow-lg text-lg shrink-0">
               ⚡
             </div>
@@ -337,7 +368,9 @@ export default function SuperadminDashboardView({
               </div>
             </div>
           </div>
+        </div>
 
+        <div className="flex-1 overflow-y-auto p-5 space-y-6">
           {/* Menú de Navegación */}
           <div className="space-y-2">
             <span className="text-[10px] uppercase font-mono font-bold text-slate-500 tracking-wider px-2 block">
@@ -370,7 +403,7 @@ export default function SuperadminDashboardView({
         </div>
 
         {/* Footer del Sidebar */}
-        <div className="pt-4 border-t border-slate-800/80 space-y-3">
+        <div className="p-4 border-t border-slate-800/80 bg-slate-950 space-y-3 shrink-0">
           <div className="flex justify-center">
             <VersionBadge />
           </div>
@@ -389,20 +422,19 @@ export default function SuperadminDashboardView({
           ========================================================================= */}
       <div className="flex-1 min-w-0 flex flex-col min-h-screen">
         {/* Navbar Superior Móvil */}
-        <header className="md:hidden flex items-center justify-between p-4 bg-slate-950 border-b border-slate-800 sticky top-0 z-20">
+        <header className="md:hidden flex items-center justify-between p-3.5 sm:p-4 bg-slate-950 border-b border-slate-800 sticky top-0 z-20">
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => setIsMobileSidebarOpen(true)}
-              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white cursor-pointer"
+              title="Abrir menú de navegación"
             >
               <Menu className="w-5 h-5" />
             </button>
             <span className="font-extrabold text-sm text-white">Torre de Control</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold">
-              v0.1.13
-            </span>
+            <VersionBadge />
           </div>
         </header>
 
