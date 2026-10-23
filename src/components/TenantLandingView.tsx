@@ -1205,16 +1205,8 @@ export default function TenantLandingView({
       {/* =========================================================================
            SECCIÓN DE CATÁLOGO: ENVASES DESTACADOS Y FILTROS POR LÍNEAS
            ========================================================================= */}
-      <section id="catalog-section" className="py-8 sm:py-16" style={{ background: 'var(--bg-main)' }}>
+      <section id="catalog-section" className="py-6 sm:py-10" style={{ background: 'var(--bg-main)' }}>
         <div className="container">
-          <div className="section-header">
-            <span className="section-tag">Alta Rotación de Fábrica</span>
-            <h2 className="section-title">Envases, Botellas, Tapas & Preformas</h2>
-            <p className="section-subtitle">
-              Línea técnica de envases estándar con stock continuo para entregas inmediatas a nivel nacional.
-            </p>
-          </div>
-
           {/* Barra de Búsqueda Reactiva en Vivo */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
             <div className="relative flex-1 max-w-md">
