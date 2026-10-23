@@ -205,15 +205,15 @@ export default function ProductEditorView({
         `Diseñado especialmente para pedidos mayoristas de alto rendimiento. ${base}.\n\n` +
         `• **Calidad Premium:** Fabricación con materiales resistentes y terminaciones reforzadas.\n` +
         `• **Ajuste y Confort:** Patronaje ergonómico con excelente caída y durabilidad.\n` +
-        `• **Presentación:** Empacado en fardo por ${unitsPerPackage} unidades, listo para distribución nacional.\n\n` +
-        `*Solicita tu cotización por fardo o caja cerrada con despacho inmediato.*`;
+        `• **Presentación:** Empacado por ${unitsPerPackage} unidades, listo para distribución nacional.\n\n` +
+        `*Solicita tu cotización por empaque cerrado o caja con despacho inmediato.*`;
     } else if (assistantTone === 'elegante') {
       generated = `Exclusivo diseño confeccionado con estándares superiores de calidad. ${base}.\n\n` +
         `Detalles de patronaje fusionado y costuras de alta densidad que garantizan una presentación impecable en vitrina.\n` +
         `Ideal para boutiques y distribuidores que exigen acabados de primera línea.`;
     } else {
       generated = `${name.trim() || 'Producto'}.\n\n${base}.\n` +
-        `Pedido mínimo: ${minOrderQty} unidades.\nEmpaque: ${unitsPerPackage} unidades por fardo.\nDisponibilidad inmediata para despachos a nivel nacional.`;
+        `Pedido mínimo: ${minOrderQty} unidades.\nEmpaque: ${unitsPerPackage} unidades por paquete.\nDisponibilidad inmediata para despachos a nivel nacional.`;
     }
 
     setDescription(generated);
@@ -938,7 +938,7 @@ export default function ProductEditorView({
                       </div>
 
                       <div>
-                        <label className="block text-slate-800 font-bold mb-1">Empaque ({isPlastics ? 'uds/bolsa' : 'uds/fardo'})</label>
+                        <label className="block text-slate-800 font-bold mb-1">Empaque (unidades por paquete / caja)</label>
                         <input
                           type="number"
                           min="1"
@@ -946,7 +946,7 @@ export default function ProductEditorView({
                           onChange={(e) => setUnitsPerPackage(Number(e.target.value) || 1)}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono"
                         />
-                        <p className="text-[11px] text-slate-400 mt-1">Unidades por paquete o fardo cerrado.</p>
+                        <p className="text-[11px] text-slate-400 mt-1">Unidades por paquete, caja o empaque cerrado.</p>
                       </div>
                     </div>
                   </div>

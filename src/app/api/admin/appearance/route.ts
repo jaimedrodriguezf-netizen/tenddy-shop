@@ -133,6 +133,16 @@ export async function PATCH(request: Request) {
     // El administrador de tienda no puede alterar store_template desde este endpoint.
     const resolvedTemplate = currentTenant.theme_config?.store_template === 'landing' ? 'landing' : 'temu';
 
+    // Normalizar unidad de empaque mayorista (presets o texto libre)
+    let updatedPackagingUnit = currentTenant.theme_config?.packaging_unit;
+    if (body.packaging_unit && typeof body.packaging_unit === 'object') {
+      const s = typeof body.packaging_unit.singular === 'string' ? body.packaging_unit.singular.trim().slice(0, 30) : '';
+      const p = typeof body.packaging_unit.plural === 'string' ? body.packaging_unit.plural.trim().slice(0, 30) : '';
+      if (s && p) {
+        updatedPackagingUnit = { singular: s, plural: p };
+      }
+    }
+
     const updatedTheme = {
       ...(currentTenant.theme_config || {}),
       primary_color: sanitizeHexColor(primary_color, currentTenant.theme_config?.primary_color || '#0284c7'),
@@ -146,6 +156,7 @@ export async function PATCH(request: Request) {
       show_best_sellers: body.show_best_sellers !== undefined ? body.show_best_sellers : (currentTenant.theme_config?.show_best_sellers ?? true),
       show_featured_ratings: body.show_featured_ratings !== undefined ? body.show_featured_ratings : (currentTenant.theme_config?.show_featured_ratings ?? true),
       social_links: updatedSocialLinks,
+      packaging_unit: updatedPackagingUnit,
     };
 
     const sanitizedHeroImage = hero_image_url !== undefined 

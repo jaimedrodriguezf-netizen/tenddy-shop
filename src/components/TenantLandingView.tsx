@@ -21,7 +21,7 @@ import {
   Pause
 } from 'lucide-react';
 import Link from 'next/link';
-import { Tenant, Branch, Category, Product, resolveLandingSections } from '@/lib/types';
+import { Tenant, Branch, Category, Product, resolveLandingSections, getPackagingUnit } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import VersionBadge from '@/components/VersionBadge';
@@ -163,6 +163,9 @@ export default function TenantLandingView({
   const sections = useMemo(() =>
     resolveLandingSections(landing.sections, tenant.name, tenant.slug),
   [landing.sections, tenant.name, tenant.slug]);
+
+  // Unidad de Empaque Dinámica
+  const packagingUnit = useMemo(() => getPackagingUnit(tenant), [tenant]);
 
   // Colores corporativos configurados
   const primaryColor = theme?.primary_color || '#A61C2E';
@@ -1411,7 +1414,7 @@ export default function TenantLandingView({
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 mt-auto">
                         <div className="flex flex-col">
                           <span className="text-[9px] sm:text-[10px] text-slate-400">Empaque</span>
-                          <span className="text-[10px] sm:text-xs font-bold text-slate-800">{packSize} u/fardo</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-800">{packSize} u/{packagingUnit.singular.toLowerCase()}</span>
                         </div>
 
                         <div className="flex items-center gap-1 sm:gap-1.5">

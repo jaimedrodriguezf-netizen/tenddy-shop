@@ -32,6 +32,7 @@ export interface Tenant {
     store_template?: string;
     custom_theme?: string;
     social_links?: TenantSocialLinks;
+    packaging_unit?: PackagingUnit;
   };
   landing_config: {
     hero_title: string;
@@ -65,6 +66,35 @@ export interface Tenant {
     reviews?: ProductReview[];
     [key: string]: any;
   };
+}
+
+export interface PackagingUnit {
+  singular: string;
+  plural: string;
+}
+
+export const PACKAGING_UNIT_PRESETS: { label: string; singular: string; plural: string }[] = [
+  { label: '📦 Paquete', singular: 'Paquete', plural: 'Paquetes' },
+  { label: '📦 Caja', singular: 'Caja', plural: 'Cajas' },
+  { label: '🏭 Fardo', singular: 'Fardo', plural: 'Fardos' },
+  { label: '🚚 Bulto', singular: 'Bulto', plural: 'Bultos' },
+  { label: '🏷️ Pack', singular: 'Pack', plural: 'Packs' },
+  { label: '🌾 Saco', singular: 'Saco', plural: 'Sacos' },
+  { label: '🧵 Rollo', singular: 'Rollo', plural: 'Rollos' },
+];
+
+export function getPackagingUnit(tenant?: Partial<Tenant> | null): PackagingUnit {
+  const custom = (tenant?.theme_config as any)?.packaging_unit;
+  if (custom && typeof custom === 'object') {
+    const s = typeof custom.singular === 'string' ? custom.singular.trim() : '';
+    const p = typeof custom.plural === 'string' ? custom.plural.trim() : '';
+    if (s && p) {
+      return { singular: s, plural: p };
+    }
+  }
+
+  // Fallback por defecto universal latinoamericano: Paquete / Paquetes
+  return { singular: 'Paquete', plural: 'Paquetes' };
 }
 
 export interface Branch {

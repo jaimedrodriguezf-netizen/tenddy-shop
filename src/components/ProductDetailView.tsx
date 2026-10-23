@@ -23,7 +23,7 @@ import {
   PackageCheck,
   Check
 } from 'lucide-react';
-import { Product, Tenant, Branch, Category } from '@/lib/types';
+import { Product, Tenant, Branch, Category, getPackagingUnit } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import { hasValidProductImage } from '@/lib/product-image';
@@ -78,15 +78,13 @@ export default function ProductDetailView({
   const [isSaved, setIsSaved] = useState(false);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
 
-  // Variantes de paquete y fardos industriales
+  // Variantes de paquete y unidades de empaque dinámicas
+  const packagingUnit = useMemo(() => getPackagingUnit(tenant), [tenant]);
   const defaultPackSize = product.units_per_package || 100;
-  const isIndustrialTenant = tenant.slug === 'ayme-pet' || tenant.industry_type === 'plastics';
-  const defaultPacks = isIndustrialTenant
-    ? `Fardo x ${defaultPackSize} uds, 5 Fardos (${defaultPackSize * 5} uds), 10 Fardos (${defaultPackSize * 10} uds)`
-    : '15 uds, 10 uds, 5 uds';
+  const defaultPacks = `${packagingUnit.singular} x ${defaultPackSize} uds, 5 ${packagingUnit.plural} (${defaultPackSize * 5} uds), 10 ${packagingUnit.plural} (${defaultPackSize * 10} uds)`;
   const rawPacks = specs.paquetes || specs.presentacion || defaultPacks;
   const packOptions = rawPacks.split(/[,/•;]+/).map((s: string) => s.trim()).filter(Boolean);
-  const [selectedPack, setSelectedPack] = useState<string>(packOptions[0] || (isIndustrialTenant ? `Fardo x ${defaultPackSize} uds` : 'Paquete de 15'));
+  const [selectedPack, setSelectedPack] = useState<string>(packOptions[0] || `${packagingUnit.singular} x ${defaultPackSize} uds`);
 
   // Variantes de tapa/color (ej: Tapas Negras, Tapas Blancas)
   const rawColors = specs.tapas || specs.color || specs.variante || 'Tapas Negras, Tapas Blancas';
@@ -158,7 +156,7 @@ export default function ProductDetailView({
     if (product.sku) msg += `🏷️ *SKU:* ${product.sku}\n`;
     msg += `📦 *Presentación elegida:* ${selectedPack}\n`;
     msg += `🎨 *Tapas / Color:* ${selectedColor}\n`;
-    msg += `📊 *Cantidad requerida:* ${quantity} unidad(es)\n`;
+    msg += `📊 *Cantidad requerida:* ${quantity} ${quantity === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}\n`;
     msg += `💰 *Precio oferta visto:* ${currencySymbol}${basePrice.toFixed(2)} (${discountPercent}% OFF)\n\n`;
     if (currentBranch) {
       msg += `📍 *Despacho:* ${currentBranch.name} (${currentBranch.city})\n`;
@@ -538,7 +536,7 @@ export default function ProductDetailView({
                   className="w-full font-extrabold text-sm py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-md transition-all hover:brightness-110 active:scale-[0.99] cursor-pointer"
                 >
                   <ShoppingCart className="w-4 h-4" />
-                  <span>Agregar al Carrito ({quantity} {quantity === 1 ? 'paquete' : 'paquetes'})</span>
+                  <span>Agregar al Carrito ({quantity} {quantity === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()})</span>
                 </button>
 
                 {targetWhatsapp && (

@@ -83,9 +83,9 @@ console.log('✅ 5. Consumo Dinámico: primary_color y secondary_color del tenan
 // Componentes clave estilo Temu
 assert(catalogContent.includes('themeTokens.primary'), 'FAIL: Debe aplicar themeTokens.primary en elementos clave');
 assert(catalogContent.includes('themeTokens.secondary'), 'FAIL: Debe aplicar themeTokens.secondary en elementos secundarios');
-assert(catalogContent.includes('title="Agregar fardo al cotizador"'), 'FAIL: Botón de cotización directa presente');
+assert(catalogContent.includes('al cotizador'), 'FAIL: Botón de cotización directa presente');
 assert(catalogContent.includes('Cargar más productos'), 'FAIL: Paginación progresiva debe usar término universal "productos"');
-assert(catalogContent.includes('Precios de Fábrica por Fardo, Bulto & Pallet'), 'FAIL: Hero Banner promocional Temu presente');
+assert(catalogContent.includes('Precios de Fábrica por'), 'FAIL: Hero Banner promocional Temu presente');
 assert(catalogContent.includes('setSortBy'), 'FAIL: Barra de ordenamiento interactiva presente');
 assert(catalogContent.includes('¡Agregado!'), 'FAIL: Micro-interacción táctil en botón cotizar presente');
 assert(catalogContent.includes('Toast Flotante de Confirmación'), 'FAIL: Toast flotante no intrusivo presente');

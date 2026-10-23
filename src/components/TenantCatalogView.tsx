@@ -31,7 +31,7 @@ import {
   Clock,
   Truck
 } from 'lucide-react';
-import { Tenant, Branch, Category, Product } from '@/lib/types';
+import { Tenant, Branch, Category, Product, getPackagingUnit } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import ProductDetailView from '@/components/ProductDetailView';
@@ -71,6 +71,9 @@ export default function TenantCatalogView({
   const [justAddedId, setJustAddedId] = useState<string | null>(null);
   const [justAddedProductName, setJustAddedProductName] = useState<string>('');
   const quickAddTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Unidad de Empaque Dinámica (Paquete, Caja, Fardo, Bulto, etc.)
+  const packagingUnit = useMemo(() => getPackagingUnit(tenant), [tenant]);
 
   const [prevFilters, setPrevFilters] = useState({ category: selectedCategory, search: searchQuery });
   if (prevFilters.category !== selectedCategory || prevFilters.search !== searchQuery) {
@@ -1207,7 +1210,7 @@ export default function TenantCatalogView({
         }}
         className="text-[11px] font-medium py-1.5 px-4 text-center border-b border-black/10"
       >
-        <span>📦 Pedidos y cotizaciones directas a fábrica por bulto, fardo o pallet con despacho nacional</span>
+        <span>📦 Pedidos y cotizaciones directas a fábrica con despacho nacional</span>
       </div>
 
       {/* =========================================================================
@@ -1241,7 +1244,7 @@ export default function TenantCatalogView({
               </div>
 
               <h2 className="text-lg sm:text-2xl font-black tracking-tight leading-tight">
-                Precios de Fábrica por Fardo, Bulto & Pallet
+                Precios de Fábrica por Mayor & Pallet
               </h2>
 
               <p className="text-xs sm:text-sm text-white/85 leading-relaxed">
@@ -1818,7 +1821,7 @@ export default function TenantCatalogView({
                       <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1 border-t border-slate-100/80">
                         <span className="flex items-center gap-1">
                           <Package className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>Fardo x {packSize} uds</span>
+                          <span>{packagingUnit.singular} x {packSize} uds</span>
                         </span>
                         <span className="font-mono font-semibold text-slate-700">
                           Mín: {minQty.toLocaleString()}
@@ -1850,7 +1853,7 @@ export default function TenantCatalogView({
                         className={`font-bold text-[11px] py-1.5 px-3 rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-all active:scale-95 cursor-pointer shrink-0 ${
                           justAddedId === p.id ? 'scale-105' : 'hover:brightness-110'
                         }`}
-                        title="Agregar fardo al cotizador"
+                        title={`Agregar ${packagingUnit.singular.toLowerCase()} al cotizador`}
                       >
                         {justAddedId === p.id ? (
                           <>

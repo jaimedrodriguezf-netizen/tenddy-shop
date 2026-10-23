@@ -19,7 +19,7 @@ import {
   Package
 } from 'lucide-react';
 import { useCartStore } from '@/lib/store/cart';
-import { Tenant, Branch } from '@/lib/types';
+import { Tenant, Branch, getPackagingUnit } from '@/lib/types';
 import { getProductPrimaryImage } from '@/lib/product-image';
 import { buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
 
@@ -50,6 +50,9 @@ export default function CartDrawer({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdQuoteNumber, setCreatedQuoteNumber] = useState<string | null>(null);
   const [lastWhatsAppUrl, setLastWhatsAppUrl] = useState<string | null>(null);
+
+  // Unidad de empaque mayorista dinámica
+  const packagingUnit = React.useMemo(() => getPackagingUnit(tenant), [tenant]);
   const isMounted = React.useSyncExternalStore(
     () => () => {},
     () => true,
@@ -144,7 +147,7 @@ export default function CartDrawer({
 
       tenantItems.forEach((item, idx) => {
         msg += `\n${idx + 1}. *${item.product.name}*\n`;
-        msg += `   • Cantidad: *${item.quantity.toLocaleString()} uds* (${item.packageCount} fardos/paquetes)\n`;
+        msg += `   • Cantidad: *${item.quantity.toLocaleString()} uds* (${item.packageCount} ${item.packageCount === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()})\n`;
         if (item.selectedColor) msg += `   • Color: ${item.selectedColor}\n`;
         const specs = item.product.attributes?.specs;
         if (specs?.boca) msg += `   • Boca: ${specs.boca}\n`;
@@ -194,7 +197,7 @@ export default function CartDrawer({
               <div>
                 <h3 className="font-bold text-sm text-white">Carrito Cotizador B2B</h3>
                 <p className="text-[11px] text-slate-400">
-                  {totalUnits.toLocaleString()} unidades en {totalPackages} fardos
+                  {totalUnits.toLocaleString()} unidades en {totalPackages} {totalPackages === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}
                 </p>
               </div>
             </div>
@@ -290,7 +293,7 @@ export default function CartDrawer({
                                 )}
                               </div>
                               <div className="text-[10px] text-slate-400 mt-1">
-                                {packSize} uds / fardo • MOQ: {minQty.toLocaleString()} uds
+                                {packSize} uds / {packagingUnit.singular.toLowerCase()} • MOQ: {minQty.toLocaleString()} uds
                               </div>
                             </div>
                             <button
@@ -318,7 +321,7 @@ export default function CartDrawer({
                                 <Minus className="w-3.5 h-3.5" />
                               </button>
                               <span className="text-xs font-bold font-mono px-2 text-white">
-                                {item.packageCount} fardos
+                                {item.packageCount} {item.packageCount === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}
                               </span>
                               <button
                                 onClick={() =>
@@ -551,9 +554,9 @@ export default function CartDrawer({
                 </span>
               </div>
               <div className="flex justify-between text-xs font-mono">
-                <span className="text-slate-400">Total Fardos / Cajas:</span>
+                <span className="text-slate-400">Total {packagingUnit.plural}:</span>
                 <span className="font-bold text-sky-400">
-                  {totalPackages} bultos
+                  {totalPackages} {totalPackages === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}
                 </span>
               </div>
 
