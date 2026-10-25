@@ -169,6 +169,12 @@ export async function POST(request: Request) {
       finalImages = [];
     }
 
+    const formattedPriceTiers = Array.isArray(price_tiers)
+      ? price_tiers
+          .filter((t: any) => typeof t?.min_qty === 'number' && t.min_qty > 0 && typeof t?.price === 'number' && t.price > 0)
+          .sort((a: any, b: any) => a.min_qty - b.min_qty)
+      : [];
+
     const { data: product, error } = await admin
       .from('products')
       .insert({
@@ -182,7 +188,7 @@ export async function POST(request: Request) {
         units_per_package: Number(units_per_package) || 1,
         attributes: attributes || {},
         images: finalImages,
-        price_tiers: price_tiers || [],
+        price_tiers: formattedPriceTiers,
         is_active: true,
       })
       .select('*')
@@ -220,6 +226,7 @@ export async function PATCH(request: Request) {
       imageData,
       images,
       image_url,
+      price_tiers,
     } = body;
 
     const admin = getAdminClient();
@@ -380,6 +387,13 @@ export async function PATCH(request: Request) {
     if (min_order_qty !== undefined) updatePayload.min_order_qty = Number(min_order_qty) || 1;
     if (units_per_package !== undefined) updatePayload.units_per_package = Number(units_per_package) || 1;
     if (attributes !== undefined) updatePayload.attributes = attributes;
+    if (price_tiers !== undefined) {
+      updatePayload.price_tiers = Array.isArray(price_tiers)
+        ? price_tiers
+            .filter((t: any) => typeof t?.min_qty === 'number' && t.min_qty > 0 && typeof t?.price === 'number' && t.price > 0)
+            .sort((a: any, b: any) => a.min_qty - b.min_qty)
+        : [];
+    }
 
     const { data: updatedProduct, error: updateErr } = await admin
       .from('products')

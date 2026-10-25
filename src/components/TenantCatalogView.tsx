@@ -1810,6 +1810,63 @@ export default function TenantCatalogView({
                         </span>
                       </div>
 
+                      {/* Precio Dinámico o Escalas Mayoristas Temu */}
+                      {(() => {
+                        const hasTiers = Array.isArray(p.price_tiers) && p.price_tiers.length > 0;
+                        if (hasTiers) {
+                          const prices = p.price_tiers!.map((t) => t.price);
+                          const lowestPrice = Math.min(...prices);
+                          const baseTierPrice = p.price_tiers![0]?.price || lowestPrice;
+                          const hasMulti = p.price_tiers!.length > 1;
+
+                          return (
+                            <div className="pt-1 flex items-baseline justify-between gap-1 flex-wrap">
+                              <div className="flex items-baseline gap-1.5 flex-wrap">
+                                <span
+                                  style={{ color: themeTokens.primary }}
+                                  className="font-black text-xs sm:text-sm font-mono tracking-tight"
+                                >
+                                  {hasMulti && <span className="text-[10px] font-normal text-slate-500 mr-0.5">Desde</span>}
+                                  ${lowestPrice.toFixed(2)}
+                                  <span className="text-[10px] font-normal text-slate-400">/u</span>
+                                </span>
+                                {hasMulti && baseTierPrice > lowestPrice && (
+                                  <span className="text-[10px] text-slate-400 line-through font-mono">
+                                    ${baseTierPrice.toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                              {hasMulti && (
+                                <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200/80 px-1.5 py-0.2 rounded font-mono">
+                                  {p.price_tiers!.length} escalas
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        if (p.attributes?.price) {
+                          return (
+                            <div className="pt-1 flex items-baseline gap-1.5 flex-wrap">
+                              <span
+                                style={{ color: themeTokens.primary }}
+                                className="font-black text-xs sm:text-sm font-mono tracking-tight"
+                              >
+                                ${Number(p.attributes.price).toFixed(2)}
+                                <span className="text-[10px] font-normal text-slate-400">/u</span>
+                              </span>
+                              {p.attributes?.sale_price && (
+                                <span className="text-[10px] text-slate-400 line-through font-mono">
+                                  ${Number(p.attributes.sale_price).toFixed(2)}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        }
+
+                        return null;
+                      })()}
+
                       {/* Badge Vendedor Estrella */}
                       <div className="pt-0.5">
                         <span className="bg-slate-900 text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded-md inline-flex items-center gap-1 shadow-2xs">

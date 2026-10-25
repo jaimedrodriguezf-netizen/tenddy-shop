@@ -193,7 +193,53 @@ export interface Product {
   min_order_qty: number;
   units_per_package: number;
   category_id?: string;
-  price_tiers?: { min_qty: number; price: number }[];
+  price_tiers?: PriceTier[];
+}
+
+export interface PriceTier {
+  min_qty: number;
+  price: number;
+}
+
+export function resolveTieredPrice(
+  priceTiers: PriceTier[] | undefined | null,
+  quantity: number,
+  fallbackPrice: number
+): { unitPrice: number; activeTier?: PriceTier; savingsPercent?: number } {
+  const safeFallback = typeof fallbackPrice === 'number' && !isNaN(fallbackPrice) && fallbackPrice > 0 ? fallbackPrice : 0;
+
+  if (!Array.isArray(priceTiers) || priceTiers.length === 0) {
+    return { unitPrice: safeFallback };
+  }
+
+  const validTiers = priceTiers
+    .filter((t) => typeof t?.min_qty === 'number' && t.min_qty > 0 && typeof t?.price === 'number' && t.price > 0)
+    .sort((a, b) => a.min_qty - b.min_qty);
+
+  if (validTiers.length === 0) {
+    return { unitPrice: safeFallback };
+  }
+
+  const basePrice = validTiers[0].price;
+
+  // Buscar la escala más alta aplicable para la cantidad solicitada
+  let matchedTier = validTiers[0];
+  for (let i = validTiers.length - 1; i >= 0; i--) {
+    if (quantity >= validTiers[i].min_qty) {
+      matchedTier = validTiers[i];
+      break;
+    }
+  }
+
+  const savings = basePrice > matchedTier.price
+    ? Math.round(((basePrice - matchedTier.price) / basePrice) * 100)
+    : undefined;
+
+  return {
+    unitPrice: matchedTier.price,
+    activeTier: matchedTier,
+    savingsPercent: savings,
+  };
 }
 
 export interface LandingTopBarSection {

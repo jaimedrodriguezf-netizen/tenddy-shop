@@ -21,9 +21,10 @@ import {
   ChevronUp,
   AlertCircle,
   PackageCheck,
-  Check
+  Check,
+  Layers
 } from 'lucide-react';
-import { Product, Tenant, Branch, Category, getPackagingUnit } from '@/lib/types';
+import { Product, Tenant, Branch, Category, getPackagingUnit, resolveTieredPrice } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import { hasValidProductImage } from '@/lib/product-image';
@@ -56,27 +57,31 @@ export default function ProductDetailView({
   const specs = product.attributes?.specs || {};
   const badge = product.attributes?.badge;
 
-  // Precios dinámicos y descuentos de alta conversión
-  const currencySymbol = tenant.settings?.currency_symbol || '$';
-  const basePrice = (product.price_tiers && product.price_tiers.length > 0 && typeof product.price_tiers[0].price === 'number')
-    ? product.price_tiers[0].price
-    : (specs.precio ? Number(specs.precio) : 3.14);
-
-  const originalPrice = specs.precio_original
-    ? Number(specs.precio_original)
-    : Math.round((basePrice / 0.53) * 100) / 100; // ~47% de descuento
-  const discountPercent = Math.max(15, Math.round(((originalPrice - basePrice) / originalPrice) * 100));
-
-  // Imágenes multi-ángulo
-  const images = hasValidProductImage(product.images, tenant)
-    ? product.images
-    : ['/assets/placeholder-product.svg'];
-
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [quantity, setQuantity] = useState<number>(1);
   const [addedAlert, setAddedAlert] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
+
+  // Precios dinámicos y escalas mayoristas por volumen
+  const currencySymbol = tenant.settings?.currency_symbol || '$';
+  const basePriceFallback = specs.precio ? Number(specs.precio) : 3.14;
+  const initialBasePrice = (product.price_tiers && product.price_tiers.length > 0 && typeof product.price_tiers[0].price === 'number')
+    ? product.price_tiers[0].price
+    : basePriceFallback;
+
+  const { unitPrice, activeTier, savingsPercent } = resolveTieredPrice(product.price_tiers, quantity, initialBasePrice);
+  const totalPrice = unitPrice * quantity;
+
+  const originalPrice = specs.precio_original
+    ? Number(specs.precio_original)
+    : Math.round((initialBasePrice / 0.53) * 100) / 100; // ~47% de descuento
+  const discountPercent = Math.max(15, Math.round(((originalPrice - unitPrice) / originalPrice) * 100));
+
+  // Imágenes multi-ángulo
+  const images = hasValidProductImage(product.images, tenant)
+    ? product.images
+    : ['/assets/placeholder-product.svg'];
 
   // Variantes de paquete y unidades de empaque dinámicas
   const packagingUnit = useMemo(() => getPackagingUnit(tenant), [tenant]);
@@ -144,7 +149,14 @@ export default function ProductDetailView({
 
   const handleAddToCart = () => {
     const variantLabel = `${selectedPack} • ${selectedColor}`;
-    addItem(product, quantity, variantLabel);
+    const productWithAppliedPrice: Product = {
+      ...product,
+      attributes: {
+        ...(product.attributes || {}),
+        price: unitPrice,
+      },
+    };
+    addItem(productWithAppliedPrice, quantity, variantLabel);
     setAddedAlert(true);
     openCart();
     setTimeout(() => setAddedAlert(false), 3000);
@@ -157,7 +169,8 @@ export default function ProductDetailView({
     msg += `📦 *Presentación elegida:* ${selectedPack}\n`;
     msg += `🎨 *Tapas / Color:* ${selectedColor}\n`;
     msg += `📊 *Cantidad requerida:* ${quantity} ${quantity === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}\n`;
-    msg += `💰 *Precio oferta visto:* ${currencySymbol}${basePrice.toFixed(2)} (${discountPercent}% OFF)\n\n`;
+    msg += `💰 *Precio unitario aplicado:* ${currencySymbol}${unitPrice.toFixed(2)}/u${activeTier ? ` (Escala mayorista de ${activeTier.min_qty}+ uds)` : ''}\n`;
+    msg += `💵 *Subtotal estimado:* ${currencySymbol}${totalPrice.toFixed(2)}\n\n`;
     if (currentBranch) {
       msg += `📍 *Despacho:* ${currentBranch.name} (${currentBranch.city})\n`;
     }
@@ -401,7 +414,7 @@ export default function ProductDetailView({
               <div className="bg-gradient-to-r from-red-50 to-orange-50/70 border border-red-200/90 rounded-2xl p-3.5 sm:p-4 space-y-2">
                 <div className="flex flex-wrap items-baseline gap-2 sm:gap-2.5">
                   <span className="text-2xl sm:text-3xl font-black text-red-600 tracking-tight font-mono">
-                    {currencySymbol}{basePrice.toFixed(2)}
+                    {currencySymbol}{unitPrice.toFixed(2)}
                   </span>
                   <span className="text-xs sm:text-sm font-medium text-slate-400 line-through font-mono">
                     {currencySymbol}{originalPrice.toFixed(2)}
@@ -440,6 +453,62 @@ export default function ProductDetailView({
                 <div className="text-[10px] text-slate-500 text-right" suppressHydrationWarning>
                   {offerEndText}
                 </div>
+
+                {/* ESCALAS DE PRECIO MAYORISTA POR VOLUMEN */}
+                {product.price_tiers && product.price_tiers.length > 0 && (
+                  <div className="pt-2.5 border-t border-red-200/70 space-y-2">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
+                      <span className="flex items-center gap-1.5">
+                        <Layers className="w-3.5 h-3.5 text-red-600" />
+                        <span>Precios por Escala Mayorista:</span>
+                      </span>
+                      {activeTier && (
+                        <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full font-bold">
+                          Activo: {currencySymbol}{unitPrice.toFixed(2)}/u ({activeTier.min_qty}+ uds)
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {product.price_tiers.map((tier, idx) => {
+                        const isCurrentActive = activeTier?.min_qty === tier.min_qty;
+                        const tierSavings = initialBasePrice > tier.price && initialBasePrice > 0
+                          ? Math.round(((initialBasePrice - tier.price) / initialBasePrice) * 100)
+                          : 0;
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setQuantity(tier.min_qty)}
+                            className={`p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                              isCurrentActive
+                                ? 'bg-red-500/15 border-red-500 shadow-2xs ring-1 ring-red-500/50'
+                                : 'bg-white/80 border-slate-200 hover:border-slate-300'
+                            }`}
+                          >
+                            <span className="text-[10px] font-bold text-slate-500 block uppercase font-mono">
+                              {tier.min_qty}+ {tier.min_qty === 1 ? 'unidad' : 'unidades'}
+                            </span>
+                            <span className="text-sm font-black text-slate-900 font-mono block">
+                              {currencySymbol}{tier.price.toFixed(2)}
+                              <span className="text-[10px] font-normal text-slate-400">/u</span>
+                            </span>
+                            {tierSavings > 0 ? (
+                              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-mono mt-0.5 inline-block">
+                                -{tierSavings}% OFF
+                              </span>
+                            ) : (
+                              <span className="text-[9px] text-slate-400 font-mono mt-0.5 inline-block">
+                                Base
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Selector de Paquete / Presentación */}
