@@ -21,6 +21,7 @@ assert(content.includes('href="#inicio"'), 'El logo/marca debe contener enlace a
 assert(content.includes('href="#procesos"'), 'El header debe contener enlace a #procesos');
 assert(content.includes('href="#catalogo"'), 'El header debe contener enlace a #catalogo');
 assert(content.includes('href="#pilares"'), 'El header debe contener enlace a #pilares');
+assert(content.includes('href="#faqs"'), 'El header debe contener enlace a #faqs');
 assert(content.includes('href="#cotizar"'), 'El header debe contener enlace a #cotizar');
 console.log('✅ 1. Header Interactivo: Enlaces de navegación desktop presentes y consistentes.');
 
@@ -71,6 +72,7 @@ assert(content.includes('activeSection'), 'Debe existir estado activeSection par
 assert(content.includes('activeSection === \'inicio\''), 'El header debe reaccionar a la sección inicio');
 assert(content.includes('activeSection === \'procesos\''), 'El header debe reaccionar a la sección procesos');
 assert(content.includes('activeSection === \'catalogo\''), 'El header debe reaccionar a la sección catalogo');
+assert(content.includes('activeSection === \'faqs\''), 'El header debe reaccionar a la sección faqs');
 console.log('✅ 9. Scroll Spy: Detección reactiva de posición y resaltado de navegación verificado.');
 
 // 10. Filtrado interactivo en Catálogo
@@ -93,4 +95,34 @@ assert(content.includes('highlightForm'), 'Debe existir estado highlightForm par
 assert(content.includes('Modelo seleccionado:'), 'Debe renderizar badge confirmatorio al seleccionar producto');
 console.log('✅ 12. Feedback Visual: Animación de foco y confirmación de envase seleccionado verificada.');
 
-console.log('\n🎉 ¡TODAS LAS 12 PRUEBAS DE NAVEGABILIDAD EN APPS/LANDING-AYME-PET PASARON EXITOSAMENTE (100%)!');
+// 13. Navegación Secuencial en Modal (Anterior / Siguiente)
+assert(content.includes('handlePrevProduct'), 'Debe existir función handlePrevProduct');
+assert(content.includes('handleNextProduct'), 'Debe existir función handleNextProduct');
+assert(content.includes('Modelo anterior'), 'Debe existir botón accesible de modelo anterior');
+assert(content.includes('Modelo siguiente'), 'Debe existir botón accesible de modelo siguiente');
+assert(content.includes('ArrowLeft'), 'Debe escuchar tecla ArrowLeft');
+assert(content.includes('ArrowRight'), 'Debe escuchar tecla ArrowRight');
+console.log('✅ 13. Modal Secuencial: Navegación de catálogo con flechas y teclado verificada.');
+
+// 14. Buscador en Catálogo
+assert(content.includes('searchQuery'), 'Debe existir estado searchQuery');
+assert(content.includes('Buscar por nombre, SKU'), 'Debe renderizar placeholder de búsqueda');
+console.log('✅ 14. Búsqueda Reactiva: Input de filtrado instantáneo por SKU, nombre y cuello verificado.');
+
+// 15. Botón Flotante Omnicanal de WhatsApp
+assert(content.includes('WhatsApp Planta'), 'Debe existir widget flotante de WhatsApp');
+assert(content.includes('animate-ping'), 'Debe incluir badge verde pulsante en vivo');
+console.log('✅ 15. Widget Flotante: Acceso comercial directo a WhatsApp en planta verificado.');
+
+// 16. Enlace de Ruta GPS en Mapa
+assert(content.includes('Trazar ruta GPS'), 'Debe existir botón de trazar ruta');
+assert(content.includes('maps.google.com'), 'Debe enlazar a Google Maps con destino de planta');
+console.log('✅ 16. Logística & GPS: Botón directo para transportistas verificado.');
+
+// 17. Acordeón de FAQs B2B
+assert(content.includes('id="faqs"'), 'Debe existir sección con id="faqs"');
+assert(content.includes('AYME_FAQS'), 'Debe contener listado de preguntas frecuentes');
+assert(content.includes('openFaqIndex'), 'Debe manejar estado para acordeón desplegable');
+console.log('✅ 17. FAQs B2B: Acordeón interactivo de condiciones industriales verificado.');
+
+console.log('\n🎉 ¡TODAS LAS 17 PRUEBAS DE NAVEGABILIDAD EN APPS/LANDING-AYME-PET PASARON EXITOSAMENTE (100%)!');

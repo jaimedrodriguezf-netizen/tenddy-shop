@@ -5,6 +5,8 @@ import {
   Package,
   MessageCircle,
   ChevronRight,
+  ChevronLeft,
+  ChevronDown,
   CheckCircle2,
   Phone,
   Mail,
@@ -18,7 +20,10 @@ import {
   ChevronUp,
   Boxes,
   FileText,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Search,
+  ExternalLink,
+  HelpCircle
 } from 'lucide-react';
 import { buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 import { resolveLandingSections, LandingSectionsConfig } from '@/lib/types';
@@ -190,6 +195,26 @@ const AYME_PROCESSES = [
   },
 ];
 
+// Preguntas frecuentes industriales B2B
+const AYME_FAQS = [
+  {
+    q: '¿Cuál es el pedido mínimo (MOQ) para envases en stock y bajo pedido?',
+    a: 'Para referencias estándar en stock despachamos desde 1 fardo (80 a 200 unidades según el modelo). Para corridas de producción a gran escala con precios mayoristas de planta, el mínimo sugerido es de 1.000 a 5.000 unidades.',
+  },
+  {
+    q: '¿Realizan despachos paletizados a provincias fuera de Pichincha / Quito?',
+    a: 'Sí, despachamos a todo el territorio ecuatoriano a través de logística de carga paletizada protegida con film termoencogible, o mediante retiro directo en la bodega de nuestra planta en Calderón.',
+  },
+  {
+    q: '¿Los envases cuentan con certificaciones de inocuidad y grado alimenticio?',
+    a: '100% sí. Empleamos exclusivamente resina PET y PP 100% virgen con certificados internacionales de no migración química, aptos para contacto directo con alimentos, bebidas, fármacos y cosméticos.',
+  },
+  {
+    q: '¿Pueden fabricar un molde exclusivo con diseño y logo propio de mi marca?',
+    a: 'Por supuesto. Nuestro departamento de ingeniería realiza modelado 3D CAD/CAM paramétrico, prototipado y mecanizado CNC en aluminio aeronáutico para matrices de 1 a 4 cavidades.',
+  },
+];
+
 export default function AymeCorporateLandingPage({ initialSections }: AymeLandingProps) {
   const sections = resolveLandingSections(initialSections, 'AYME INDUSTRIAS PET', 'ayme-pet');
   const primaryColor = '#A61C2E';
@@ -212,25 +237,48 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
   // Scroll Spy: sección activa en navegación
   const [activeSection, setActiveSection] = useState('inicio');
 
-  // Filtrado de catálogo
+  // Filtrado y búsqueda de catálogo
   const [selectedCategoryTab, setSelectedCategoryTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Modal B2B de Ficha Técnica
   const [technicalModalProduct, setTechnicalModalProduct] = useState<(typeof AYME_PRODUCTS)[number] | null>(null);
 
+  // Acordeón de FAQs
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
+
   // Feedback visual al cotizar un producto
   const [highlightForm, setHighlightForm] = useState(false);
 
-  // Escuchar tecla Esc para cerrar modal
+  // Navegación secuencial en Modal de Ficha Técnica
+  const handlePrevProduct = () => {
+    if (!technicalModalProduct) return;
+    const currentIndex = AYME_PRODUCTS.findIndex((p) => p.id === technicalModalProduct.id);
+    const prevIndex = (currentIndex - 1 + AYME_PRODUCTS.length) % AYME_PRODUCTS.length;
+    setTechnicalModalProduct(AYME_PRODUCTS[prevIndex]);
+  };
+
+  const handleNextProduct = () => {
+    if (!technicalModalProduct) return;
+    const currentIndex = AYME_PRODUCTS.findIndex((p) => p.id === technicalModalProduct.id);
+    const nextIndex = (currentIndex + 1) % AYME_PRODUCTS.length;
+    setTechnicalModalProduct(AYME_PRODUCTS[nextIndex]);
+  };
+
+  // Escuchar teclas para modal (Esc para cerrar, flechas para hojear)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setTechnicalModalProduct(null);
+      } else if (e.key === 'ArrowLeft' && technicalModalProduct) {
+        handlePrevProduct();
+      } else if (e.key === 'ArrowRight' && technicalModalProduct) {
+        handleNextProduct();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [technicalModalProduct]);
 
   useEffect(() => {
     let prevY = window.scrollY;
@@ -253,7 +301,7 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
       }
 
       // Scroll Spy: detección de sección activa
-      const sectionIds = ['inicio', 'procesos', 'catalogo', 'pilares', 'cotizar'];
+      const sectionIds = ['inicio', 'procesos', 'catalogo', 'pilares', 'faqs', 'cotizar'];
       const scrollThreshold = currentY + 160;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -306,9 +354,18 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
-  const filteredProducts = selectedCategoryTab === 'all'
-    ? AYME_PRODUCTS
-    : AYME_PRODUCTS.filter((p) => p.type === selectedCategoryTab);
+  const filteredProducts = AYME_PRODUCTS.filter((prod) => {
+    const matchesCategory = selectedCategoryTab === 'all' || prod.type === selectedCategoryTab;
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch =
+      !q ||
+      prod.name.toLowerCase().includes(q) ||
+      prod.sku.toLowerCase().includes(q) ||
+      prod.neck.toLowerCase().includes(q) ||
+      prod.category.toLowerCase().includes(q) ||
+      prod.description.toLowerCase().includes(q);
+    return matchesCategory && matchesSearch;
+  });
 
   return (
     <div id="inicio" style={themeStyles} className="min-h-screen bg-[#0a1128] text-slate-100 font-sans selection:bg-[#A61C2E] selection:text-white">
@@ -412,6 +469,17 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     )}
                   </a>
                 )}
+                <a
+                  href="#faqs"
+                  className={`transition-colors py-1 relative ${
+                    activeSection === 'faqs' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Preguntas Frecuentes
+                  {activeSection === 'faqs' && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
+                  )}
+                </a>
                 {sections.rfq_and_map.enabled && (
                   <a
                     href="#cotizar"
@@ -497,6 +565,15 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     🏆 Garantías & Respaldo
                   </a>
                 )}
+                <a
+                  href="#faqs"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    activeSection === 'faqs' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
+                  }`}
+                >
+                  ❓ Preguntas Frecuentes
+                </a>
                 {sections.rfq_and_map.enabled && (
                   <a
                     href="#cotizar"
@@ -668,7 +745,7 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </div>
       </section>
 
-      {/* SECCIÓN DE CATÁLOGO DE ENVASES PET CON TABS DE CATEGORÍA (#catalogo con scroll-mt-24) */}
+      {/* SECCIÓN DE CATÁLOGO DE ENVASES PET CON TABS Y BUSCADOR (#catalogo con scroll-mt-24) */}
       <section id="catalogo" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-8 border-b border-white/10">
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider">
@@ -683,142 +760,185 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
           </p>
         </div>
 
-        {/* TABS DE FILTRADO POR CATEGORÍA */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-          <button
-            type="button"
-            onClick={() => setSelectedCategoryTab('all')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedCategoryTab === 'all'
-                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
-                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
-            }`}
-          >
-            <span>Todos los Modelos</span>
-            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">8</span>
-          </button>
+        {/* BARRA DE BÚSQUEDA Y TABS DE FILTRADO POR CATEGORÍA */}
+        <div className="space-y-4 max-w-4xl mx-auto">
+          {/* Input de Búsqueda Reactiva */}
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre, SKU (ej: B500), tipo de rosca (ej: 28mm) o aplicación..."
+              className="w-full bg-[#060c1d] border border-white/15 rounded-2xl pl-11 pr-10 py-3 text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#A61C2E] shadow-xl transition-colors"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1 rounded-full bg-white/10"
+                title="Limpiar búsqueda"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-          <button
-            type="button"
-            onClick={() => setSelectedCategoryTab('botellas')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedCategoryTab === 'botellas'
-                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
-                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
-            }`}
-          >
-            <span>Botellas PET</span>
-            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">4</span>
-          </button>
+          {/* Tabs de Selección Rápida */}
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryTab('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedCategoryTab === 'all'
+                  ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                  : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+              }`}
+            >
+              <span>Todos los Modelos</span>
+              <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">8</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSelectedCategoryTab('galones')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedCategoryTab === 'galones'
-                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
-                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
-            }`}
-          >
-            <span>Galones Industriales</span>
-            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">1</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryTab('botellas')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedCategoryTab === 'botellas'
+                  ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                  : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+              }`}
+            >
+              <span>Botellas PET</span>
+              <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">4</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSelectedCategoryTab('frascos')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedCategoryTab === 'frascos'
-                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
-                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
-            }`}
-          >
-            <span>Frascos Boca Ancha</span>
-            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">1</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryTab('galones')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedCategoryTab === 'galones'
+                  ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                  : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+              }`}
+            >
+              <span>Galones Industriales</span>
+              <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">1</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setSelectedCategoryTab('preformas-tapas')}
-            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-              selectedCategoryTab === 'preformas-tapas'
-                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
-                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
-            }`}
-          >
-            <span>Preformas & Tapas</span>
-            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">2</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryTab('frascos')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedCategoryTab === 'frascos'
+                  ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                  : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+              }`}
+            >
+              <span>Frascos Boca Ancha</span>
+              <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">1</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedCategoryTab('preformas-tapas')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                selectedCategoryTab === 'preformas-tapas'
+                  ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                  : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+              }`}
+            >
+              <span>Preformas & Tapas</span>
+              <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">2</span>
+            </button>
+          </div>
         </div>
 
         {/* GRILLA DE PRODUCTOS FILTRADOS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
-          {filteredProducts.map((prod) => (
-            <div
-              key={prod.id}
-              className="bg-[#060c1d] border border-white/10 rounded-2xl p-4 flex flex-col justify-between hover:border-[#A61C2E]/60 transition-all group"
+        {filteredProducts.length === 0 ? (
+          <div className="text-center py-12 bg-[#060c1d] border border-white/10 rounded-3xl p-8 space-y-3 max-w-lg mx-auto">
+            <Package className="w-8 h-8 text-slate-500 mx-auto" />
+            <h4 className="text-sm font-bold text-white">No encontramos modelos con ese criterio</h4>
+            <p className="text-xs text-slate-400">Prueba con otro término de búsqueda o limpia los filtros.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedCategoryTab('all');
+              }}
+              className="text-xs text-[#A61C2E] underline font-bold"
             >
-              <div>
-                <div className="relative aspect-square rounded-xl bg-slate-900/80 border border-white/5 flex items-center justify-center p-4 overflow-hidden mb-3">
-                  <img
-                    src={prod.image}
-                    alt={prod.name}
-                    loading="lazy"
-                    className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
-                  />
-                  <span className="absolute top-2 right-2 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-black/60 text-slate-300 border border-white/10">
-                    B2B • Mayorista
-                  </span>
+              Restablecer catálogo completo
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+            {filteredProducts.map((prod) => (
+              <div
+                key={prod.id}
+                className="bg-[#060c1d] border border-white/10 rounded-2xl p-4 flex flex-col justify-between hover:border-[#A61C2E]/60 transition-all group"
+              >
+                <div>
+                  <div className="relative aspect-square rounded-xl bg-slate-900/80 border border-white/5 flex items-center justify-center p-4 overflow-hidden mb-3">
+                    <img
+                      src={prod.image}
+                      alt={prod.name}
+                      loading="lazy"
+                      className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
+                    />
+                    <span className="absolute top-2 right-2 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-black/60 text-slate-300 border border-white/10">
+                      B2B • Mayorista
+                    </span>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[10px] font-mono">
+                      <span className="text-red-400 font-bold">{prod.category}</span>
+                      <span className="text-slate-500">{prod.sku}</span>
+                    </div>
+                    <h4 className="font-bold text-sm text-white group-hover:text-red-300 transition-colors">
+                      {prod.name}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed pt-1">
+                      {prod.description}
+                    </p>
+                  </div>
+
+                  <div className="mt-3 pt-3 border-t border-white/10 space-y-1 font-mono text-[10px] text-slate-400">
+                    <div className="flex justify-between">
+                      <span>Rosca:</span>
+                      <span className="text-slate-200 font-semibold">{prod.neck}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Gramaje:</span>
+                      <span className="text-slate-200 font-semibold">{prod.weight}</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono">
-                    <span className="text-red-400 font-bold">{prod.category}</span>
-                    <span className="text-slate-500">{prod.sku}</span>
-                  </div>
-                  <h4 className="font-bold text-sm text-white group-hover:text-red-300 transition-colors">
-                    {prod.name}
-                  </h4>
-                  <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed pt-1">
-                    {prod.description}
-                  </p>
-                </div>
+                {/* Botones de acción: Ficha Técnica y Cotizar */}
+                <div className="mt-4 pt-2 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setTechnicalModalProduct(prod)}
+                    className="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold py-2 px-3 rounded-xl border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <FileText className="w-3.5 h-3.5 text-[#A61C2E]" />
+                    <span>Ver Plano & Medidas</span>
+                  </button>
 
-                <div className="mt-3 pt-3 border-t border-white/10 space-y-1 font-mono text-[10px] text-slate-400">
-                  <div className="flex justify-between">
-                    <span>Rosca:</span>
-                    <span className="text-slate-200 font-semibold">{prod.neck}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Gramaje:</span>
-                    <span className="text-slate-200 font-semibold">{prod.weight}</span>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectProductAndQuote(prod.formValue)}
+                    className="w-full bg-[#A61C2E] hover:bg-[#8C1625] text-white text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md shadow-red-950/40 cursor-pointer"
+                  >
+                    <span>Cotizar este Envase</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
-
-              {/* Botones de acción: Ficha Técnica y Cotizar */}
-              <div className="mt-4 pt-2 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => setTechnicalModalProduct(prod)}
-                  className="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold py-2 px-3 rounded-xl border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-[#A61C2E]" />
-                  <span>Ver Plano & Medidas</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleSelectProductAndQuote(prod.formValue)}
-                  className="w-full bg-[#A61C2E] hover:bg-[#8C1625] text-white text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md shadow-red-950/40 cursor-pointer"
-                >
-                  <span>Cotizar este Envase</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* 4. TRES PILARES DE RESPALDO INDUSTRIAL (#pilares con scroll-mt-24) */}
@@ -846,6 +966,61 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
           </div>
         </section>
       )}
+
+      {/* SECCIÓN DE PREGUNTAS FRECUENTES B2B (#faqs con scroll-mt-24) */}
+      <section id="faqs" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-8 border-b border-white/10">
+        <div className="text-center space-y-3">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-xs font-mono font-bold uppercase tracking-wider">
+            <HelpCircle className="w-3.5 h-3.5" />
+            <span>Resolución de Dudas Comerciales</span>
+          </span>
+          <h3 className="text-2xl sm:text-4xl font-black text-white">
+            Preguntas Frecuentes de Fabricación
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto">
+            Condiciones de despacho, pedidos mínimos y estándares de inocuidad en nuestra planta de Calderón.
+          </p>
+        </div>
+
+        <div className="space-y-3">
+          {AYME_FAQS.map((faq, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <div
+                key={idx}
+                className="bg-[#060c1d] border border-white/10 rounded-2xl overflow-hidden transition-all duration-200"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                  className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition-colors"
+                >
+                  <span className="font-bold text-sm text-white">{faq.q}</span>
+                  <ChevronDown
+                    className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                      isOpen ? 'rotate-180 text-[#A61C2E]' : ''
+                    }`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="px-4 sm:px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-white/5 pt-3">
+                    <p>{faq.a}</p>
+                    <div className="mt-3">
+                      <a
+                        href="#cotizar"
+                        className="text-[#A61C2E] hover:underline font-bold text-xs inline-flex items-center gap-1"
+                      >
+                        <span>¿Tienes una consulta específica? Contáctanos en el formulario</span>
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
 
       {/* 5. FORMULARIO B2B Y MAPA DE PLANTA (#cotizar con scroll-mt-24 y feedback reactivo) */}
       {sections.rfq_and_map.enabled && (
@@ -964,14 +1139,29 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
           {/* Ubicación y Mapa */}
           {sections.rfq_and_map.show_map && (
             <div className="bg-[#060c1d] border border-white/15 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-4">
-              <div>
-                <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                  <MapPin className="w-5 h-5 text-[#A61C2E]" />
-                  <span>{sections.rfq_and_map.map_title || 'Ubicación de Planta & Retiro Directo'}</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-1">
-                  Sector Calderón - Llano Grande, Quito, Ecuador.
-                </p>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-[#A61C2E]" />
+                    <span>{sections.rfq_and_map.map_title || 'Ubicación de Planta & Retiro Directo'}</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Sector Calderón - Llano Grande, Quito, Ecuador.
+                  </p>
+                </div>
+
+                {/* Botón de Ruta GPS en Google Maps / Waze */}
+                <a
+                  href="https://maps.google.com/?q=Llano+Grande,+Sector+Calderon,+Quito,+Ecuador"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-bold border border-red-500/30 transition-all hover:scale-105"
+                  title="Abrir en GPS"
+                >
+                  <MapPin className="w-3.5 h-3.5" />
+                  <span>Trazar ruta GPS</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
               </div>
 
               <div className="h-72 w-full rounded-2xl overflow-hidden border border-white/10 bg-slate-900">
@@ -1016,24 +1206,29 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </section>
       )}
 
-      {/* MODAL B2B DE FICHA TÉCNICA Y ESPECIFICACIONES DE PLANTA */}
+      {/* MODAL B2B DE FICHA TÉCNICA Y ESPECIFICACIONES CON NAVEGACIÓN SECUENCIAL */}
       {technicalModalProduct && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
           onClick={() => setTechnicalModalProduct(null)}
         >
           <div
             className="bg-[#060c1d] border border-white/20 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative text-left"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header del Modal */}
+            {/* Header del Modal con Controles de Navegación Secuencial */}
             <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
               <div>
-                <span className="text-[10px] font-mono font-bold uppercase text-red-400 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
-                  Ficha Técnica • SKU: {technicalModalProduct.sku}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono font-bold uppercase text-red-400 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+                    Ficha Técnica • SKU: {technicalModalProduct.sku}
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    Modelo {AYME_PRODUCTS.findIndex((p) => p.id === technicalModalProduct.id) + 1} de {AYME_PRODUCTS.length}
+                  </span>
+                </div>
                 <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
                   {technicalModalProduct.name}
                 </h3>
@@ -1042,14 +1237,36 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setTechnicalModalProduct(null)}
-                className="p-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
-                aria-label="Cerrar modal"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {/* Controles: Anterior, Siguiente y Cerrar */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handlePrevProduct}
+                  className="p-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
+                  title="Modelo anterior (Flecha Izquierda)"
+                  aria-label="Modelo anterior"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextProduct}
+                  className="p-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
+                  title="Modelo siguiente (Flecha Derecha)"
+                  aria-label="Modelo siguiente"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTechnicalModalProduct(null)}
+                  className="p-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition-colors cursor-pointer ml-1"
+                  aria-label="Cerrar modal (Escape)"
+                  title="Cerrar (Escape)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Contenido: Imagen + Tabla de Medidas de Ingeniería */}
@@ -1124,18 +1341,39 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </div>
       )}
 
-      {/* BOTÓN FLOTANTE VOLVER ARRIBA */}
-      {isHeaderSolid && (
-        <button
-          type="button"
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-6 right-6 z-30 bg-[#A61C2E] hover:bg-[#8C1625] text-white p-3 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/20 cursor-pointer"
-          aria-label="Volver arriba"
-          title="Volver arriba"
+      {/* WIDGET FLOTANTE OMNICANAL: BOTÓN VOLVER ARRIBA Y BOTÓN WHATSAPP */}
+      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3 pointer-events-auto">
+        {/* Botón Volver Arriba */}
+        {isHeaderSolid && (
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="bg-slate-800/90 hover:bg-slate-700 text-white p-3 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/20 cursor-pointer"
+            aria-label="Volver arriba"
+            title="Volver arriba"
+          >
+            <ChevronUp className="w-5 h-5" />
+          </button>
+        )}
+
+        {/* Botón WhatsApp Flotante Permanente */}
+        <a
+          href={`https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(
+            '¡Hola AYME INDUSTRIAS PET! Deseo consultar disponibilidad de envases y precios mayoristas de planta.'
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-3 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center gap-2 border border-white/20 group"
+          title="Contactar a Ventas en Planta"
         >
-          <ChevronUp className="w-5 h-5" />
-        </button>
-      )}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300" />
+          </span>
+          <MessageCircle className="w-5 h-5" />
+          <span className="hidden sm:inline">WhatsApp Planta ({displayPhone})</span>
+        </a>
+      </div>
 
       {/* 6. FOOTER INTERACTIVO */}
       {sections.footer.enabled && (
@@ -1153,6 +1391,9 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
             </a>
             <a href="#catalogo" className="hover:text-white transition-colors">
               Catálogo de Envases
+            </a>
+            <a href="#faqs" className="hover:text-white transition-colors">
+              Preguntas Frecuentes
             </a>
             <a href="#cotizar" className="hover:text-white transition-colors">
               Solicitar Cotización
