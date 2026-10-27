@@ -8,7 +8,7 @@ const cspHeader = `
   img-src 'self' blob: data: https://*.supabase.co https://lh3.googleusercontent.com https://images.unsplash.com https:;
   media-src 'self' blob: data: https://*.supabase.co https://commondatastorage.googleapis.com https:;
   connect-src 'self' https://*.supabase.co wss://*.supabase.co https:;
-  frame-src 'self' https://wa.me;
+  frame-src 'self' https://wa.me https://www.google.com https://maps.google.com;
   frame-ancestors 'self';
   base-uri 'self';
   form-action 'self' https://wa.me;

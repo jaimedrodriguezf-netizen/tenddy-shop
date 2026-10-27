@@ -1781,7 +1781,6 @@ export default function TenantLandingView({
                   style={{ border: 0, display: 'block' }}
                   allowFullScreen={false}
                   loading="lazy"
-                  sandbox="allow-scripts allow-same-origin allow-popups"
                   referrerPolicy="no-referrer-when-downgrade"
                   title={`Ubicación Planta ${tenant.name}`}
                 />
