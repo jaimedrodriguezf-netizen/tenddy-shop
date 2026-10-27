@@ -16,7 +16,9 @@ import {
   Menu,
   X,
   ChevronUp,
-  Boxes
+  Boxes,
+  FileText,
+  SlidersHorizontal
 } from 'lucide-react';
 import { buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 import { resolveLandingSections, LandingSectionsConfig } from '@/lib/types';
@@ -25,84 +27,132 @@ interface AymeLandingProps {
   initialSections?: Partial<LandingSectionsConfig>;
 }
 
-// Catálogo oficial de envases y preformas de AYME INDUSTRIAS PET
+// Catálogo oficial de envases y preformas de AYME INDUSTRIAS PET con cotas técnicas de ingeniería
 const AYME_PRODUCTS = [
   {
     id: 'ayme-001',
+    sku: 'AYME-B500-24',
     name: 'Botella PET 500ml Cilíndrica',
     category: 'Línea Bebidas & Alimentos',
+    type: 'botellas',
     neck: 'Rosca 28mm PCO 1881',
     weight: '24g / 28g',
+    height: '210.5 mm ± 1.5mm',
+    diameter: '65.0 mm ± 1.0mm',
+    packaging: '150 uds / fardo termocontraíble',
+    palletQty: '3.600 uds / palet americano (1.0 x 1.2 m)',
     image: '/assets/products/ayme-001.svg',
     formValue: 'Botella PET 500ml',
     description: 'Envase de alta resistencia y transparencia cristal para jugos, aguas, lácteos y vinagres.',
   },
   {
     id: 'ayme-002',
+    sku: 'AYME-B1000-32',
     name: 'Botella PET 1 Litro Estándar',
     category: 'Línea Granel & Líquidos',
+    type: 'botellas',
     neck: 'Rosca 28mm PCO',
     weight: '32g / 36g',
+    height: '265.0 mm ± 2.0mm',
+    diameter: '82.0 mm ± 1.2mm',
+    packaging: '100 uds / fardo termocontraíble',
+    palletQty: '2.400 uds / palet americano',
     image: '/assets/products/ayme-002.svg',
     formValue: 'Botella PET 1 Litro',
     description: 'Diseño anatómico con estrías de compresión vertical para embotellado continuo en planta.',
   },
   {
     id: 'ayme-003',
+    sku: 'AYME-G3800-95',
     name: 'Galón PET 3.8L Industrial',
     category: 'Línea Químicos & Limpieza',
+    type: 'galones',
     neck: 'Rosca 38mm / Asa Reforzada',
     weight: '85g - 110g',
+    height: '315.0 mm ± 2.5mm',
+    diameter: '155.0 mm ± 2.0mm',
+    packaging: '24 uds / bulto paletizado',
+    palletQty: '480 uds / palet americano',
     image: '/assets/products/ayme-003.svg',
     formValue: 'Galón PET 3.8 Litros',
     description: 'Garrafa con asa ergonómica reforzada para cloro, detergentes, aceites y desinfectantes.',
   },
   {
     id: 'ayme-004',
+    sku: 'AYME-B250-18',
     name: 'Botella PET 250ml Cuadrada',
     category: 'Línea Cosmética & Farma',
+    type: 'botellas',
     neck: 'Rosca 28mm',
     weight: '18g / 22g',
+    height: '148.0 mm ± 1.0mm',
+    diameter: '50.0 x 50.0 mm (Base cuadrada)',
+    packaging: '200 uds / fardo',
+    palletQty: '4.800 uds / palet',
     image: '/assets/products/ayme-004.svg',
     formValue: 'Botella PET 250ml Cuadrada',
     description: 'Formato premium de caras planas ideal para etiquetado frontal completo y termoencogible.',
   },
   {
     id: 'ayme-005',
+    sku: 'AYME-F500-63',
     name: 'Frasco PET 500ml Boca Ancha',
     category: 'Línea Alimentos & Sólidos',
+    type: 'frascos',
     neck: 'Rosca 63mm / 70mm',
     weight: '30g / 35g',
+    height: '125.0 mm ± 1.2mm',
+    diameter: '85.0 mm ± 1.0mm',
+    packaging: '120 uds / fardo',
+    palletQty: '2.880 uds / palet',
     image: '/assets/products/ayme-005.svg',
     formValue: 'Frasco PET 500ml Boca Ancha',
     description: 'Frasco transparente ideal para confitería, salsas espesas, cápsulas y frutos secos.',
   },
   {
     id: 'ayme-006',
+    sku: 'AYME-B1500-42',
     name: 'Botella PET 1.5L Familiar',
     category: 'Línea Bebidas Carbonatadas',
+    type: 'botellas',
     neck: 'Rosca 28mm PCO',
     weight: '42g',
+    height: '305.0 mm ± 2.0mm',
+    diameter: '92.0 mm ± 1.5mm',
+    packaging: '80 uds / fardo',
+    palletQty: '1.920 uds / palet',
     image: '/assets/products/ayme-006.svg',
     formValue: 'Botella PET 1.5L Familiar',
     description: 'Base petaloide de alta tolerancia a presiones internas de gasificado y empaque paletizado.',
   },
   {
     id: 'ayme-007',
+    sku: 'AYME-PREF-28',
     name: 'Preformas PET 24g - 42g',
     category: 'Materia Prima Grado Alimento',
+    type: 'preformas-tapas',
     neck: 'Cuello PCO 1881 / 1810',
     weight: '24g a 42g',
+    height: 'Longitudes variables 90 - 130 mm',
+    diameter: 'Espesor de pared 3.5 - 4.2 mm',
+    packaging: 'Cajas octogonales (Octabin) 10.000 uds',
+    palletQty: '1 Octabin por palet (aprox. 450 kg)',
     image: '/assets/products/ayme-007.svg',
     formValue: 'Preformas & Tapas',
     description: 'Inyectadas en resina PET 100% virgen certificada para soplado industrial en planta propia.',
   },
   {
     id: 'ayme-008',
+    sku: 'AYME-TAP-28',
     name: 'Tapas de Seguridad y Liners PP',
     category: 'Accesorios & Cierres',
+    type: 'preformas-tapas',
     neck: '28mm / 38mm / 63mm',
     weight: 'Polipropileno Copolímero',
+    height: 'Perfil bajo PCO 1881 / Estándar',
+    diameter: 'Ajuste de torque calibrado',
+    packaging: 'Cajas corrugadas 5.000 uds con funda plástica interna',
+    palletQty: '24 cajas por palet (120.000 tapas)',
     image: '/assets/products/ayme-008.svg',
     formValue: 'Preformas & Tapas',
     description: 'Cierre hermético con anillo precinto de seguridad inviolable y liners de inducción térmica.',
@@ -159,19 +209,42 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [isHeaderSolid, setIsHeaderSolid] = useState(false);
 
+  // Scroll Spy: sección activa en navegación
+  const [activeSection, setActiveSection] = useState('inicio');
+
+  // Filtrado de catálogo
+  const [selectedCategoryTab, setSelectedCategoryTab] = useState('all');
+
+  // Modal B2B de Ficha Técnica
+  const [technicalModalProduct, setTechnicalModalProduct] = useState<(typeof AYME_PRODUCTS)[number] | null>(null);
+
+  // Feedback visual al cotizar un producto
+  const [highlightForm, setHighlightForm] = useState(false);
+
+  // Escuchar tecla Esc para cerrar modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setTechnicalModalProduct(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   useEffect(() => {
     let prevY = window.scrollY;
 
-    const handleSmartHeader = () => {
+    const handleScrollEvents = () => {
       const currentY = window.scrollY;
       const diff = currentY - prevY;
 
+      // Smart Header: visibilidad y opacidad
       if (currentY <= 60) {
         setIsHeaderVisible(true);
         setIsHeaderSolid(false);
       } else {
         setIsHeaderSolid(true);
-
         if (diff > 8 && currentY > 120) {
           setIsHeaderVisible(false);
         } else if (diff < -6) {
@@ -179,11 +252,25 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         }
       }
 
+      // Scroll Spy: detección de sección activa
+      const sectionIds = ['inicio', 'procesos', 'catalogo', 'pilares', 'cotizar'];
+      const scrollThreshold = currentY + 160;
+
+      for (let i = sectionIds.length - 1; i >= 0; i--) {
+        const id = sectionIds[i];
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= scrollThreshold) {
+          setActiveSection(id);
+          break;
+        }
+      }
+
       prevY = currentY;
     };
 
-    window.addEventListener('scroll', handleSmartHeader, { passive: true });
-    return () => window.removeEventListener('scroll', handleSmartHeader);
+    window.addEventListener('scroll', handleScrollEvents, { passive: true });
+    handleScrollEvents();
+    return () => window.removeEventListener('scroll', handleScrollEvents);
   }, []);
 
   const mainWhatsapp = '593998722324';
@@ -191,10 +278,17 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
 
   const handleSelectProductAndQuote = (productName: string) => {
     setContactProduct(productName);
+    setTechnicalModalProduct(null);
+    setHighlightForm(true);
+
     const target = document.getElementById('cotizar');
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' });
     }
+
+    setTimeout(() => {
+      setHighlightForm(false);
+    }, 2800);
   };
 
   const handleSendRFQ = (e: React.FormEvent) => {
@@ -212,9 +306,13 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
+  const filteredProducts = selectedCategoryTab === 'all'
+    ? AYME_PRODUCTS
+    : AYME_PRODUCTS.filter((p) => p.type === selectedCategoryTab);
+
   return (
     <div id="inicio" style={themeStyles} className="min-h-screen bg-[#0a1128] text-slate-100 font-sans selection:bg-[#A61C2E] selection:text-white">
-      {/* 1 & 2. CABECERA FLOTANTE CON SMART HIDE (OCULTA AL BAJAR, APARECE AL SUBIR) */}
+      {/* 1 & 2. CABECERA FLOTANTE CON SMART HIDE Y SCROLL SPY */}
       <div
         className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
           isHeaderSolid ? 'shadow-2xl' : ''
@@ -265,29 +363,66 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 </div>
               </a>
 
-              {/* Navegación Desktop */}
-              <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-300">
+              {/* Navegación Desktop con Scroll Spy Reactivo */}
+              <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold">
                 <button
                   type="button"
                   onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className="hover:text-white transition-colors cursor-pointer"
+                  className={`transition-colors cursor-pointer py-1 relative ${
+                    activeSection === 'inicio' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
+                  }`}
                 >
                   Inicio
+                  {activeSection === 'inicio' && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
+                  )}
                 </button>
-                <a href="#procesos" className="hover:text-white transition-colors">
+                <a
+                  href="#procesos"
+                  className={`transition-colors py-1 relative ${
+                    activeSection === 'procesos' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
                   Fases de Fabricación
+                  {activeSection === 'procesos' && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
+                  )}
                 </a>
-                <a href="#catalogo" className="hover:text-white transition-colors">
+                <a
+                  href="#catalogo"
+                  className={`transition-colors py-1 relative ${
+                    activeSection === 'catalogo' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
+                  }`}
+                >
                   Catálogo de Envases
+                  {activeSection === 'catalogo' && (
+                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
+                  )}
                 </a>
                 {sections.pillars.enabled && (
-                  <a href="#pilares" className="hover:text-white transition-colors">
+                  <a
+                    href="#pilares"
+                    className={`transition-colors py-1 relative ${
+                      activeSection === 'pilares' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
                     Garantías & Calidad
+                    {activeSection === 'pilares' && (
+                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
+                    )}
                   </a>
                 )}
                 {sections.rfq_and_map.enabled && (
-                  <a href="#cotizar" className="hover:text-white transition-colors">
+                  <a
+                    href="#cotizar"
+                    className={`transition-colors py-1 relative ${
+                      activeSection === 'cotizar' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
                     Cotizar & Planta
+                    {activeSection === 'cotizar' && (
+                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
+                    )}
                   </a>
                 )}
               </nav>
@@ -318,7 +453,7 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
               </div>
             </div>
 
-            {/* Menú Drawer Móvil */}
+            {/* Menú Drawer Móvil con Resaltado de Sección */}
             {isMobileMenuOpen && (
               <div className="lg:hidden bg-[#060c1d]/98 backdrop-blur-xl border-t border-white/10 px-4 py-4 space-y-2">
                 <button
@@ -327,21 +462,27 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     setIsMobileMenuOpen(false);
                   }}
-                  className="block w-full text-left py-2 px-3 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white"
+                  className={`block w-full text-left py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    activeSection === 'inicio' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
+                  }`}
                 >
                   🏭 Inicio
                 </button>
                 <a
                   href="#procesos"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block py-2 px-3 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white"
+                  className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    activeSection === 'procesos' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
+                  }`}
                 >
                   ⚙️ Fases de Fabricación
                 </a>
                 <a
                   href="#catalogo"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="block py-2 px-3 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white"
+                  className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    activeSection === 'catalogo' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
+                  }`}
                 >
                   📦 Catálogo de Envases
                 </a>
@@ -349,7 +490,9 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                   <a
                     href="#pilares"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block py-2 px-3 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white"
+                    className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                      activeSection === 'pilares' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
+                    }`}
                   >
                     🏆 Garantías & Respaldo
                   </a>
@@ -358,7 +501,9 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                   <a
                     href="#cotizar"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="block py-2 px-3 rounded-xl text-xs font-bold text-slate-200 hover:bg-white/10 hover:text-white"
+                    className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                      activeSection === 'cotizar' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
+                    }`}
                   >
                     📍 Cotizador & Retiro en Planta
                   </a>
@@ -455,8 +600,8 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </section>
       )}
 
-      {/* SECCIÓN DE FASES DE FABRICACIÓN / PROCESOS INDUSTRIALES (#procesos) */}
-      <section id="procesos" className="py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-10 border-b border-white/10">
+      {/* SECCIÓN DE FASES DE FABRICACIÓN / PROCESOS INDUSTRIALES (#procesos con scroll-mt-24) */}
+      <section id="procesos" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-10 border-b border-white/10">
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono font-bold uppercase tracking-wider">
             <Factory className="w-3.5 h-3.5" />
@@ -523,8 +668,8 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </div>
       </section>
 
-      {/* SECCIÓN DE CATÁLOGO DE ENVASES PET (#catalogo) */}
-      <section id="catalogo" className="py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-10 border-b border-white/10">
+      {/* SECCIÓN DE CATÁLOGO DE ENVASES PET CON TABS DE CATEGORÍA (#catalogo con scroll-mt-24) */}
+      <section id="catalogo" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-8 border-b border-white/10">
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold uppercase tracking-wider">
             <Boxes className="w-3.5 h-3.5" />
@@ -538,8 +683,77 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {AYME_PRODUCTS.map((prod) => (
+        {/* TABS DE FILTRADO POR CATEGORÍA */}
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+          <button
+            type="button"
+            onClick={() => setSelectedCategoryTab('all')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedCategoryTab === 'all'
+                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+            }`}
+          >
+            <span>Todos los Modelos</span>
+            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">8</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedCategoryTab('botellas')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedCategoryTab === 'botellas'
+                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+            }`}
+          >
+            <span>Botellas PET</span>
+            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">4</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedCategoryTab('galones')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedCategoryTab === 'galones'
+                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+            }`}
+          >
+            <span>Galones Industriales</span>
+            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">1</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedCategoryTab('frascos')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedCategoryTab === 'frascos'
+                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+            }`}
+          >
+            <span>Frascos Boca Ancha</span>
+            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">1</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedCategoryTab('preformas-tapas')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              selectedCategoryTab === 'preformas-tapas'
+                ? 'bg-[#A61C2E] text-white shadow-lg shadow-red-950/50 scale-105'
+                : 'bg-white/10 text-slate-300 hover:bg-white/15 hover:text-white'
+            }`}
+          >
+            <span>Preformas & Tapas</span>
+            <span className="bg-black/30 px-1.5 py-0.5 rounded-full text-[10px] font-mono">2</span>
+          </button>
+        </div>
+
+        {/* GRILLA DE PRODUCTOS FILTRADOS */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+          {filteredProducts.map((prod) => (
             <div
               key={prod.id}
               className="bg-[#060c1d] border border-white/10 rounded-2xl p-4 flex flex-col justify-between hover:border-[#A61C2E]/60 transition-all group"
@@ -558,9 +772,10 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 </div>
 
                 <div className="space-y-1">
-                  <span className="text-[10px] font-mono text-red-400 font-bold block">
-                    {prod.category}
-                  </span>
+                  <div className="flex items-center justify-between text-[10px] font-mono">
+                    <span className="text-red-400 font-bold">{prod.category}</span>
+                    <span className="text-slate-500">{prod.sku}</span>
+                  </div>
                   <h4 className="font-bold text-sm text-white group-hover:text-red-300 transition-colors">
                     {prod.name}
                   </h4>
@@ -581,7 +796,17 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 </div>
               </div>
 
-              <div className="mt-4 pt-2">
+              {/* Botones de acción: Ficha Técnica y Cotizar */}
+              <div className="mt-4 pt-2 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setTechnicalModalProduct(prod)}
+                  className="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold py-2 px-3 rounded-xl border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <FileText className="w-3.5 h-3.5 text-[#A61C2E]" />
+                  <span>Ver Plano & Medidas</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => handleSelectProductAndQuote(prod.formValue)}
@@ -596,9 +821,9 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </div>
       </section>
 
-      {/* 4. TRES PILARES DE RESPALDO INDUSTRIAL (#pilares) */}
+      {/* 4. TRES PILARES DE RESPALDO INDUSTRIAL (#pilares con scroll-mt-24) */}
       {sections.pillars.enabled && sections.pillars.items?.length > 0 && (
-        <section id="pilares" className="py-16 px-4 sm:px-6 bg-[#060c1d] border-b border-white/10">
+        <section id="pilares" className="scroll-mt-24 py-16 px-4 sm:px-6 bg-[#060c1d] border-b border-white/10">
           <div className="max-w-7xl mx-auto space-y-6">
             <div className="text-center max-w-2xl mx-auto space-y-2">
               <span className="text-xs font-mono font-bold text-yellow-400 uppercase tracking-wider">
@@ -622,12 +847,18 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </section>
       )}
 
-      {/* 5. FORMULARIO B2B Y MAPA DE PLANTA (#cotizar) */}
+      {/* 5. FORMULARIO B2B Y MAPA DE PLANTA (#cotizar con scroll-mt-24 y feedback reactivo) */}
       {sections.rfq_and_map.enabled && (
-        <section id="cotizar" className="py-16 px-4 sm:px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <section id="cotizar" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
           {/* Formulario */}
           {sections.rfq_and_map.show_form && (
-            <div className="bg-[#060c1d] border border-white/15 p-6 sm:p-8 rounded-3xl shadow-2xl space-y-5">
+            <div
+              className={`bg-[#060c1d] border p-6 sm:p-8 rounded-3xl shadow-2xl space-y-5 transition-all duration-500 ${
+                highlightForm
+                  ? 'border-[#A61C2E] ring-4 ring-[#A61C2E]/30 scale-[1.01]'
+                  : 'border-white/15'
+              }`}
+            >
               <div>
                 <h3 className="text-xl font-bold text-white flex items-center gap-2">
                   <MessageCircle className="w-5 h-5 text-emerald-400" />
@@ -636,6 +867,16 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 <p className="text-xs text-slate-400 mt-1">
                   {sections.rfq_and_map.subtitle || 'Atención directa de fábrica para pedidos por fardo, bulto o contenedor.'}
                 </p>
+
+                {/* Banner de feedback al seleccionar producto */}
+                {highlightForm && (
+                  <div className="mt-3 bg-red-500/20 border border-red-500/40 text-red-200 text-xs px-3.5 py-2 rounded-xl flex items-center gap-2 animate-pulse">
+                    <Sparkles className="w-4 h-4 text-yellow-400 shrink-0" />
+                    <span>
+                      Modelo seleccionado: <strong>{contactProduct}</strong>. Completa tus datos para enviarte la propuesta.
+                    </span>
+                  </div>
+                )}
               </div>
 
               <form onSubmit={handleSendRFQ} className="space-y-4 text-xs">
@@ -680,7 +921,9 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     <select
                       value={contactProduct}
                       onChange={(e) => setContactProduct(e.target.value)}
-                      className="w-full bg-[#0a1128] border border-white/15 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#A61C2E]"
+                      className={`w-full bg-[#0a1128] border rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-[#A61C2E] transition-colors ${
+                        highlightForm ? 'border-[#A61C2E] bg-[#A61C2E]/10' : 'border-white/15'
+                      }`}
                     >
                       <option value="Botella PET 500ml">Botella PET 500ml</option>
                       <option value="Botella PET 1 Litro">Botella PET 1 Litro</option>
@@ -771,6 +1014,114 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
             </div>
           )}
         </section>
+      )}
+
+      {/* MODAL B2B DE FICHA TÉCNICA Y ESPECIFICACIONES DE PLANTA */}
+      {technicalModalProduct && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn"
+          onClick={() => setTechnicalModalProduct(null)}
+        >
+          <div
+            className="bg-[#060c1d] border border-white/20 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl relative text-left"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header del Modal */}
+            <div className="flex items-start justify-between gap-4 border-b border-white/10 pb-4">
+              <div>
+                <span className="text-[10px] font-mono font-bold uppercase text-red-400 px-2 py-0.5 rounded-full bg-red-500/10 border border-red-500/20">
+                  Ficha Técnica • SKU: {technicalModalProduct.sku}
+                </span>
+                <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                  {technicalModalProduct.name}
+                </h3>
+                <p className="text-xs text-slate-400">
+                  {technicalModalProduct.category}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setTechnicalModalProduct(null)}
+                className="p-2 rounded-xl bg-white/10 text-slate-300 hover:text-white hover:bg-white/20 transition-colors cursor-pointer"
+                aria-label="Cerrar modal"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Contenido: Imagen + Tabla de Medidas de Ingeniería */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
+              <div className="relative aspect-square rounded-2xl bg-slate-900/90 border border-white/10 p-6 flex items-center justify-center">
+                <img
+                  src={technicalModalProduct.image}
+                  alt={technicalModalProduct.name}
+                  className="max-h-full max-w-full object-contain"
+                />
+              </div>
+
+              <div className="space-y-3 text-xs font-mono">
+                <h4 className="text-white font-sans font-bold text-sm border-b border-white/10 pb-1 flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-4 h-4 text-[#A61C2E]" />
+                  <span>Especificaciones de Planta</span>
+                </h4>
+
+                <div className="space-y-2 text-slate-300">
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-slate-500">Rosca / Cuello:</span>
+                    <span className="text-white font-bold">{technicalModalProduct.neck}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-slate-500">Gramaje de Resina:</span>
+                    <span className="text-white font-bold">{technicalModalProduct.weight}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-slate-500">Altura Total:</span>
+                    <span className="text-white font-bold">{technicalModalProduct.height}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-slate-500">Diámetro de Cuerpo:</span>
+                    <span className="text-white font-bold">{technicalModalProduct.diameter}</span>
+                  </div>
+                  <div className="flex justify-between border-b border-white/5 pb-1">
+                    <span className="text-slate-500">Embalaje por Fardo:</span>
+                    <span className="text-emerald-400 font-bold">{technicalModalProduct.packaging}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Paletizado Oficial:</span>
+                    <span className="text-yellow-300 font-bold">{technicalModalProduct.palletQty}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Acciones del Modal */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 pt-2 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => handleSelectProductAndQuote(technicalModalProduct.formValue)}
+                className="w-full sm:flex-1 bg-[#A61C2E] hover:bg-[#8C1625] text-white font-bold text-xs py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <span>Solicitar Cotización de este Modelo</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <a
+                href={`https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(
+                  `¡Hola AYME INDUSTRIAS PET! Requiero cotización formal y ficha técnica del modelo: ${technicalModalProduct.name} (SKU: ${technicalModalProduct.sku}).`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-1.5 transition-all shadow-md"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp Rápido</span>
+              </a>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* BOTÓN FLOTANTE VOLVER ARRIBA */}

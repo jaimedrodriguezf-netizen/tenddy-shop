@@ -6,11 +6,15 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-console.log('🧪 Iniciando verificación de navegabilidad en apps/landing-ayme-pet...');
+console.log('🧪 Iniciando verificación de navegabilidad integral en apps/landing-ayme-pet...');
 
 const standalonePath = path.join(__dirname, '../apps/landing-ayme-pet/src/app/page.tsx');
 assert(fs.existsSync(standalonePath), 'Debe existir apps/landing-ayme-pet/src/app/page.tsx');
 const content = fs.readFileSync(standalonePath, 'utf8');
+
+const globalsCssPath = path.join(__dirname, '../apps/landing-ayme-pet/src/app/globals.css');
+assert(fs.existsSync(globalsCssPath), 'Debe existir apps/landing-ayme-pet/src/app/globals.css');
+const globalsCss = fs.readFileSync(globalsCssPath, 'utf8');
 
 // 1. Header interactivo y enlaces ancla
 assert(content.includes('href="#inicio"'), 'El logo/marca debe contener enlace a #inicio');
@@ -56,4 +60,37 @@ assert(content.includes('Volver arriba'), 'Debe existir botón flotante o de ret
 assert(content.includes('<footer'), 'Debe existir footer');
 console.log('✅ 7. Footer & Retorno: Navegación de retorno al inicio y footer interactivo verificados.');
 
-console.log('\n🎉 ¡TODAS LAS PRUEBAS DE NAVEGABILIDAD EN APPS/LANDING-AYME-PET PASARON EXITOSAMENTE (100%)!');
+// 8. Scroll-Padding y Márgenes de anclaje (scroll-mt-24)
+assert(globalsCss.includes('scroll-padding-top'), 'globals.css debe definir scroll-padding-top');
+assert(globalsCss.includes('scroll-behavior: smooth'), 'globals.css debe definir scroll-behavior smooth');
+assert(content.includes('scroll-mt-24'), 'Las secciones principales deben incluir scroll-mt-24 para no ser tapadas por el header');
+console.log('✅ 8. Scroll-Padding & Márgenes: Espaciado contra header fijo verificado.');
+
+// 9. Scroll Spy activo en Header
+assert(content.includes('activeSection'), 'Debe existir estado activeSection para el Scroll Spy');
+assert(content.includes('activeSection === \'inicio\''), 'El header debe reaccionar a la sección inicio');
+assert(content.includes('activeSection === \'procesos\''), 'El header debe reaccionar a la sección procesos');
+assert(content.includes('activeSection === \'catalogo\''), 'El header debe reaccionar a la sección catalogo');
+console.log('✅ 9. Scroll Spy: Detección reactiva de posición y resaltado de navegación verificado.');
+
+// 10. Filtrado interactivo en Catálogo
+assert(content.includes('selectedCategoryTab'), 'Debe existir estado de filtrado de categorías en catálogo');
+assert(content.includes('Todos los Modelos'), 'Tab de todos los modelos presente');
+assert(content.includes('Botellas PET'), 'Tab de botellas presente');
+assert(content.includes('Galones Industriales'), 'Tab de galones presente');
+assert(content.includes('Preformas & Tapas'), 'Tab de preformas y tapas presente');
+console.log('✅ 10. Filtros de Catálogo: Tabs de selección rápida por línea de envases verificadas.');
+
+// 11. Modal de Ficha Técnica B2B
+assert(content.includes('technicalModalProduct'), 'Debe existir estado technicalModalProduct para el modal técnico');
+assert(content.includes('Ver Plano & Medidas'), 'Debe existir botón para abrir ficha técnica');
+assert(content.includes('Especificaciones de Planta'), 'Debe renderizar tabla de ingeniería');
+assert(content.includes('palletQty'), 'Debe mostrar información de paletizado y logística');
+console.log('✅ 11. Modal B2B: Ficha técnica con plano, medidas de ingeniería y embalaje verificada.');
+
+// 12. Feedback visual en Formulario (#cotizar)
+assert(content.includes('highlightForm'), 'Debe existir estado highlightForm para feedback visual');
+assert(content.includes('Modelo seleccionado:'), 'Debe renderizar badge confirmatorio al seleccionar producto');
+console.log('✅ 12. Feedback Visual: Animación de foco y confirmación de envase seleccionado verificada.');
+
+console.log('\n🎉 ¡TODAS LAS 12 PRUEBAS DE NAVEGABILIDAD EN APPS/LANDING-AYME-PET PASARON EXITOSAMENTE (100%)!');

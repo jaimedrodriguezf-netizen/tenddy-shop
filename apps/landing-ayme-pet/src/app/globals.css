@@ -12,3 +12,8 @@
 :root {
   --font-serif: 'Cormorant Garamond', Georgia, serif;
 }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
