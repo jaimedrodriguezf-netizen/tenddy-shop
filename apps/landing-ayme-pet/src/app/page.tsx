@@ -270,6 +270,15 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
   const [highlightForm, setHighlightForm] = useState(false);
 
   // Navegación secuencial en Modal de Ficha Técnica
+  const openProductModal = (prod: (typeof AYME_PRODUCTS)[number]) => {
+    setTechnicalModalProduct(prod);
+    try {
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ modal: 'product', id: prod.id }, '', '#catalogo');
+      }
+    } catch {}
+  };
+
   const handlePrevProduct = () => {
     if (!technicalModalProduct) return;
     const currentIndex = AYME_PRODUCTS.findIndex((p) => p.id === technicalModalProduct.id);
@@ -295,8 +304,17 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         handleNextProduct();
       }
     };
+    const handlePopState = () => {
+      if (technicalModalProduct) {
+        setTechnicalModalProduct(null);
+      }
+    };
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('popstate', handlePopState);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('popstate', handlePopState);
+    };
   }, [technicalModalProduct]);
 
   useEffect(() => {
@@ -824,7 +842,7 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 <div className="mt-4 pt-2 space-y-2">
                   <button
                     type="button"
-                    onClick={() => setTechnicalModalProduct(prod)}
+                    onClick={() => openProductModal(prod)}
                     className="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold py-2 px-3 rounded-xl border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <FileText className="w-3.5 h-3.5 text-[#A61C2E]" />

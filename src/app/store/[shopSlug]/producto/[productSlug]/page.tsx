@@ -28,12 +28,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
+  const isLandingTemplate = (tenant.theme_config as any)?.store_template === 'landing';
+  const backHref = isLandingTemplate ? `/store/${tenant.slug}#catalog-section` : `/store/${tenant.slug}`;
+
   return (
     <>
       <ViewTracker tenantId={tenant.id} />
       <ProductDetailView
         product={product}
-        backHref={`/store/${tenant.slug}`}
+        backHref={backHref}
         tenant={tenant}
         selectedBranch={branches[0] || null}
         branches={branches}

@@ -238,8 +238,14 @@ export default function ProductDetailView({
             {backHref ? (
               <Link
                 href={backHref}
+                onClick={(e) => {
+                  if (typeof window !== 'undefined' && window.history.length > 1 && document.referrer.includes(tenant.slug)) {
+                    e.preventDefault();
+                    window.history.back();
+                  }
+                }}
                 className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs p-1.5 sm:px-3 sm:py-1.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0"
-                title="Volver a la tienda"
+                title="Volver al catálogo"
               >
                 <ArrowLeft className="w-4 h-4 text-slate-600" />
                 <span className="hidden sm:inline">Volver</span>
@@ -265,12 +271,12 @@ export default function ProductDetailView({
 
             {/* Desktop: Breadcrumb Jerárquico Completo */}
             <nav className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 min-w-0 flex-1 overflow-hidden py-1">
-              <Link href={`/store/${tenant.slug}`} className="hover:text-slate-900 font-semibold shrink-0">
+              <Link href={backHref || `/store/${tenant.slug}`} className="hover:text-slate-900 font-semibold shrink-0">
                 Inicio
               </Link>
               <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
               <span className="hover:text-slate-900 font-medium shrink-0">
-                {categoryObj?.name || 'Catálogo'}
+                {categoryObj?.name || (tenant.industry_type === 'plastics' ? 'Catálogo' : 'Hogar y cocina')}
               </span>
               <ChevronRight className="w-3 h-3 text-slate-400 shrink-0" />
               <span className="hover:text-slate-900 font-medium shrink-0">
