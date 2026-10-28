@@ -28,13 +28,18 @@ console.log('✅ Test 2 aprobado: Tipos TypeScript presentes y con compatibilida
 console.log('🧪 Test 3: Verificando src/lib/plans.ts...');
 const plansHelperContent = fs.readFileSync(path.join(__dirname, '../src/lib/plans.ts'), 'utf8');
 assert(plansHelperContent.includes('export const DEFAULT_PLANS: Plan[]'), 'Debe exportar DEFAULT_PLANS');
+assert(plansHelperContent.includes("'free'"), 'Debe incluir el plan free');
 assert(plansHelperContent.includes("'essential'"), 'Debe incluir el plan essential');
+assert(plansHelperContent.includes('max_products: 10'), 'Plan free debe tener 10 productos');
+assert(plansHelperContent.includes('max_images_per_product: 2'), 'Plan free debe tener 2 fotos por producto');
+assert(plansHelperContent.includes('max_products: 500'), 'Plan essential debe tener 500 productos');
+assert(plansHelperContent.includes('max_images_per_product: 1'), 'Plan essential debe tener 1 foto por producto');
 assert(plansHelperContent.includes('price_yearly: 100'), 'Plan essential debe costar 100 USD anuales');
 assert(plansHelperContent.includes('export function getPlanBySlug'), 'Debe exportar getPlanBySlug');
 assert(plansHelperContent.includes('export function checkPlanLimit'), 'Debe exportar checkPlanLimit');
 assert(plansHelperContent.includes('export function calculateAnnualSavings'), 'Debe exportar calculateAnnualSavings');
 assert(plansHelperContent.includes('export function validatePlanPayload'), 'Debe exportar validatePlanPayload');
-console.log('✅ Test 3 aprobado: Helper central de planes implementado con plan esencial de $100/año.');
+console.log('✅ Test 3 aprobado: Helper central con plan gratuito (10 prod / 2 fotos) y esencial ($100/año, 500 prod / 1 foto).');
 
 // 4. Validar existencia de endpoints de API
 console.log('🧪 Test 4: Verificando endpoints API...');

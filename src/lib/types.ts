@@ -449,6 +449,7 @@ export function resolveLandingSections(raw?: any, tenantName?: string, slug?: st
 
 export interface PlanLimits {
   max_products: number; // -1 = ilimitado
+  max_images_per_product?: number; // -1 = ilimitado (ej: 2 en Gratis, 1 en Esencial, etc.)
   max_branches: number; // -1 = ilimitado
   max_team_members: number; // -1 = ilimitado
   custom_domain_allowed: boolean;

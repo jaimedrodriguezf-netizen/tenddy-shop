@@ -105,19 +105,53 @@ INSERT INTO public.plans (
     limits
 ) VALUES 
 (
-    'essential',
-    'Catálogo Esencial',
-    'Para pequeños talleres y artesanos que buscan digitalizar sus productos y vender por WhatsApp con tarifa ultra accesible.',
-    10.00,
-    100.00,
+    'free',
+    'Plan Gratuito',
+    'Para probar la plataforma y comenzar a recibir pedidos por WhatsApp sin costo.',
+    0.00,
+    0.00,
     'USD',
-    'Económico',
+    'Gratis',
     1,
     TRUE,
     TRUE,
     '[
         "Catálogo digital móvil y web optimizado",
-        "Hasta 25 productos con fotos y descripción",
+        "Hasta 10 productos con 2 fotos cada uno",
+        "Botón directo de cotización a WhatsApp",
+        "1 Sucursal o taller matriz",
+        "1 Usuario administrador",
+        "Subdominio tenddy.shop incluido",
+        "100% Gratis sin tarjeta de crédito"
+    ]'::jsonb,
+    '{
+        "max_products": 10,
+        "max_images_per_product": 2,
+        "max_branches": 1,
+        "max_team_members": 1,
+        "custom_domain_allowed": false,
+        "custom_landing_allowed": false,
+        "bulk_import_allowed": false,
+        "support_priority": "standard",
+        "max_storage_mb": 50,
+        "analytics_enabled": false,
+        "remove_branding": false
+    }'::jsonb
+),
+(
+    'essential',
+    'Catálogo Esencial',
+    'Para pequeños talleres y distribuidores que buscan digitalizar su catálogo con 500 productos y pago anual ultra accesible.',
+    10.00,
+    100.00,
+    'USD',
+    'Económico',
+    2,
+    TRUE,
+    TRUE,
+    '[
+        "Catálogo digital móvil y web optimizado",
+        "Hasta 500 productos con 1 foto principal",
         "Botón directo de cotización a WhatsApp",
         "1 Sucursal o taller matriz",
         "1 Usuario administrador",
@@ -126,14 +160,15 @@ INSERT INTO public.plans (
         "Tarifa anual preferencial de $100 USD/año"
     ]'::jsonb,
     '{
-        "max_products": 25,
+        "max_products": 500,
+        "max_images_per_product": 1,
         "max_branches": 1,
         "max_team_members": 1,
         "custom_domain_allowed": false,
         "custom_landing_allowed": false,
         "bulk_import_allowed": false,
         "support_priority": "standard",
-        "max_storage_mb": 150,
+        "max_storage_mb": 500,
         "analytics_enabled": false,
         "remove_branding": false
     }'::jsonb
@@ -141,17 +176,17 @@ INSERT INTO public.plans (
 (
     'starter',
     'Catálogo Starter',
-    'Ideal para fábricas y distribuidores en crecimiento con catálogo mediano.',
+    'Ideal para fábricas y distribuidores en crecimiento con catálogo mediano y fotos detalladas.',
     29.00,
     290.00,
     'USD',
     'Crecimiento',
-    2,
+    3,
     TRUE,
     TRUE,
     '[
         "Catálogo digital responsivo móvil y desktop",
-        "Hasta 100 productos con variantes y fotos",
+        "Hasta 350 productos con 3 fotos cada uno",
         "Cotizaciones directas a WhatsApp por sucursal",
         "1 Sucursal o Planta matriz",
         "Hasta 2 miembros de equipo comercial",
@@ -159,14 +194,15 @@ INSERT INTO public.plans (
         "Soporte estándar vía Mesa de Ayuda"
     ]'::jsonb,
     '{
-        "max_products": 100,
+        "max_products": 350,
+        "max_images_per_product": 3,
         "max_branches": 1,
         "max_team_members": 2,
         "custom_domain_allowed": false,
         "custom_landing_allowed": false,
         "bulk_import_allowed": false,
         "support_priority": "standard",
-        "max_storage_mb": 350,
+        "max_storage_mb": 800,
         "analytics_enabled": false,
         "remove_branding": false
     }'::jsonb
@@ -179,12 +215,12 @@ INSERT INTO public.plans (
     690.00,
     'USD',
     'Más Popular',
-    3,
+    4,
     TRUE,
     TRUE,
     '[
         "Todo lo incluido en Starter",
-        "Hasta 500 productos con stock por planta",
+        "Hasta 1000 productos con hasta 6 fotos + video",
         "Importación y exportación masiva en Excel oficial",
         "Landing corporativa modular personalizable",
         "Hasta 3 sucursales o centros de distribución",
@@ -193,14 +229,15 @@ INSERT INTO public.plans (
         "Soporte prioritario con SLA de 24h"
     ]'::jsonb,
     '{
-        "max_products": 500,
+        "max_products": 1000,
+        "max_images_per_product": 6,
         "max_branches": 3,
         "max_team_members": 5,
         "custom_domain_allowed": false,
         "custom_landing_allowed": true,
         "bulk_import_allowed": true,
         "support_priority": "priority",
-        "max_storage_mb": 1024,
+        "max_storage_mb": 3000,
         "analytics_enabled": true,
         "remove_branding": false
     }'::jsonb
@@ -213,7 +250,7 @@ INSERT INTO public.plans (
     1790.00,
     'USD',
     'Industrial',
-    4,
+    5,
     TRUE,
     TRUE,
     '[
@@ -228,13 +265,14 @@ INSERT INTO public.plans (
     ]'::jsonb,
     '{
         "max_products": -1,
+        "max_images_per_product": -1,
         "max_branches": -1,
         "max_team_members": -1,
         "custom_domain_allowed": true,
         "custom_landing_allowed": true,
         "bulk_import_allowed": true,
         "support_priority": "dedicated_24_7",
-        "max_storage_mb": 5120,
+        "max_storage_mb": 10000,
         "analytics_enabled": true,
         "remove_branding": true
     }'::jsonb
