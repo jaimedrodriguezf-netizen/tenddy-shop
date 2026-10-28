@@ -1152,7 +1152,11 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
 
                 {/* Botón de Ruta GPS en Google Maps / Waze */}
                 <a
-                  href="https://maps.google.com/?q=Llano+Grande,+Sector+Calderon,+Quito,+Ecuador"
+                  href={
+                    sections.rfq_and_map.map_embed_url && sections.rfq_and_map.map_embed_url.includes('maps.app.goo.gl')
+                      ? sections.rfq_and_map.map_embed_url
+                      : "https://maps.google.com/?q=-0.115479,-78.441504"
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-[11px] font-bold border border-red-500/30 transition-all hover:scale-105"
@@ -1167,7 +1171,11 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
               <div className="h-72 w-full rounded-2xl overflow-hidden border border-white/10 bg-slate-900">
                 <iframe
                   title="Ubicación AYME INDUSTRIAS PET"
-                  src={sections.rfq_and_map.map_embed_url || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.816652458428!2d-78.4485!3d-0.0886!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMMKwMDUnMTkuMCJTIDc4wrAyNic1NC42Ilc!5e0!3m2!1ses!2sec!4v1620000000000!5m2!1ses!2sec"}
+                  src={
+                    sections.rfq_and_map.map_embed_url && !sections.rfq_and_map.map_embed_url.includes('maps.app.goo.gl') && !sections.rfq_and_map.map_embed_url.includes('goo.gl') && sections.rfq_and_map.map_embed_url.includes('embed')
+                      ? sections.rfq_and_map.map_embed_url
+                      : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.441504!3d-0.115479!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"
+                  }
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}

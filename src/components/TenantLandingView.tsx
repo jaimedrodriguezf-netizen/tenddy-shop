@@ -1774,29 +1774,41 @@ export default function TenantLandingView({
             <div className="contact-info-card" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               {/* Mapa Interactivo de Google Maps - Llano Grande, Quito */}
               <div className="google-maps-container" style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)', boxShadow: 'var(--shadow-md)' }}>
-                <iframe
-                  src={(landing as any)?.maps_embed_url || "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.45524675!3d-0.11467465!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"}
-                  width="100%"
-                  height="240"
-                  style={{ border: 0, display: 'block' }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  title={`Ubicación Planta ${tenant.name}`}
-                />
-                <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
-                  <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>
-                    📍 {tenantDefaults.plantLocation}
-                  </span>
-                  <a
-                    href={(landing as any)?.maps_url || `https://maps.google.com/?q=${encodeURIComponent(tenantDefaults.plantLocation)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}
-                  >
-                    Ver en Google Maps ↗
-                  </a>
-                </div>
+                {(() => {
+                  const defaultEmbed = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.441504!3d-0.115479!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec";
+                  const rawUrl = (landing as any)?.maps_embed_url || sections.rfq_and_map?.map_embed_url;
+                  const isShortlink = Boolean(rawUrl && (rawUrl.includes('maps.app.goo.gl') || rawUrl.includes('goo.gl') || !rawUrl.includes('embed')));
+                  const embedSrc = isShortlink ? defaultEmbed : (rawUrl || defaultEmbed);
+                  const directLink = (landing as any)?.maps_url || (isShortlink ? rawUrl : `https://maps.google.com/?q=${encodeURIComponent(tenantDefaults.plantLocation)}`);
+
+                  return (
+                    <>
+                      <iframe
+                        src={embedSrc}
+                        width="100%"
+                        height="240"
+                        style={{ border: 0, display: 'block' }}
+                        allowFullScreen={false}
+                        loading="lazy"
+                        referrerPolicy="no-referrer-when-downgrade"
+                        title={`Ubicación Planta ${tenant.name}`}
+                      />
+                      <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
+                        <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>
+                          📍 {tenantDefaults.plantLocation}
+                        </span>
+                        <a
+                          href={directLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}
+                        >
+                          Ver en Google Maps ↗
+                        </a>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               <div>
