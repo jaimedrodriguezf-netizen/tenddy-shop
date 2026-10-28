@@ -32,10 +32,10 @@ assert.ok(landingContent.includes('object-contain'), 'Las imágenes de producto 
 assert.ok(landingContent.includes('grid-cols-2'), 'La tabla de especificaciones rápidas debe usar grid responsivo');
 console.log('✅ 4. Catálogo: Tarjetas de producto compactas con aspect-square y especificaciones de 2 columnas verificadas.');
 
-// 5. Verificación de secciones y respaldo industrial
+// 5. Verificación de secciones
 assert.ok(landingContent.includes('py-8 sm:py-16'), 'Las secciones principales deben usar espaciados responsivos py-8 sm:py-16');
-assert.ok(landingContent.includes('sm:grid-cols-3'), 'El bloque de respaldo industrial debe apilarse limpiamente en móvil');
-console.log('✅ 5. Secciones: Espaciados responsivos py-8 sm:py-16 y respaldo industrial adaptado verificados.');
+assert.ok(!landingContent.includes('id="services-section"'), 'La sección de servicios y respaldo industrial fue retirada a petición del cliente');
+console.log('✅ 5. Secciones: Espaciados responsivos py-8 sm:py-16 y retiro de servicios industriales verificados.');
 
 // 6. Verificación de separación Header - Hero y menú de perfil de administración
 assert.ok(cssContent.includes('padding: 7rem 0.85rem'), 'sequence-ui-layer debe tener 7rem de padding superior en móvil para no colisionar con el header');

@@ -667,18 +667,6 @@ export default function TenantLandingView({
                   )}
                 </li>
 
-                {landing.show_services !== false && (
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="nav-link cursor-pointer bg-transparent border-0"
-                    >
-                      Servicios Industriales
-                    </button>
-                  </li>
-                )}
-
                 <li>
                   <button
                     type="button"
@@ -905,21 +893,6 @@ export default function TenantLandingView({
                     ))}
                   </div>
                 )}
-                {landing.show_services !== false && (
-                  <li>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' });
-                      }}
-                      className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
-                    >
-                      <span>🏭 Servicios Industriales</span>
-                      <ChevronRight className="w-4 h-4 text-slate-500" />
-                    </button>
-                  </li>
-                )}
                 <li>
                   <button
                     type="button"
@@ -1091,11 +1064,11 @@ export default function TenantLandingView({
                 </div>
                 <button
                   type="button"
-                  onClick={() => document.getElementById('services-section')?.scrollIntoView({ behavior: 'smooth' })}
+                  onClick={() => document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' })}
                   className="btn btn-accent btn-block cursor-pointer"
                   style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
                 >
-                  Conocer Proceso de Inyección
+                  Ver Catálogo de Envases
                 </button>
               </article>
 
@@ -1469,191 +1442,6 @@ export default function TenantLandingView({
           )}
         </div>
       </section>
-
-      {/* =========================================================================
-           SECCIÓN DE SERVICIOS INDUSTRIALES
-           ========================================================================= */}
-      {landing.show_services !== false && (
-        <section id="services-section" className="py-8 sm:py-16" style={{ background: '#FFFFFF', borderTop: '1px solid var(--border)' }}>
-          <div className="container">
-            <div className="section-header">
-              <span className="section-tag">Capacidad de Planta</span>
-              <h2 className="section-title">Servicios Industriales en Plásticos PET & PP</h2>
-              <p className="section-subtitle">
-                Desde el diseño del molde y la inyección de preformas hasta el soplado, etiquetado y logística nacional para su empresa.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {/* Servicio 1 */}
-              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                <div>
-                  <div className="h-48 relative overflow-hidden bg-slate-900">
-                    <img
-                      src="/assets/services/service-01.webp"
-                      alt="Soplado e Inyección de Envases"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      onError={(e: any) => {
-                        e.target.onerror = null;
-                        e.target.src = '//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-2149182258-612x612.webp/:/cr=t:0%25,l:5.67%25,w:88.67%25,h:100%25/rs=w:612,h:460,cg:true';
-                      }}
-                    />
-                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
-                      01 • SOPLADO & INYECCIÓN
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-bold text-lg mb-2 text-slate-900">
-                      Diseño, desarrollo y fabricación de envases PET, tapas y accesorios en PP
-                    </h3>
-                    <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                      Producción rotativa en alta cadencia para alimentos, bebidas, farma y químicos con cuello PCO 28mm y 38mm libre de deformaciones.
-                    </p>
-                  </div>
-                </div>
-                <div className="p-6 pt-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setServiceOptionType('Botella PET Estándar');
-                      setServiceCapacity('500 ml / 28mm PCO');
-                      setServiceVolume('10.000 a 25.000 uds/mes');
-                      setActiveServiceModal({
-                        id: 'soplado',
-                        title: 'Diseño, desarrollo y fabricación de envases PET, tapas y accesorios en PP',
-                        tag: '01 • SOPLADO & INYECCIÓN',
-                      });
-                    }}
-                    className="btn btn-accent btn-block cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <span>Configurar y Cotizar</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Servicio 2 */}
-              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                <div>
-                  <div className="h-48 relative overflow-hidden bg-slate-900">
-                    <img
-                      src="/assets/services/service-02.webp"
-                      alt="Tapas, liners y accesorios"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      onError={(e: any) => {
-                        e.target.onerror = null;
-                        e.target.src = '//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/gettyimages-1669778843-2048x2048.webp/:/cr=t:0%25,l:5.68%25,w:88.65%25,h:100%25/rs=w:730,h:549,cg:true';
-                      }}
-                    />
-                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
-                      02 • TAPAS & ACCESORIOS
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-bold text-lg mb-2 text-slate-900">
-                      Proveedores de tapas, liners y accesorios para envases plásticos
-                    </h3>
-                    <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                      Suministro masivo de tapas de seguridad inviolable, liners de inducción para hermeticidad total, atomizadores y bombas dosificadoras.
-                    </p>
-                  </div>
-                </div>
-                <div className="p-6 pt-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setServiceOptionType('Tapas de Seguridad Inviolable');
-                      setServiceCapacity('Rosca 28mm PCO 1881');
-                      setServiceVolume('20.000 uds/fardo');
-                      setActiveServiceModal({
-                        id: 'tapas',
-                        title: 'Proveedores de tapas, liners y accesorios para envases plásticos',
-                        tag: '02 • TAPAS & ACCESORIOS',
-                      });
-                    }}
-                    className="btn btn-accent btn-block cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <span>Configurar y Cotizar</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-
-              {/* Servicio 3 */}
-              <div className="service-card rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                <div>
-                  <div className="h-48 relative overflow-hidden bg-slate-900">
-                    <img
-                      src="/assets/services/service-03.png"
-                      alt="Moldes 3D y Matricería"
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                      onError={(e: any) => {
-                        e.target.onerror = null;
-                        e.target.src = '//img1.wsimg.com/isteam/ip/e22b46da-7172-4420-8f89-b873eb8244bd/blob-9c30011.png/:/cr=t:0%25,l:12.59%25,w:74.81%25,h:100%25/rs=w:730,h:549,cg:true';
-                      }}
-                    />
-                    <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-1 rounded">
-                      03 • INGENIERÍA DE MOLDES
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <h3 className="font-bold text-lg mb-2 text-slate-900">
-                      Personalización de proyectos, matricería 3D y moldes exclusivos
-                    </h3>
-                    <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-                      Modelado CAD 3D para moldes exclusivos de tu marca en aluminio aeronáutico refrigerado con optimización de gramaje y resistencia.
-                    </p>
-                  </div>
-                </div>
-                <div className="p-6 pt-0">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setServiceOptionType('Desarrollo de Molde Exclusivo 3D');
-                      setServiceCapacity('Diseño a medida según muestra');
-                      setServiceVolume('Matriz 1 a 4 cavidades');
-                      setActiveServiceModal({
-                        id: 'moldes',
-                        title: 'Personalización de proyectos, matricería 3D y moldes exclusivos',
-                        tag: '03 • INGENIERÍA DE MOLDES',
-                      });
-                    }}
-                    className="btn btn-accent btn-block cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <span>Configurar y Cotizar</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Respaldo Industrial */}
-            <div className="mt-8 sm:mt-16 bg-slate-50 rounded-2xl p-4 sm:p-8 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-8 text-center">
-              <div>
-                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">🏆</div>
-                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Inocuidad & BPM</h4>
-                <p className="text-xs sm:text-sm text-slate-500">Resina 100% virgen certificada para contacto alimentario y farmacéutico sin migración.</p>
-              </div>
-              <div>
-                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">⚙️</div>
-                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Alta Cadencia Rotativa</h4>
-                <p className="text-xs sm:text-sm text-slate-500">Capacidad de +12.000 BPH y mecanizado CNC de moldes con diseño exclusivo.</p>
-              </div>
-              <div>
-                <div className="text-3xl sm:text-4xl mb-1 sm:mb-2">🚛</div>
-                <h4 className="text-sm sm:text-base font-bold mb-1" style={{ color: primaryColor }}>Logística & Despacho Nacional</h4>
-                <p className="text-xs sm:text-sm text-slate-500">Entregas paletizadas seguras a todo el Ecuador y retiro directo en planta Quito.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* =========================================================================
            SECCIÓN DE CONTACTO & UBICACIÓN GOOGLE MAPS

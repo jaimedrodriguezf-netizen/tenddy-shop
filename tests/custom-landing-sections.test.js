@@ -130,9 +130,9 @@ assert(appearanceContent.includes('openSectionAccordion'), 'Debe proveer estado 
 assert(appearanceContent.includes('1. Barra Superior Informativa (Top Promo Bar)'), 'Debe incluir bloque Sección 1');
 assert(appearanceContent.includes('2. Cabecera Corporativa (Header)'), 'Debe incluir bloque Sección 2');
 assert(appearanceContent.includes('3. Portada Industrial (Hero & Telemetría)'), 'Debe incluir bloque Sección 3');
-assert(appearanceContent.includes('4. Pilares de Respaldo Industrial (3 Pilares)'), 'Debe incluir bloque Sección 4');
-assert(appearanceContent.includes('5. Cotizador Técnico & Ubicación de Planta'), 'Debe incluir bloque Sección 5');
-assert(appearanceContent.includes('6. Pie de Página Corporativo (Footer)'), 'Debe incluir bloque Sección 6');
+assert(!appearanceContent.includes('4. Pilares de Respaldo Industrial (3 Pilares)'), 'Sección 4 de pilares debe haber sido retirada del panel');
+assert(appearanceContent.includes('4. Cotizador Técnico & Ubicación de Planta'), 'Debe incluir bloque Sección 4');
+assert(appearanceContent.includes('5. Pie de Página Corporativo (Footer)'), 'Debe incluir bloque Sección 5');
 assert(appearanceContent.includes('sections: sections'), 'handleSave debe enviar sections a la API');
 
 console.log('✅ 4. Editor de Secciones UI: AppearanceTab integra los 6 bloques con interruptores ON/OFF y acordeones.');

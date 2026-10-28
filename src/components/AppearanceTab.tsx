@@ -1780,86 +1780,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
               )}
             </div>
 
-            {/* 4. PILARES DE RESPALDO */}
-            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
-              <div
-                onClick={() => setOpenSectionAccordion(openSectionAccordion === 'pillars' ? null : 'pillars')}
-                className="p-4 flex items-center justify-between gap-3 cursor-pointer hover:bg-slate-50/70 transition-colors"
-              >
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base">🛡️</span>
-                  <div>
-                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                      <span>4. Pilares de Respaldo Industrial (3 Pilares)</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
-                        sections.pillars.enabled
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : 'bg-slate-100 text-slate-500'
-                      }`}>
-                        {sections.pillars.enabled ? 'Activa' : 'Desactivada'}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-slate-500">Tarjetas de inocuidad, cadencia y logística que avalan la fábrica</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={sections.pillars.enabled}
-                      onChange={() => toggleSectionActive('pillars')}
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-600"></div>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setOpenSectionAccordion(openSectionAccordion === 'pillars' ? null : 'pillars')}
-                    className="p-1 text-slate-400 hover:text-slate-700"
-                  >
-                    {openSectionAccordion === 'pillars' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-
-              {openSectionAccordion === 'pillars' && (
-                <div className="p-4 border-t border-slate-100 bg-slate-50/50 space-y-3.5 text-xs">
-                  {sections.pillars.items.map((pillar, idx) => (
-                    <div key={idx} className="bg-white p-3.5 rounded-xl border border-slate-200 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold bg-slate-100 text-slate-700 px-2 py-0.5 rounded-full">
-                          Pilar #{idx + 1}
-                        </span>
-                        <input
-                          type="text"
-                          value={pillar.icon}
-                          onChange={(e) => updatePillarItem(idx, { icon: e.target.value })}
-                          placeholder="Emoji / Ícono (ej: 🏆)"
-                          className="w-16 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-center text-sm"
-                        />
-                        <input
-                          type="text"
-                          value={pillar.title}
-                          onChange={(e) => updatePillarItem(idx, { title: e.target.value })}
-                          placeholder="Título del Pilar"
-                          className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1 font-bold text-slate-900 focus:outline-none focus:border-indigo-500"
-                        />
-                      </div>
-                      <textarea
-                        rows={2}
-                        value={pillar.desc}
-                        onChange={(e) => updatePillarItem(idx, { desc: e.target.value })}
-                        placeholder="Descripción o justificación técnica del pilar..."
-                        className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-slate-700 focus:outline-none focus:border-indigo-500 resize-none text-xs"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* 5. COTIZADOR & MAPA DE PLANTA */}
+            {/* 4. COTIZADOR & MAPA DE PLANTA */}
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
               <div
                 onClick={() => setOpenSectionAccordion(openSectionAccordion === 'rfq_and_map' ? null : 'rfq_and_map')}
@@ -1869,7 +1790,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   <span className="text-base">📝</span>
                   <div>
                     <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                      <span>5. Cotizador Técnico & Ubicación de Planta</span>
+                      <span>4. Cotizador Técnico & Ubicación de Planta</span>
                       <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
                         sections.rfq_and_map.enabled
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -1999,7 +1920,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
               )}
             </div>
 
-            {/* 6. FOOTER CORPORATIVO */}
+            {/* 5. FOOTER CORPORATIVO */}
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-2xs">
               <div
                 onClick={() => setOpenSectionAccordion(openSectionAccordion === 'footer' ? null : 'footer')}
@@ -2009,7 +1930,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                   <span className="text-base">⚖️</span>
                   <div>
                     <div className="text-xs font-bold text-slate-900 flex items-center gap-2">
-                      <span>6. Pie de Página Corporativo (Footer)</span>
+                      <span>5. Pie de Página Corporativo (Footer)</span>
                       <span className={`text-[10px] font-bold px-2 py-0.2 rounded-full ${
                         sections.footer.enabled
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
@@ -2122,20 +2043,7 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
               </div>
             </label>
 
-            <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
-              <input
-                type="checkbox"
-                checked={showServices}
-                onChange={(e) => setShowServices(e.target.checked)}
-                className="w-4 h-4 mt-0.5 rounded text-slate-900 focus:ring-slate-900 border-slate-300"
-              />
-              <div>
-                <div className="font-bold text-xs text-slate-900">Servicios Industriales / Maquila</div>
-                <div className="text-[11px] text-slate-500 mt-0.5">
-                  Muestra la sección de diseño de moldes CNC y maquila de producción.
-                </div>
-              </div>
-            </label>
+
 
             <label className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-slate-200/80 cursor-pointer hover:border-slate-300 transition-all">
               <input

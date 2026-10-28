@@ -50,15 +50,12 @@ function runTests() {
   );
   console.log('✅ 4. Header: Menú interactivo con dropdown de categorías verificado.');
 
-  // 3 Servicios Industriales
+  // 3 Servicios Industriales retirados por requerimiento del cliente
   assert(
-    landingCode.includes('Servicios Industriales en Plásticos PET & PP') &&
-    landingCode.includes('Diseño, desarrollo y fabricación de envases PET') &&
-    landingCode.includes('Proveedores de tapas, liners y accesorios') &&
-    landingCode.includes('Personalización de proyectos, matricería 3D'),
-    'Debe existir la sección de 3 Servicios Industriales de planta'
+    !landingCode.includes('id="services-section"'),
+    'La sección de Servicios Industriales debe haber sido retirada de la landing'
   );
-  console.log('✅ 5. Servicios: Bloque de los 3 Servicios Industriales de planta verificado.');
+  console.log('✅ 5. Servicios: Sección de Servicios Industriales retirada correctamente.');
 
   // Catálogo: Buscador reactivo y Ficha Técnica
   assert(

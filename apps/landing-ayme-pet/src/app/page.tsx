@@ -164,37 +164,6 @@ const AYME_PRODUCTS = [
   },
 ];
 
-// Fases de fabricación y servicios industriales
-const AYME_PROCESSES = [
-  {
-    step: '01',
-    badge: 'SOPLADO & INYECCIÓN',
-    title: 'Fabricación y Maquila de Envases PET & PP',
-    description: 'Líneas rotativas y lineales de alta velocidad (+12.000 BPH) para abastecimiento masivo continuo con espesores uniformes y cuellos libres de deformación.',
-    image: '/assets/services/service-01.webp',
-    specs: ['Cadencia: +12.000 BPH', 'Cuellos: 28mm PCO y 38mm', 'Resina 100% virgen'],
-    productPreset: 'Botella PET 500ml',
-  },
-  {
-    step: '02',
-    badge: 'TAPAS & ACCESORIOS',
-    title: 'Suministro de Tapas Inviolables y Liners',
-    description: 'Producción de tapas en polipropileno con precinto de seguridad desprendible y liners de inducción electromagnética para hermeticidad absoluta.',
-    image: '/assets/services/service-02.webp',
-    specs: ['Liners de inducción herméticos', 'Precinto de rotura inviolable', 'Variedad de colores corporativos'],
-    productPreset: 'Preformas & Tapas',
-  },
-  {
-    step: '03',
-    badge: 'INGENIERÍA DE MOLDES',
-    title: 'Matricería 3D y Moldes Personalizados',
-    description: 'Departamento propio de diseño paramétrico CAD/CAM y maquinado CNC en aluminio aeronáutico para matrices exclusivas con la identidad de tu marca.',
-    image: '/assets/services/service-03.png',
-    specs: ['Modelado CAD/CAM 3D', 'Aluminio aeronáutico refrigerado', 'Matriz 1 a 4 cavidades'],
-    productPreset: 'Molde Personalizado 3D',
-  },
-];
-
 // Preguntas frecuentes industriales B2B
 const AYME_FAQS = [
   {
@@ -301,7 +270,7 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
       }
 
       // Scroll Spy: detección de sección activa
-      const sectionIds = ['inicio', 'procesos', 'catalogo', 'pilares', 'faqs', 'cotizar'];
+      const sectionIds = ['inicio', 'catalogo', 'faqs', 'cotizar'];
       const scrollThreshold = currentY + 160;
 
       for (let i = sectionIds.length - 1; i >= 0; i--) {
@@ -435,17 +404,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                   )}
                 </button>
                 <a
-                  href="#procesos"
-                  className={`transition-colors py-1 relative ${
-                    activeSection === 'procesos' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Fases de Fabricación
-                  {activeSection === 'procesos' && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
-                  )}
-                </a>
-                <a
                   href="#catalogo"
                   className={`transition-colors py-1 relative ${
                     activeSection === 'catalogo' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
@@ -456,19 +414,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
                   )}
                 </a>
-                {sections.pillars.enabled && (
-                  <a
-                    href="#pilares"
-                    className={`transition-colors py-1 relative ${
-                      activeSection === 'pilares' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    Garantías & Calidad
-                    {activeSection === 'pilares' && (
-                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
-                    )}
-                  </a>
-                )}
                 <a
                   href="#faqs"
                   className={`transition-colors py-1 relative ${
@@ -537,15 +482,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                   🏭 Inicio
                 </button>
                 <a
-                  href="#procesos"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    activeSection === 'procesos' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  ⚙️ Fases de Fabricación
-                </a>
-                <a
                   href="#catalogo"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
@@ -554,17 +490,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 >
                   📦 Catálogo de Envases
                 </a>
-                {sections.pillars.enabled && (
-                  <a
-                    href="#pilares"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
-                      activeSection === 'pilares' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    🏆 Garantías & Respaldo
-                  </a>
-                )}
                 <a
                   href="#faqs"
                   onClick={() => setIsMobileMenuOpen(false)}
@@ -627,14 +552,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 )}
 
                 <a
-                  href="#procesos"
-                  className="bg-white/10 hover:bg-white/15 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl border border-white/15 transition-all cursor-pointer flex items-center gap-2"
-                >
-                  <span>{sections.hero.cta_secondary_text || 'Ver Fases de Fabricación'}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
-                </a>
-
-                <a
                   href="#catalogo"
                   className="bg-slate-800/80 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl border border-white/10 transition-all cursor-pointer flex items-center gap-2"
                 >
@@ -676,74 +593,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
           </div>
         </section>
       )}
-
-      {/* SECCIÓN DE FASES DE FABRICACIÓN / PROCESOS INDUSTRIALES (#procesos con scroll-mt-24) */}
-      <section id="procesos" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-10 border-b border-white/10">
-        <div className="text-center max-w-3xl mx-auto space-y-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-mono font-bold uppercase tracking-wider">
-            <Factory className="w-3.5 h-3.5" />
-            <span>Capacidad y Tecnología Industrial</span>
-          </span>
-          <h3 className="text-2xl sm:text-4xl font-black text-white">
-            Fases de Fabricación & Servicios de Planta
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Desde el diseño paramétrico de matrices y moldes en aluminio aeronáutico hasta el soplado en alta cadencia con resina 100% virgen certificada.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {AYME_PROCESSES.map((proc) => (
-            <div
-              key={proc.step}
-              className="bg-[#060c1d] border border-white/10 rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between group hover:border-[#A61C2E]/50 transition-colors"
-            >
-              <div>
-                <div className="h-48 relative overflow-hidden bg-slate-900">
-                  <img
-                    src={proc.image}
-                    alt={proc.title}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md text-white text-[10px] font-mono font-bold px-2.5 py-1 rounded-md border border-white/15">
-                    FASE {proc.step} • {proc.badge}
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-3">
-                  <h4 className="font-bold text-base text-white leading-snug">
-                    {proc.title}
-                  </h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {proc.description}
-                  </p>
-
-                  <ul className="pt-2 space-y-1.5 text-[11px] text-slate-300 font-mono">
-                    {proc.specs.map((sp, idx) => (
-                      <li key={idx} className="flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>{sp}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="p-6 pt-0">
-                <button
-                  type="button"
-                  onClick={() => handleSelectProductAndQuote(proc.productPreset)}
-                  className="w-full bg-white/10 hover:bg-[#A61C2E] text-white text-xs font-bold py-2.5 px-4 rounded-xl border border-white/15 hover:border-transparent transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Configurar y Cotizar Fase {proc.step}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       {/* SECCIÓN DE CATÁLOGO DE ENVASES PET CON TABS Y BUSCADOR (#catalogo con scroll-mt-24) */}
       <section id="catalogo" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-7xl mx-auto space-y-8 border-b border-white/10">
@@ -941,31 +790,8 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         )}
       </section>
 
-      {/* 4. TRES PILARES DE RESPALDO INDUSTRIAL (#pilares con scroll-mt-24) */}
-      {sections.pillars.enabled && sections.pillars.items?.length > 0 && (
-        <section id="pilares" className="scroll-mt-24 py-16 px-4 sm:px-6 bg-[#060c1d] border-b border-white/10">
-          <div className="max-w-7xl mx-auto space-y-6">
-            <div className="text-center max-w-2xl mx-auto space-y-2">
-              <span className="text-xs font-mono font-bold text-yellow-400 uppercase tracking-wider">
-                Garantía y Confianza B2B
-              </span>
-              <h3 className="text-xl sm:text-3xl font-black text-white">
-                Pilares Operativos en Nuestra Planta
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {sections.pillars.items.map((item, idx) => (
-                <div key={idx} className="bg-[#0a1128] border border-white/10 p-6 rounded-2xl space-y-2">
-                  <div className="text-3xl mb-1">{item.icon}</div>
-                  <h4 className="text-base font-bold text-white">{item.title}</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+      {/* 4. PILARES DE RESPALDO (Retirada por requerimiento de cliente) */}
+      {sections.pillars.enabled && false && null}
 
       {/* SECCIÓN DE PREGUNTAS FRECUENTES B2B (#faqs con scroll-mt-24) */}
       <section id="faqs" className="scroll-mt-24 py-16 px-4 sm:px-6 max-w-5xl mx-auto space-y-8 border-b border-white/10">
@@ -1394,9 +1220,6 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
             >
               Inicio
             </button>
-            <a href="#procesos" className="hover:text-white transition-colors">
-              Fases de Fabricación
-            </a>
             <a href="#catalogo" className="hover:text-white transition-colors">
               Catálogo de Envases
             </a>
