@@ -19,6 +19,8 @@ export interface Tenant {
   industry_type: string;
   logo_url: string;
   views_count?: number;
+  plan_slug?: string;
+  plan_status?: string;
   theme_config: {
     primary_color: string;
     secondary_color: string;
@@ -438,5 +440,67 @@ export function resolveLandingSections(raw?: any, tenantName?: string, slug?: st
       copyright_text: typeof raw.footer?.copyright_text === 'string' && raw.footer.copyright_text.trim() ? raw.footer.copyright_text.trim() : defaults.footer.copyright_text,
       show_powered_by: raw.footer?.show_powered_by !== undefined ? Boolean(raw.footer.show_powered_by) : defaults.footer.show_powered_by,
     },
+  };
+}
+
+// ==========================================================
+// TENDDY SAAS: Planes & Precios (Engine)
+// ==========================================================
+
+export interface PlanLimits {
+  max_products: number; // -1 = ilimitado
+  max_branches: number; // -1 = ilimitado
+  max_team_members: number; // -1 = ilimitado
+  custom_domain_allowed: boolean;
+  custom_landing_allowed: boolean;
+  bulk_import_allowed: boolean;
+  support_priority: 'standard' | 'priority' | 'dedicated_24_7';
+  max_storage_mb: number;
+  analytics_enabled?: boolean;
+  remove_branding?: boolean;
+  [key: string]: any;
+}
+
+export interface Plan {
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  price_monthly: number;
+  price_yearly: number;
+  currency: string;
+  badge?: string;
+  sort_order: number;
+  is_active: boolean;
+  is_public: boolean;
+  features: string[];
+  limits: PlanLimits;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type SubscriptionStatus = 'active' | 'trialing' | 'past_due' | 'canceled' | 'paused';
+export type BillingCycle = 'monthly' | 'yearly' | 'custom';
+
+export interface TenantSubscription {
+  id: string;
+  tenant_id: string;
+  plan_id?: string;
+  plan_slug: string;
+  status: SubscriptionStatus;
+  billing_cycle: BillingCycle;
+  price_paid: number;
+  currency: string;
+  started_at: string;
+  current_period_start: string;
+  current_period_end?: string;
+  cancel_at_period_end: boolean;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  plans?: Plan;
+  tenants?: {
+    name: string;
+    slug: string;
   };
 }

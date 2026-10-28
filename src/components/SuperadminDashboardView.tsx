@@ -28,12 +28,15 @@ import {
   Layers,
   Sparkles,
   Copy,
-  Check
+  Check,
+  CreditCard
 } from 'lucide-react';
 import SuperadminUsersManager, { B2BAccount, TenantStaffMember } from './SuperadminUsersManager';
 import SuperadminSupportManager, { SupportTicketRecord } from './SuperadminSupportManager';
+import SuperadminPlansManager from './SuperadminPlansManager';
 import VersionBadge from './VersionBadge';
 import DecoupleTenantModal from './DecoupleTenantModal';
+import { Plan } from '@/lib/types';
 
 export interface SuperadminTenantSummary {
   id: string;
@@ -53,6 +56,8 @@ export interface SuperadminTenantSummary {
   decoupled_url?: string;
   store_template?: string;
   custom_landing_unlocked?: boolean;
+  plan_slug?: string;
+  plan_status?: string;
 }
 
 interface SuperadminDashboardViewProps {
@@ -67,6 +72,7 @@ interface SuperadminDashboardViewProps {
   initialBuyers?: B2BAccount[];
   initialStaff?: TenantStaffMember[];
   initialTickets?: SupportTicketRecord[];
+  initialPlans?: Plan[];
 }
 
 export default function SuperadminDashboardView({
@@ -81,9 +87,10 @@ export default function SuperadminDashboardView({
   initialBuyers = [],
   initialStaff = [],
   initialTickets = [],
+  initialPlans = [],
 }: SuperadminDashboardViewProps) {
   const [tenants, setTenants] = useState<SuperadminTenantSummary[]>(initialTenants);
-  const [activeTab, setActiveTab] = useState<'tenants' | 'users' | 'support'>('tenants');
+  const [activeTab, setActiveTab] = useState<'tenants' | 'users' | 'support' | 'plans'>('tenants');
   const [search, setSearch] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedDecoupleTenant, setSelectedDecoupleTenant] = useState<SuperadminTenantSummary | null>(null);
@@ -257,6 +264,26 @@ export default function SuperadminDashboardView({
         </div>
         <span className="text-[11px] font-mono bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-800 text-slate-300">
           {initialTickets.length}
+        </span>
+      </button>
+
+      <button
+        onClick={() => {
+          setActiveTab('plans');
+          setIsMobileSidebarOpen(false);
+        }}
+        className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+          activeTab === 'plans'
+            ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30 shadow-sm'
+            : 'text-slate-400 hover:text-white hover:bg-slate-900 border border-transparent'
+        }`}
+      >
+        <div className="flex items-center gap-3">
+          <CreditCard className="w-4 h-4 shrink-0 text-amber-400" />
+          <span>Planes & Precios SaaS</span>
+        </div>
+        <span className="text-[11px] font-mono bg-slate-900/80 px-2 py-0.5 rounded-full border border-slate-800 text-slate-300">
+          {initialPlans.length || 3}
         </span>
       </button>
     </nav>
@@ -661,27 +688,39 @@ export default function SuperadminDashboardView({
                             )}
 
                             {/* Badge y Selector de Plantilla Gobernado por Superadmin */}
-                            {t.store_template === 'landing' ? (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {t.store_template === 'landing' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleTemplate(t.id, t.store_template)}
+                                  disabled={isUpdating}
+                                  className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                                  title="Formato: Landing Corporativa B2B (Clic de Superadmin para cambiar a Catálogo Temu)"
+                                >
+                                  <span>🏭 Landing VIP</span>
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleTemplate(t.id, t.store_template)}
+                                  disabled={isUpdating}
+                                  className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-sky-300 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                                  title="Formato: Catálogo Temu Estándar (Clic de Superadmin para promover a Landing Corporativa)"
+                                >
+                                  <span>🛍️ Catálogo Temu</span>
+                                </button>
+                              )}
+
+                              {/* Badge de Plan Comercial */}
                               <button
                                 type="button"
-                                onClick={() => handleToggleTemplate(t.id, t.store_template)}
-                                disabled={isUpdating}
-                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-indigo-300 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-                                title="Formato: Landing Corporativa B2B (Clic de Superadmin para cambiar a Catálogo Temu)"
+                                onClick={() => setActiveTab('plans')}
+                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
+                                title="Plan comercial asignado. Clic para ir a Planes & Precios"
                               >
-                                <span>🏭 Landing VIP</span>
+                                <span>💎 {t.plan_slug ? t.plan_slug.toUpperCase() : 'STARTER'}</span>
                               </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleToggleTemplate(t.id, t.store_template)}
-                                disabled={isUpdating}
-                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-sky-300 bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/30 px-2 py-0.5 rounded-full transition-colors cursor-pointer"
-                                title="Formato: Catálogo Temu Estándar (Clic de Superadmin para promover a Landing Corporativa)"
-                              >
-                                <span>🛍️ Catálogo Temu</span>
-                              </button>
-                            )}
+                            </div>
 
                             {t.is_decoupled && (
                               <span
@@ -767,6 +806,21 @@ export default function SuperadminDashboardView({
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-sm">
               <SuperadminSupportManager
                 initialTickets={initialTickets}
+              />
+            </div>
+          )}
+
+          {/* PESTAÑA 4: PLANES Y PRECIOS SAAS */}
+          {activeTab === 'plans' && (
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-6 shadow-sm">
+              <SuperadminPlansManager
+                initialPlans={initialPlans}
+                tenants={tenants}
+                onTenantPlanUpdated={(tenantId, newPlanSlug) => {
+                  setTenants((prev) =>
+                    prev.map((t) => (t.id === tenantId ? { ...t, plan_slug: newPlanSlug } : t))
+                  );
+                }}
               />
             </div>
           )}

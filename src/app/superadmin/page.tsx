@@ -5,6 +5,8 @@ import SuperadminDashboardView, { SuperadminTenantSummary } from '@/components/S
 import SuperadminLoginForm from '@/components/SuperadminLoginForm';
 import { B2BAccount, TenantStaffMember } from '@/components/SuperadminUsersManager';
 import { SupportTicketRecord } from '@/components/SuperadminSupportManager';
+import { DEFAULT_PLANS } from '@/lib/plans';
+import { Plan } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -26,9 +28,9 @@ export default async function SuperadminPage() {
   try {
     const admin = getAdminClient();
 
-    // Consultar métricas, usuarios, productos con imágenes, dominios y tickets de soporte en paralelo
-    const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes, ticketsRes, storageRes, domainsRes] = await Promise.all([
-      admin.from('tenants').select('id, slug, name, industry_type, is_active, views_count, created_at, theme_config').order('created_at', { ascending: false }),
+    // Consultar métricas, usuarios, productos con imágenes, dominios, tickets y planes en paralelo
+    const [tenantsRes, quotesRes, productsRes, accountsRes, staffRes, ticketsRes, storageRes, domainsRes, plansRes] = await Promise.all([
+      admin.from('tenants').select('id, slug, name, industry_type, is_active, views_count, created_at, theme_config, plan_slug, plan_status').order('created_at', { ascending: false }),
       admin.from('quotes').select('id, tenant_id, estimated_total, items'),
       admin.from('products').select('id, tenant_id, images'),
       admin.from('b2b_accounts').select('*').order('created_at', { ascending: false }),
@@ -36,9 +38,10 @@ export default async function SuperadminPage() {
       admin.from('support_tickets').select('*, tenants(name, slug)').order('created_at', { ascending: false }),
       admin.storage.from('support-attachments').list('', { limit: 1000 }).catch(() => ({ data: [] })),
       admin.from('tenant_domains').select('tenant_id, domain, is_primary'),
+      admin.from('plans').select('*').order('sort_order', { ascending: true }),
     ]);
 
-    const rawTenants = tenantsRes.data || [];
+    const rawTenants = (tenantsRes as any)?.data || [];
     const rawQuotes = quotesRes.data || [];
     const rawProducts = productsRes.data || [];
     const rawBuyers = (accountsRes.data || []) as B2BAccount[];
@@ -46,6 +49,28 @@ export default async function SuperadminPage() {
     const rawTickets = (ticketsRes.data || []) as SupportTicketRecord[];
     const rawStorageFiles = (storageRes && 'data' in storageRes && Array.isArray(storageRes.data)) ? storageRes.data : [];
     const rawDomains = domainsRes?.data || [];
+    const rawPlans = (plansRes as any)?.data || [];
+
+    // Mapear planes con fallback defensivo al catálogo por defecto
+    const initialPlans: Plan[] = (Array.isArray(rawPlans) && rawPlans.length > 0)
+      ? rawPlans.map((p: any) => ({
+          id: p.id,
+          slug: p.slug,
+          name: p.name,
+          description: p.description || '',
+          price_monthly: Number(p.price_monthly) || 0,
+          price_yearly: Number(p.price_yearly) || 0,
+          currency: p.currency || 'USD',
+          badge: p.badge || '',
+          sort_order: Number(p.sort_order) || 0,
+          is_active: Boolean(p.is_active),
+          is_public: Boolean(p.is_public),
+          features: Array.isArray(p.features) ? p.features : [],
+          limits: typeof p.limits === 'object' && p.limits !== null ? p.limits : DEFAULT_PLANS[0].limits,
+          created_at: p.created_at,
+          updated_at: p.updated_at,
+        }))
+      : DEFAULT_PLANS;
 
     // Mapear dominios públicos principales por tenant
     const domainsByTenant: Record<string, string> = {};
@@ -73,7 +98,7 @@ export default async function SuperadminPage() {
     });
 
     // Calcular métricas agregadas por tenant de forma defensiva
-    const tenantsSummary: SuperadminTenantSummary[] = rawTenants.map((t) => {
+    const tenantsSummary: SuperadminTenantSummary[] = rawTenants.map((t: any) => {
       const tenantQuotes = rawQuotes.filter((q: any) => q.tenant_id === t.id);
       const tenantProducts = rawProducts.filter((p: any) => p.tenant_id === t.id);
       const tenantImages = imagesByTenant[t.id] || 0;
@@ -96,6 +121,8 @@ export default async function SuperadminPage() {
         decoupled_url: (t.theme_config as any)?.decoupled_url || '',
         store_template: (t.theme_config as any)?.store_template || 'temu',
         custom_landing_unlocked: Boolean((t.theme_config as any)?.custom_landing_unlocked),
+        plan_slug: (t as any).plan_slug || 'starter',
+        plan_status: (t as any).plan_status || 'active',
       };
     });
 
@@ -103,8 +130,8 @@ export default async function SuperadminPage() {
     const totalGlobalProducts = rawProducts.length;
     const totalB2BAccounts = rawBuyers.length;
     const totalStorageFiles = rawStorageFiles.length;
-    const totalGlobalViews = rawTenants.reduce((acc, t: any) => acc + (Number(t.views_count) || 0), 0);
-    const totalGlobalUnitsQuoted = rawQuotes.reduce((acc, q: any) => {
+    const totalGlobalViews = rawTenants.reduce((acc: number, t: any) => acc + (Number(t.views_count) || 0), 0);
+    const totalGlobalUnitsQuoted = rawQuotes.reduce((acc: number, q: any) => {
       const items = Array.isArray(q.items) ? q.items : [];
       return acc + items.reduce((sub: number, i: any) => sub + (Number(i?.total_units) || 0), 0);
     }, 0);
@@ -122,6 +149,7 @@ export default async function SuperadminPage() {
         initialBuyers={rawBuyers}
         initialStaff={rawStaff}
         initialTickets={rawTickets}
+        initialPlans={initialPlans}
       />
     );
   } catch (err: unknown) {
