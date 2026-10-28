@@ -35,6 +35,22 @@ interface AymeLandingProps {
 // Catálogo oficial de envases y preformas de AYME INDUSTRIAS PET con cotas técnicas de ingeniería
 const AYME_PRODUCTS = [
   {
+    id: 'ayme-yogurt-500',
+    sku: 'AYME-YOG-500',
+    name: 'Botella Ergonómica 500ml Yogurt / Jugo',
+    category: 'Línea Láctea & Bebidas',
+    type: 'botellas',
+    neck: 'Rosca 38mm / 28mm PCO con Tapa',
+    weight: '28g',
+    height: '195.0 mm ± 1.0mm',
+    diameter: '62.0 mm (Cintura anatómica)',
+    packaging: '100 uds / fardo',
+    palletQty: '3.600 uds / palet americano',
+    image: '/assets/products/yogurt-500ml/1793204589665.jpg',
+    formValue: 'Botella Ergonómica 500ml Yogurt',
+    description: 'Envase plástico ergonómico de fácil agarre para yogurt, lácteos, jugos y néctares pasteurizados.',
+  },
+  {
     id: 'ayme-osito',
     sku: 'AYME-OSITO-250',
     name: 'Envase / Botella Infantil Osito 250ml',
