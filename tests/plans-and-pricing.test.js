@@ -29,17 +29,23 @@ console.log('🧪 Test 3: Verificando src/lib/plans.ts...');
 const plansHelperContent = fs.readFileSync(path.join(__dirname, '../src/lib/plans.ts'), 'utf8');
 assert(plansHelperContent.includes('export const DEFAULT_PLANS: Plan[]'), 'Debe exportar DEFAULT_PLANS');
 assert(plansHelperContent.includes("'free'"), 'Debe incluir el plan free');
-assert(plansHelperContent.includes("'essential'"), 'Debe incluir el plan essential');
+assert(plansHelperContent.includes("'plan_500'"), 'Debe incluir el plan plan_500');
+assert(plansHelperContent.includes("'plan_1000'"), 'Debe incluir el plan plan_1000');
+assert(plansHelperContent.includes("'plan_2000'"), 'Debe incluir el plan plan_2000');
+assert(plansHelperContent.includes("'enterprise'"), 'Debe incluir el plan enterprise');
 assert(plansHelperContent.includes('max_products: 10'), 'Plan free debe tener 10 productos');
 assert(plansHelperContent.includes('max_images_per_product: 2'), 'Plan free debe tener 2 fotos por producto');
-assert(plansHelperContent.includes('max_products: 500'), 'Plan essential debe tener 500 productos');
-assert(plansHelperContent.includes('max_images_per_product: 1'), 'Plan essential debe tener 1 foto por producto');
-assert(plansHelperContent.includes('price_yearly: 100'), 'Plan essential debe costar 100 USD anuales');
+assert(plansHelperContent.includes('max_products: 500'), 'Plan 500 debe tener 500 productos');
+assert(plansHelperContent.includes('max_images_per_product: 1'), 'Plan 500 debe tener 1 foto por producto');
+assert(plansHelperContent.includes('price_yearly: 100'), 'Plan 500 debe costar 100 USD anuales');
+assert(plansHelperContent.includes('price_yearly: 250'), 'Plan 1000 debe costar 250 USD anuales');
+assert(plansHelperContent.includes('price_yearly: 450'), 'Plan 2000 debe costar 450 USD anuales');
+assert(plansHelperContent.includes('price_yearly: 1200'), 'Plan enterprise debe costar 1200 USD anuales');
 assert(plansHelperContent.includes('export function getPlanBySlug'), 'Debe exportar getPlanBySlug');
 assert(plansHelperContent.includes('export function checkPlanLimit'), 'Debe exportar checkPlanLimit');
 assert(plansHelperContent.includes('export function calculateAnnualSavings'), 'Debe exportar calculateAnnualSavings');
 assert(plansHelperContent.includes('export function validatePlanPayload'), 'Debe exportar validatePlanPayload');
-console.log('✅ Test 3 aprobado: Helper central con plan gratuito (10 prod / 2 fotos) y esencial ($100/año, 500 prod / 1 foto).');
+console.log('✅ Test 3 aprobado: Helper central con escala anual completa (Free, 500, 1000, 2000, Enterprise).');
 
 // 4. Validar existencia de endpoints de API
 console.log('🧪 Test 4: Verificando endpoints API...');
@@ -48,13 +54,19 @@ assert(fs.existsSync(path.join(__dirname, '../src/app/api/superadmin/tenants/pla
 assert(fs.existsSync(path.join(__dirname, '../src/app/api/plans/route.ts')), 'Ruta /api/plans debe existir');
 console.log('✅ Test 4 aprobado: Rutas API REST Superadmin y pública implementadas.');
 
-// 5. Validar componentes de frontend en Superadmin
+// 5. Validar componentes de frontend en Superadmin y Landing Page
 console.log('🧪 Test 5: Verificando componentes UI...');
 assert(fs.existsSync(path.join(__dirname, '../src/components/SuperadminPlansManager.tsx')), 'Componente SuperadminPlansManager debe existir');
+assert(fs.existsSync(path.join(__dirname, '../src/components/PricingSection.tsx')), 'Componente PricingSection debe existir');
 
 const dashboardViewContent = fs.readFileSync(path.join(__dirname, '../src/components/SuperadminDashboardView.tsx'), 'utf8');
 assert(dashboardViewContent.includes('SuperadminPlansManager'), 'SuperadminDashboardView debe importar SuperadminPlansManager');
 assert(dashboardViewContent.includes("activeTab === 'plans'"), 'SuperadminDashboardView debe renderizar la pestaña de planes');
-console.log('✅ Test 5 aprobado: UI en Torre de Control Superadmin integrada.');
+
+const homePageContent = fs.readFileSync(path.join(__dirname, '../src/components/PlatformHomePage.tsx'), 'utf8');
+assert(homePageContent.includes('PricingSection'), 'PlatformHomePage debe importar PricingSection');
+assert(homePageContent.includes('<PricingSection />'), 'PlatformHomePage debe renderizar PricingSection');
+assert(homePageContent.includes('href="#pricing"'), 'PlatformHomePage debe tener ancla #pricing en navbar');
+console.log('✅ Test 5 aprobado: UI en Torre de Control y PricingSection en Landing integradas.');
 
 console.log('\n🎉 ¡TODAS LAS PRUEBAS DE ARQUITECTURA DEL MÓDULO DE PLANES PASARON EXITOSAMENTE!');

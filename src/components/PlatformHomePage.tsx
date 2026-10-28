@@ -26,6 +26,7 @@ import {
 import AdminLoginModal from './AdminLoginModal';
 import SupportTicketModal from './SupportTicketModal';
 import VersionBadge from './VersionBadge';
+import PricingSection from './PricingSection';
 import { supabase } from '@/lib/supabase';
 
 interface UserSessionInfo {
@@ -107,6 +108,10 @@ export default function PlatformHomePage() {
           <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
             <a href="#features" className="hover:text-white transition-colors">Características B2B</a>
             <a href="#cases" className="hover:text-white transition-colors">Casos de Uso</a>
+            <a href="#pricing" className="hover:text-white transition-colors flex items-center gap-1.5">
+              <span>Planes & Precios</span>
+              <span className="text-[10px] bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">100% Anual</span>
+            </a>
             <button
               onClick={() => setIsSupportModalOpen(true)}
               className="text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
@@ -380,6 +385,9 @@ export default function PlatformHomePage() {
         </div>
       </section>
 
+      {/* Sección Dinámica de Planes y Precios SaaS */}
+      <PricingSection />
+
       {/* CTA Final */}
       <section className="border-t border-slate-800 bg-slate-900/40 py-12 sm:py-20 text-center">
         <div className="max-w-3xl mx-auto px-4 space-y-4 sm:space-y-6">
@@ -430,6 +438,7 @@ export default function PlatformHomePage() {
               Acceso Administrador
             </button>
             <Link href="/registro" className="hover:text-white py-1">Crear Tienda</Link>
+            <a href="#pricing" className="hover:text-white py-1">Planes & Tarifas</a>
           </div>
         </div>
       </footer>
