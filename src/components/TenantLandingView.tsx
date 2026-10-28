@@ -1336,6 +1336,13 @@ export default function TenantLandingView({
                         </span>
                       )}
 
+                      {product.attributes?.video_url && (
+                        <span className="absolute bottom-2 left-2 z-10 bg-black/80 backdrop-blur-xs text-emerald-400 font-bold text-[9px] px-2 py-0.5 rounded-full flex items-center gap-1 border border-emerald-500/30 shadow-xs">
+                          <span>▶</span>
+                          <span>Video 360°</span>
+                        </span>
+                      )}
+
                       {product.images && product.images.length > 0 && product.images[0] ? (
                         <img
                           src={product.images[0]}

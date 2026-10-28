@@ -78,7 +78,9 @@ export default function ProductDetailView({
     : Math.round((initialBasePrice / 0.53) * 100) / 100; // ~47% de descuento
   const discountPercent = Math.max(15, Math.round(((originalPrice - unitPrice) / originalPrice) * 100));
 
-  // Imágenes multi-ángulo
+  // Imágenes multi-ángulo y video
+  const videoUrl = product.attributes?.video_url;
+  const [isVideoActive, setIsVideoActive] = useState(false);
   const images = hasValidProductImage(product.images, tenant)
     ? product.images
     : ['/assets/placeholder-product.svg'];
@@ -319,19 +321,37 @@ export default function ProductDetailView({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start w-full min-w-0">
           
           {/* =========================================================================
-              COLUMNA IZQUIERDA: GALERÍA DE IMÁGENES MULTI-ÁNGULO (7 COLUMNAS)
+              COLUMNA IZQUIERDA: GALERÍA DE IMÁGENES MULTI-ÁNGULO Y VIDEO (7 COLUMNAS)
               ========================================================================= */}
           <div className="lg:col-span-7 flex flex-col-reverse sm:flex-row gap-3 bg-white p-3 sm:p-5 rounded-2xl border border-slate-200 shadow-2xs w-full max-w-full overflow-hidden">
             {/* Tira de Miniaturas */}
-            {images.length > 1 && (
+            {(images.length > 1 || videoUrl) && (
               <div className="flex sm:flex-col gap-2 overflow-x-auto sm:overflow-y-auto max-h-[580px] pb-1 sm:pb-0 scrollbar-none shrink-0 w-full sm:w-auto">
+                {videoUrl && (
+                  <button
+                    type="button"
+                    onClick={() => setIsVideoActive(true)}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all p-1 bg-slate-900 cursor-pointer shrink-0 flex flex-col items-center justify-center text-white ${
+                      isVideoActive
+                        ? 'border-emerald-500 shadow-xs ring-2 ring-emerald-500/20'
+                        : 'border-slate-300 hover:border-slate-500 opacity-90 hover:opacity-100'
+                    }`}
+                    title="Ver Video del Producto"
+                  >
+                    <span className="text-emerald-400 text-xs font-black">▶</span>
+                    <span className="text-[9px] font-bold tracking-tight uppercase">Video</span>
+                  </button>
+                )}
                 {images.map((img, idx) => (
                   <button
                     key={idx}
                     type="button"
-                    onClick={() => setActiveImageIndex(idx)}
+                    onClick={() => {
+                      setIsVideoActive(false);
+                      setActiveImageIndex(idx);
+                    }}
                     className={`w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all p-0.5 bg-slate-50 cursor-pointer shrink-0 ${
-                      activeImageIndex === idx
+                      !isVideoActive && activeImageIndex === idx
                         ? 'border-orange-500 shadow-xs ring-2 ring-orange-500/20'
                         : 'border-slate-200 hover:border-slate-400 opacity-80 hover:opacity-100'
                     }`}
@@ -347,13 +367,26 @@ export default function ProductDetailView({
               </div>
             )}
 
-            {/* Visor Principal de Imagen */}
+            {/* Visor Principal de Imagen o Video */}
             <div className="flex-1 relative flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 overflow-hidden group aspect-square sm:aspect-auto sm:min-h-[520px] w-full">
-              <img
-                src={images[activeImageIndex] || images[0]}
-                alt={product.name}
-                className="w-full h-full max-h-[360px] sm:max-h-[540px] object-contain p-2 sm:p-4 filter drop-shadow-sm transition-transform duration-300 group-hover:scale-103"
-              />
+              {isVideoActive && videoUrl ? (
+                <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 bg-slate-950">
+                  <video
+                    src={videoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full max-h-[360px] sm:max-h-[540px] object-contain rounded-lg"
+                  />
+                </div>
+              ) : (
+                <img
+                  src={images[activeImageIndex] || images[0]}
+                  alt={product.name}
+                  className="w-full h-full max-h-[360px] sm:max-h-[540px] object-contain p-2 sm:p-4 filter drop-shadow-sm transition-transform duration-300 group-hover:scale-103"
+                />
+              )}
 
               {/* Badges Flotantes sobre la Imagen */}
               <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">

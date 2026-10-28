@@ -35,6 +35,40 @@ interface AymeLandingProps {
 // Catálogo oficial de envases y preformas de AYME INDUSTRIAS PET con cotas técnicas de ingeniería
 const AYME_PRODUCTS = [
   {
+    id: 'ayme-osito',
+    sku: 'AYME-OSITO-250',
+    name: 'Envase / Botella Infantil Osito 250ml',
+    category: 'Línea Infantil & Novedades',
+    type: 'botellas',
+    neck: 'Rosca 28mm Infantil',
+    weight: '26g',
+    height: '145.0 mm ± 1.0mm',
+    diameter: '55.0 mm',
+    packaging: '100 uds / fardo',
+    palletQty: '4.000 uds / palet americano',
+    image: '/assets/products/osito-250ml/1793203704250.jpg',
+    videoUrl: '/assets/products/videos/osito-250ml.mp4',
+    formValue: 'Botella Infantil Osito 250ml',
+    description: 'Envase plástico PET con relieve 3D figura de osito para confitería, miel de abeja, jugos infantiles y dulces.',
+  },
+  {
+    id: 'ayme-galonera-500',
+    sku: 'AYME-GAL500-45',
+    name: 'Galonera PET 500ml con Asa',
+    category: 'Línea Químicos & Limpieza',
+    type: 'galones',
+    neck: 'Rosca 28mm PCO / 38mm',
+    weight: '45g',
+    height: '160.0 mm ± 1.5mm',
+    diameter: '80.0 mm',
+    packaging: '100 uds / fardo',
+    palletQty: '2.500 uds / palet americano',
+    image: '/assets/products/ayme-003.svg',
+    videoUrl: '/assets/products/videos/galonera-500ml.mp4',
+    formValue: 'Galonera PET 500ml',
+    description: 'Galonera compacta con asa ergonómica reforzada para lubricantes, químicos, desinfectantes y agroquímicos.',
+  },
+  {
     id: 'ayme-001',
     sku: 'AYME-B500-24',
     name: 'Botella PET 500ml Cilíndrica',
@@ -737,6 +771,12 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     <span className="absolute top-2 right-2 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-black/60 text-slate-300 border border-white/10">
                       B2B • Mayorista
                     </span>
+                    {(prod as any).videoUrl && (
+                      <span className="absolute bottom-2 left-2 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm">
+                        <span>▶</span>
+                        <span>Video 360°</span>
+                      </span>
+                    )}
                   </div>
 
                   <div className="space-y-1">
@@ -1103,14 +1143,25 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
               </div>
             </div>
 
-            {/* Contenido: Imagen + Tabla de Medidas de Ingeniería */}
+            {/* Contenido: Imagen / Video + Tabla de Medidas de Ingeniería */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-              <div className="relative aspect-square rounded-2xl bg-slate-900/90 border border-white/10 p-6 flex items-center justify-center">
-                <img
-                  src={technicalModalProduct.image}
-                  alt={technicalModalProduct.name}
-                  className="max-h-full max-w-full object-contain"
-                />
+              <div className="relative aspect-square rounded-2xl bg-slate-900/90 border border-white/10 p-2 flex items-center justify-center overflow-hidden">
+                {(technicalModalProduct as any).videoUrl ? (
+                  <video
+                    src={(technicalModalProduct as any).videoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    playsInline
+                    className="w-full h-full object-contain rounded-xl"
+                  />
+                ) : (
+                  <img
+                    src={technicalModalProduct.image}
+                    alt={technicalModalProduct.name}
+                    className="max-h-full max-w-full object-contain p-4"
+                  />
+                )}
               </div>
 
               <div className="space-y-3 text-xs font-mono">
