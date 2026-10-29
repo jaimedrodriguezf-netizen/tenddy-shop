@@ -148,9 +148,9 @@ export default function ProductEditorView({
   const [galleryUrls, setGalleryUrls] = useState<string[]>(product?.images?.slice(1) || []);
   const [galleryUrlInput, setGalleryUrlInput] = useState<string>('');
 
-  // Categorías
+  // Categorías (solo asignar id si el producto ya la tenía asignada, sin forzar la primera por defecto)
   const [selectedCatId, setSelectedCatId] = useState<string>(
-    product?.category_id || (categories.length > 0 ? categories[0].id : '')
+    product?.category_id || ''
   );
   const [catTab, setCatTab] = useState<'all' | 'most_used'>('all');
   const [isAddingNewCat, setIsAddingNewCat] = useState(false);
@@ -528,6 +528,9 @@ export default function ProductEditorView({
     } catch (err: unknown) {
       const msg = translateErrorMessage(err, isEditing ? 'Error al actualizar el producto' : 'Error al guardar el producto');
       setErrorMsg(msg);
+      if (typeof window !== 'undefined') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } finally {
       setSaving(false);
     }
@@ -1566,8 +1569,22 @@ export default function ProductEditorView({
 
               {/* Lista con checkboxes jerárquicos */}
               <div className="max-h-48 overflow-y-auto space-y-1 pr-1 border border-slate-100 rounded-xl p-2.5 bg-slate-50/50">
+                {/* Opción Sin Categorizar */}
+                <label className="flex items-center gap-2 px-1.5 py-1 rounded-lg text-xs cursor-pointer hover:bg-white transition-colors">
+                  <input
+                    type="radio"
+                    name="productCategorySelect"
+                    checked={!selectedCatId}
+                    onChange={() => setSelectedCatId('')}
+                    className="rounded-full border-slate-300 text-sky-600 focus:ring-0 cursor-pointer"
+                  />
+                  <span className={`truncate ${!selectedCatId ? 'font-bold text-slate-900' : 'text-slate-500 italic'}`}>
+                    — Sin categorizar —
+                  </span>
+                </label>
+
                 {categories.length === 0 ? (
-                  <p className="text-[11px] text-slate-400 italic">No hay categorías creadas.</p>
+                  <p className="text-[11px] text-slate-400 italic px-1.5 pt-1">No hay más categorías creadas.</p>
                 ) : (
                   categories.map((cat) => {
                     const depth = cat.parent_id ? (categories.some((p) => p.id === cat.parent_id && p.parent_id) ? 3 : 2) : 1;

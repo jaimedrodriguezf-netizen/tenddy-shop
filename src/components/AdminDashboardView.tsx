@@ -1341,6 +1341,7 @@ export default function AdminDashboardView({
                   setProducts((prev) => prev.map((p) => (p.id === updatedProd.id ? updatedProd : p)));
                   setEditingProduct(null);
                 }}
+                onCategoryCreated={(newCat) => setCategories((prev) => [...prev, newCat])}
               />
             ) : (
               <ProductsManagerView

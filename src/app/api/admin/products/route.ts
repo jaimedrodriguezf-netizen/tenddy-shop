@@ -175,11 +175,27 @@ export async function POST(request: Request) {
           .sort((a: any, b: any) => a.min_qty - b.min_qty)
       : [];
 
+    // Sanitizar category_id para evitar error 22P02 de sintaxis UUID o 23503 de clave foránea
+    let safeCategoryId: string | null = null;
+    if (category_id && typeof category_id === 'string') {
+      const cleanCatId = category_id.trim();
+      const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(cleanCatId);
+      if (isValidUuid) {
+        const { data: catExists } = await admin
+          .from('categories')
+          .select('id')
+          .eq('id', cleanCatId)
+          .eq('tenant_id', tenant_id)
+          .maybeSingle();
+        safeCategoryId = catExists ? cleanCatId : null;
+      }
+    }
+
     const { data: product, error } = await admin
       .from('products')
       .insert({
         tenant_id,
-        category_id: category_id || null,
+        category_id: safeCategoryId,
         slug: targetSlug,
         name: name.trim(),
         sku: sku.trim().toUpperCase(),
@@ -196,7 +212,26 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error('Error creando producto:', error);
-      return NextResponse.json({ error: 'No se pudo crear el producto en el catálogo' }, { status: 500 });
+      if (error.code === '23505') {
+        const detail = (error.details || '').toLowerCase();
+        if (detail.includes('sku')) {
+          return NextResponse.json(
+            { error: `Ya existe otro producto con el código SKU "${sku}". Por favor elige un código diferente.` },
+            { status: 409 }
+          );
+        }
+        return NextResponse.json(
+          { error: 'Ya existe otro producto con este mismo nombre o enlace web en tu catálogo. Por favor usa un nombre diferente.' },
+          { status: 409 }
+        );
+      }
+      if (error.code === '23503') {
+        return NextResponse.json(
+          { error: 'La categoría seleccionada no existe o fue retirada. Elige otra categoría o marca "Sin categorizar".' },
+          { status: 400 }
+        );
+      }
+      return NextResponse.json({ error: `No se pudo crear el producto: ${error.message || 'Verifica los datos ingresados'}` }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, product });
@@ -352,7 +387,7 @@ export async function PATCH(request: Request) {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
-        .slice(0, 60);
+        .slice(0, 120);
 
       if (targetSlug && targetSlug !== currentProduct.slug) {
         // Si el usuario editó explícitamente el slug, verificar que no colisione con otro producto del tenant
@@ -362,10 +397,10 @@ export async function PATCH(request: Request) {
           .eq('tenant_id', currentProduct.tenant_id)
           .eq('slug', targetSlug)
           .neq('id', id)
-          .single();
+          .maybeSingle();
 
         if (collision) {
-          targetSlug = `${targetSlug}-${Math.floor(10 + Math.random() * 90)}`;
+          targetSlug = `${targetSlug.slice(0, 110)}-${Math.floor(10 + Math.random() * 90)}`;
         }
         updatePayload.slug = targetSlug;
       }
@@ -378,11 +413,30 @@ export async function PATCH(request: Request) {
         .replace(/[\u0300-\u036f]/g, '')
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '')
-        .slice(0, 40);
+        .slice(0, 50);
       const cleanSkuPart = (sku || currentProduct.sku || 'sku').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 30);
       updatePayload.slug = `${cleanName}-${cleanSkuPart}-${Math.floor(10 + Math.random() * 90)}`;
     }
-    if (category_id !== undefined) updatePayload.category_id = category_id || null;
+
+    if (category_id !== undefined) {
+      if (!category_id) {
+        updatePayload.category_id = null;
+      } else {
+        const catStr = String(category_id).trim();
+        const isValidUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(catStr);
+        if (isValidUuid) {
+          const { data: catExists } = await admin
+            .from('categories')
+            .select('id')
+            .eq('id', catStr)
+            .eq('tenant_id', currentProduct.tenant_id)
+            .maybeSingle();
+          updatePayload.category_id = catExists ? catStr : null;
+        } else {
+          updatePayload.category_id = null;
+        }
+      }
+    }
     if (description !== undefined) updatePayload.description = description ? description.trim() : null;
     if (min_order_qty !== undefined) updatePayload.min_order_qty = Number(min_order_qty) || 1;
     if (units_per_package !== undefined) updatePayload.units_per_package = Number(units_per_package) || 1;
@@ -404,7 +458,35 @@ export async function PATCH(request: Request) {
 
     if (updateErr) {
       console.error('Error actualizando producto:', updateErr);
-      return NextResponse.json({ error: 'No se pudo actualizar el producto' }, { status: 500 });
+      
+      // Mensajes comerciales y específicos para que el comerciante sepa exactamente qué corregir
+      if (updateErr.code === '23505') {
+        const detail = (updateErr.details || '').toLowerCase();
+        if (detail.includes('sku')) {
+          return NextResponse.json(
+            { error: `Ya existe otro producto con el código SKU "${updatePayload.sku || sku}". Por favor cámbialo en la pestaña Inventario para poder guardarlo.` },
+            { status: 409 }
+          );
+        }
+        if (detail.includes('slug')) {
+          return NextResponse.json(
+            { error: 'Ya existe otro producto con el mismo nombre o enlace web en tu catálogo. Por favor modifica el nombre del producto o el enlace permanente.' },
+            { status: 409 }
+          );
+        }
+      }
+
+      if (updateErr.code === '23503') {
+        return NextResponse.json(
+          { error: 'La categoría seleccionada no es válida o fue eliminada. Por favor selecciona otra categoría o marca "Sin categorizar".' },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json(
+        { error: `No se pudo guardar el producto modificado: ${updateErr.message || 'Verifica los datos e intenta nuevamente.'}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ success: true, product: updatedProduct });

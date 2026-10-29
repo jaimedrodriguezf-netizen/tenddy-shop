@@ -10,6 +10,7 @@ interface EditProductModalProps {
   product: Product | null;
   categories: Category[];
   onProductUpdated: (updatedProduct: Product) => void;
+  onCategoryCreated?: (newCategory: Category) => void;
   tenant: Tenant;
 }
 
@@ -19,6 +20,7 @@ export default function EditProductModal({
   product,
   categories,
   onProductUpdated,
+  onCategoryCreated,
   tenant,
 }: EditProductModalProps) {
   if (!isOpen || !product) return null;
@@ -33,6 +35,7 @@ export default function EditProductModal({
         onProductUpdated(updatedProd);
         onClose();
       }}
+      onCategoryCreated={onCategoryCreated}
     />
   );
 }
