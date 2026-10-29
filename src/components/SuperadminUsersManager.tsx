@@ -1,24 +1,22 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import {
-  Users,
   UserPlus,
-  Building2,
-  Phone,
-  Mail,
-  MapPin,
   Trash2,
   Power,
-  Shield,
-  Briefcase,
   Search,
   Check,
   AlertCircle,
   Loader2,
   X,
-  CreditCard
+  ExternalLink,
+  Copy,
+  Package,
+  ImageIcon
 } from 'lucide-react';
+import type { SuperadminTenantSummary } from './SuperadminDashboardView';
 
 export interface B2BAccount {
   id: string;
@@ -42,6 +40,9 @@ export interface TenantStaffMember {
   role: string;
   is_active: boolean;
   created_at: string;
+  total_products?: number;
+  total_images?: number;
+  primary_domain?: string;
   tenants?: {
     name: string;
     slug: string;
@@ -51,17 +52,30 @@ export interface TenantStaffMember {
 interface SuperadminUsersManagerProps {
   initialBuyers: B2BAccount[];
   initialStaff: TenantStaffMember[];
+  tenants?: SuperadminTenantSummary[];
 }
 
 export default function SuperadminUsersManager({
   initialBuyers,
   initialStaff,
+  tenants = [],
 }: SuperadminUsersManagerProps) {
   const [subTab, setSubTab] = useState<'buyers' | 'staff'>('buyers');
   const [buyers, setBuyers] = useState<B2BAccount[]>(initialBuyers);
   const [staff, setStaff] = useState<TenantStaffMember[]>(initialStaff);
   const [search, setSearch] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [copiedSlug, setCopiedSlug] = useState<string | null>(null);
+
+  const copyStoreUrl = (slug: string) => {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://tenddy.shop';
+    const fullUrl = `${origin}/store/${slug}`;
+    if (navigator?.clipboard) {
+      navigator.clipboard.writeText(fullUrl);
+      setCopiedSlug(slug);
+      setTimeout(() => setCopiedSlug(null), 2000);
+    }
+  };
 
   // Formulario nuevo comprador
   const [companyName, setCompanyName] = useState('');
@@ -414,7 +428,8 @@ export default function SuperadminUsersManager({
             <thead className="bg-slate-900/60 border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px] tracking-wider">
               <tr>
                 <th className="py-3 px-4">Usuario / Staff</th>
-                <th className="py-3 px-4">Tienda Asignada</th>
+                <th className="py-3 px-4">Tienda Asignada & URL</th>
+                <th className="py-3 px-4 text-center">Catálogo (Prods / Imgs)</th>
                 <th className="py-3 px-4">Rol</th>
                 <th className="py-3 px-4">Teléfono</th>
                 <th className="py-3 px-4">Estado</th>
@@ -424,58 +439,112 @@ export default function SuperadminUsersManager({
             <tbody className="divide-y divide-slate-800/60">
               {filteredStaff.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-500">
+                  <td colSpan={7} className="py-12 text-center text-slate-500">
                     No hay miembros de staff registrados.
                   </td>
                 </tr>
               ) : (
-                filteredStaff.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-white text-sm">{s.full_name}</div>
-                      <div className="text-[11px] text-slate-400">{s.email}</div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-sky-400">{s.tenants?.name || 'Tienda Principal'}</div>
-                      <div className="text-[10px] font-mono text-slate-500">{s.tenants?.slug}.tenddy.shop</div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="capitalize bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[11px] font-bold text-amber-400">
-                        {s.role}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 font-mono text-slate-300">
-                      {s.phone ? `+${s.phone}` : '—'}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {s.is_active ? (
-                        <span className="text-emerald-400 font-semibold text-[11px]">Activo</span>
-                      ) : (
-                        <span className="text-rose-400 font-semibold text-[11px]">Suspendido</span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => handleToggleUser(s.id, s.is_active, 'staff')}
-                          className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
-                            s.is_active ? 'text-rose-400 hover:bg-rose-500/10 border-rose-500/20' : 'text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
-                          }`}
-                          title={s.is_active ? 'Suspender acceso' : 'Reactivar acceso'}
-                        >
-                          <Power className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteUser(s.id, 'staff')}
-                          className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-slate-800 rounded-lg transition-colors cursor-pointer"
-                          title="Eliminar usuario"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                filteredStaff.map((s) => {
+                  const tenantSummary = tenants.find((t) => t.id === s.tenant_id || t.slug === s.tenants?.slug);
+                  const productCount = s.total_products ?? tenantSummary?.total_products ?? 0;
+                  const imageCount = s.total_images ?? tenantSummary?.total_images ?? 0;
+                  const storeDomain = s.primary_domain || tenantSummary?.primary_domain || (s.tenants?.slug ? `${s.tenants.slug}.tenddy.shop` : null);
+
+                  return (
+                    <tr key={s.id} className="hover:bg-slate-900/40 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-white text-sm">{s.full_name}</div>
+                        <div className="text-[11px] text-slate-400">{s.email}</div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-bold text-sky-400">{s.tenants?.name || 'Tienda Principal'}</div>
+                        {s.tenants?.slug ? (
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Link
+                              href={`/store/${s.tenants.slug}`}
+                              target="_blank"
+                              className="text-[11px] font-mono text-sky-400/90 hover:text-sky-300 hover:underline flex items-center gap-1 group truncate max-w-[200px]"
+                              title={`Abrir tienda pública: ${storeDomain}`}
+                            >
+                              <span>{storeDomain}</span>
+                              <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100 shrink-0" />
+                            </Link>
+
+                            <button
+                              type="button"
+                              onClick={() => copyStoreUrl(s.tenants!.slug)}
+                              className="text-slate-500 hover:text-white p-1 rounded hover:bg-slate-900 transition-colors cursor-pointer"
+                              title="Copiar URL de la tienda"
+                            >
+                              {copiedSlug === s.tenants.slug ? (
+                                <Check className="w-3 h-3 text-emerald-400" />
+                              ) : (
+                                <Copy className="w-3 h-3" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] font-mono text-slate-500">—</div>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <div className="inline-flex items-center gap-2">
+                          <span
+                            className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 text-slate-200 px-2 py-1 rounded-lg text-xs font-semibold"
+                            title={`Total de productos: ${productCount}`}
+                          >
+                            <Package className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                            <span>{productCount}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">prods</span>
+                          </span>
+                          <span
+                            className="inline-flex items-center gap-1.5 bg-slate-900 border border-slate-800 text-slate-200 px-2 py-1 rounded-lg text-xs font-semibold"
+                            title={`Total de imágenes: ${imageCount}`}
+                          >
+                            <ImageIcon className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                            <span>{imageCount}</span>
+                            <span className="text-[10px] text-slate-400 font-normal">imgs</span>
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <span className="capitalize bg-slate-900 border border-slate-800 px-2 py-0.5 rounded text-[11px] font-bold text-amber-400">
+                          {s.role}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-mono text-slate-300">
+                        {s.phone ? `+${s.phone}` : '—'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {s.is_active ? (
+                          <span className="text-emerald-400 font-semibold text-[11px]">Activo</span>
+                        ) : (
+                          <span className="text-rose-400 font-semibold text-[11px]">Suspendido</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => handleToggleUser(s.id, s.is_active, 'staff')}
+                            className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                              s.is_active ? 'text-rose-400 hover:bg-rose-500/10 border-rose-500/20' : 'text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/20'
+                            }`}
+                            title={s.is_active ? 'Suspender acceso' : 'Reactivar acceso'}
+                          >
+                            <Power className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(s.id, 'staff')}
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 border border-slate-800 rounded-lg transition-colors cursor-pointer"
+                            title="Eliminar usuario"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
