@@ -26,7 +26,13 @@ import {
   Zap,
   Factory,
   Home,
-  Truck
+  Truck,
+  ShieldCheck,
+  Snowflake,
+  Award,
+  RefreshCw,
+  Video,
+  Music
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tenant, Branch, Category, Product, resolveLandingSections, getPackagingUnit } from '@/lib/types';
@@ -158,16 +164,16 @@ export default function TenantLandingView({
     contactReqLabel: isAyme || tenant.industry_type === 'plastics' ? 'Tipo de Envase o Servicio Requerido' : 'Tipo de Requerimiento',
     contactOptions: isAyme || tenant.industry_type === 'plastics'
       ? [
-          { value: 'Cotización General de Envases', label: '📦 Cotización General de Envases' },
-          { value: 'Fabricación de Molde Personalizado', label: '📐 Fabricación de Molde Personalizado 3D' },
-          { value: 'Solicitud de Muestras Físicas', label: '🧪 Solicitud de Kit de Muestras Físicas' },
-          { value: 'Maquila de Soplado en Volumen', label: '🏭 Maquila de Soplado en Alto Volumen' },
+          { value: 'Cotización General de Envases', label: 'Cotización General de Envases' },
+          { value: 'Fabricación de Molde Personalizado', label: 'Fabricación de Molde Personalizado 3D' },
+          { value: 'Solicitud de Muestras Físicas', label: 'Solicitud de Kit de Muestras Físicas' },
+          { value: 'Maquila de Soplado en Volumen', label: 'Maquila de Soplado en Alto Volumen' },
         ]
       : [
-          { value: 'Cotización Mayorista de Productos', label: '📦 Cotización Mayorista de Productos' },
-          { value: 'Pedidos Especiales y Personalizados', label: '📐 Pedidos Especiales y Personalizados' },
-          { value: 'Solicitud de Muestras Comerciales', label: '🧪 Solicitud de Muestras Comerciales' },
-          { value: 'Distribución y Despacho Masivo', label: '🏭 Distribución y Despacho Masivo' },
+          { value: 'Cotización Mayorista de Productos', label: 'Cotización Mayorista de Productos' },
+          { value: 'Pedidos Especiales y Personalizados', label: 'Pedidos Especiales y Personalizados' },
+          { value: 'Solicitud de Muestras Comerciales', label: 'Solicitud de Muestras Comerciales' },
+          { value: 'Distribución y Despacho Masivo', label: 'Distribución y Despacho Masivo' },
         ],
   }), [tenant, landing, isAyme]);
 
@@ -612,11 +618,11 @@ export default function TenantLandingView({
                 )
               ) : (
                 <>
-                  <span>🏭 <strong>{tenant.name}</strong>{tenant.slug === 'ayme-pet' ? ' | Solutions in Packaging' : ''}</span>
+                  <span className="inline-flex items-center gap-1.5"><Factory className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>{tenant.name}</strong>{tenant.slug === 'ayme-pet' ? ' | Solutions in Packaging' : ''}</span>
                   <span className="hidden md:inline">•</span>
-                  <span className="hidden md:inline">📦 <strong>Ventas Mayoristas & Moldes</strong></span>
+                  <span className="hidden md:inline-flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>Ventas Mayoristas & Moldes</strong></span>
                   <span className="hidden sm:inline">•</span>
-                  <span>📱 <strong>WhatsApp: {displayPhone}</strong></span>
+                  <span className="inline-flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>WhatsApp: {displayPhone}</strong></span>
                 </>
               )}
             </div>
@@ -1149,11 +1155,11 @@ export default function TenantLandingView({
                 </p>
                 <div className="step-features-grid">
                   <div className="step-feat-box">
-                    <h5>⚡ Alta Resistencia</h5>
+                    <h5 className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-amber-400" /> Alta Resistencia</h5>
                     <p>Bi-orientación molecular que triplica la resistencia a caídas.</p>
                   </div>
                   <div className="step-feat-box">
-                    <h5>❄️ Enfriamiento Rápido</h5>
+                    <h5 className="flex items-center gap-1.5"><Snowflake className="w-4 h-4 text-sky-400" /> Enfriamiento Rápido</h5>
                     <p>Ciclo ultraveloz con fondo petaloide libre de tensiones.</p>
                   </div>
                 </div>
@@ -1772,18 +1778,18 @@ export default function TenantLandingView({
                       </a>
                     )}
                     {safeExternalUrl(social.instagram) && (
-                      <a href={safeExternalUrl(social.instagram)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Instagram">
-                        📸 Instagram
+                      <a href={safeExternalUrl(social.instagram)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="Instagram">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> Instagram
                       </a>
                     )}
                     {safeExternalUrl(social.tiktok) && (
-                      <a href={safeExternalUrl(social.tiktok)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="TikTok">
-                        🎵 TikTok
+                      <a href={safeExternalUrl(social.tiktok)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="TikTok">
+                        <Music className="w-3.5 h-3.5" /> TikTok
                       </a>
                     )}
                     {safeExternalUrl(social.youtube) && (
-                      <a href={safeExternalUrl(social.youtube)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="YouTube">
-                        ▶️ YouTube
+                      <a href={safeExternalUrl(social.youtube)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="YouTube">
+                        <Video className="w-3.5 h-3.5" /> YouTube
                       </a>
                     )}
                   </div>
@@ -1791,11 +1797,11 @@ export default function TenantLandingView({
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3 sm:mt-0">
                 <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400">
-                  <span>🏆 Inocuidad BPM</span>
+                  <span className="inline-flex items-center gap-1"><Award className="w-3.5 h-3.5 text-amber-400" /> Inocuidad BPM</span>
                   <span className="hidden sm:inline">•</span>
-                  <span>♻️ PET 100% Reciclable</span>
+                  <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 text-emerald-400" /> PET 100% Reciclable</span>
                   <span className="hidden sm:inline">•</span>
-                  <span>📦 Despacho Paletizado</span>
+                  <span className="inline-flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-sky-400" /> Despacho Paletizado</span>
                 </div>
                 <VersionBadge className="bg-slate-900 border-slate-800 text-slate-400" />
               </div>
@@ -1948,8 +1954,9 @@ export default function TenantLandingView({
           aria-label="Atención por WhatsApp"
           className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 sm:gap-3 group animate-fade-in"
         >
-          <div className="hidden sm:block opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-none whitespace-nowrap">
-            ¿Cotizamos por WhatsApp? 💬
+          <div className="hidden sm:inline-flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-none whitespace-nowrap">
+            <span>¿Cotizamos por WhatsApp?</span>
+            <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
           </div>
           <a
             href={buildEcuadorWhatsAppUrl(mainWhatsapp, defaultWelcomeMsg)}

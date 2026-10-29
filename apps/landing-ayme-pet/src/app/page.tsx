@@ -23,7 +23,8 @@ import {
   SlidersHorizontal,
   Search,
   ExternalLink,
-  HelpCircle
+  HelpCircle,
+  Home
 } from 'lucide-react';
 import { buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 import { resolveLandingSections, LandingSectionsConfig } from '@/lib/types';
@@ -530,39 +531,43 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     setIsMobileMenuOpen(false);
                   }}
-                  className={`block w-full text-left py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-2 w-full text-left py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
                     activeSection === 'inicio' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
                   }`}
                 >
-                  🏭 Inicio
+                  <Home className="w-3.5 h-3.5" />
+                  <span>Inicio</span>
                 </button>
                 <a
                   href="#catalogo"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
                     activeSection === 'catalogo' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
                   }`}
                 >
-                  📦 Catálogo de Envases
+                  <Package className="w-3.5 h-3.5" />
+                  <span>Catálogo de Envases</span>
                 </a>
                 <a
                   href="#faqs"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                  className={`flex items-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
                     activeSection === 'faqs' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
                   }`}
                 >
-                  ❓ Preguntas Frecuentes
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  <span>Preguntas Frecuentes</span>
                 </a>
                 {sections.rfq_and_map.enabled && (
                   <a
                     href="#cotizar"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className={`block py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
+                    className={`flex items-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
                       activeSection === 'cotizar' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
                     }`}
                   >
-                    📍 Cotizador & Retiro en Planta
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span>Cotizador & Retiro en Planta</span>
                   </a>
                 )}
               </div>
