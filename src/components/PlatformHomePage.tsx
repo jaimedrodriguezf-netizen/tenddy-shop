@@ -749,34 +749,6 @@ export default function PlatformHomePage() {
         </div>
       </section>
 
-      {/* CTA Final */}
-      <section className="border-b border-slate-800 bg-slate-900/40 py-16 sm:py-24 text-center">
-        <div className="max-w-3xl mx-auto px-4 space-y-4 sm:space-y-6">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-            ¿Listo para llevar tu fábrica o distribuidora al canal digital?
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto px-2">
-            Crea tu tienda B2B hoy mismo. Recibe cotizaciones formales por WhatsApp y gestiona tus clientes en un panel privado.
-          </p>
-          <div className="pt-2 flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 sm:gap-4 max-w-sm sm:max-w-none mx-auto">
-            <Link
-              href="/registro"
-              className="bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm py-3.5 px-8 rounded-xl shadow-lg shadow-sky-600/30 transition-all flex items-center justify-center gap-2 group"
-            >
-              <span>Registrar Mi Empresa Gratis</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </Link>
-            <button
-              onClick={() => setIsSupportModalOpen(true)}
-              className="bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-sm py-3.5 px-6 rounded-xl border border-slate-700 transition-all cursor-pointer flex items-center justify-center gap-2"
-            >
-              <LifeBuoy className="w-4 h-4 text-amber-400" />
-              <span>Contactar Soporte</span>
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Footer Responsivo */}
       <footer className="py-8 sm:py-12 text-xs text-slate-500 text-center">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-6">
