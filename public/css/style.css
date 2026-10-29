@@ -814,6 +814,12 @@ h1, h2, h3, h4, h5, h6 {
         grid-template-columns: repeat(2, 1fr);
         gap: 0.5rem;
     }
+    .product-badge {
+        top: 6px;
+        left: 6px;
+        font-size: 0.62rem;
+        padding: 0.15rem 0.45rem;
+    }
 }
 
 .product-card {

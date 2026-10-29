@@ -196,7 +196,7 @@ export default function CartDrawer({
   if (!isMounted || !isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden">
+    <div className="fixed inset-0 z-[2000] overflow-hidden">
       {/* Backdrop oscuro con desenfoque */}
       <div
         onClick={closeCart}
@@ -215,20 +215,27 @@ export default function CartDrawer({
           {/* Header del Drawer */}
           <div
             style={{ backgroundColor: drawerHeaderBg, borderBottomColor: tokens.primaryBorder }}
-            className="p-4 border-b flex items-center justify-between backdrop-blur-md"
+            className="p-4 pt-5 sm:pt-4 border-b flex items-center justify-between backdrop-blur-md"
           >
-            <div className="flex items-center gap-2">
-              <Package className="w-5 h-5" style={{ color: tokens.primary }} />
+            <div className="flex items-center gap-2.5">
+              <div
+                style={{ backgroundColor: tokens.primaryLight, borderColor: tokens.primaryBorder }}
+                className="w-9 h-9 rounded-xl border flex items-center justify-center shrink-0"
+              >
+                <Package className="w-5 h-5" style={{ color: tokens.primary }} />
+              </div>
               <div>
-                <h3 className="font-bold text-sm text-white">Carrito Cotizador B2B</h3>
-                <p className="text-[11px] text-slate-400">
-                  {totalUnits.toLocaleString()} unidades en {totalPackages} {totalPackages === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}
+                <h3 className="font-bold text-sm text-white leading-tight">Carrito Cotizador B2B</h3>
+                <p className="text-[11px] text-slate-400 font-mono mt-0.5">
+                  {tenantItems.length} {tenantItems.length === 1 ? 'modelo' : 'modelos'} • {totalPackages} {totalPackages === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()} ({totalUnits.toLocaleString()} uds)
                 </p>
               </div>
             </div>
             <button
               onClick={closeCart}
-              className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="Cerrar cotizador"
+              aria-label="Cerrar carrito cotizador"
             >
               <X className="w-5 h-5" />
             </button>
@@ -581,18 +588,24 @@ export default function CartDrawer({
           {step === 'items' && items.length > 0 && (
             <div
               style={{ backgroundColor: drawerHeaderBg, borderTopColor: tokens.primaryBorder }}
-              className="p-4 border-t space-y-3 backdrop-blur-md"
+              className="p-4 border-t space-y-2.5 backdrop-blur-md"
             >
               <div className="flex justify-between text-xs font-mono">
-                <span className="text-slate-400">Total Unidades:</span>
-                <span className="font-bold text-white text-sm">
-                  {totalUnits.toLocaleString()} uds
+                <span className="text-slate-400">Modelos en cotizador:</span>
+                <span className="font-bold text-white text-xs">
+                  {tenantItems.length} {tenantItems.length === 1 ? 'producto' : 'productos'}
                 </span>
               </div>
               <div className="flex justify-between text-xs font-mono">
                 <span className="text-slate-400">Total {packagingUnit.plural}:</span>
                 <span className="font-bold" style={{ color: tokens.primary }}>
                   {totalPackages} {totalPackages === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs font-mono">
+                <span className="text-slate-400">Total Unidades:</span>
+                <span className="font-bold text-white text-sm">
+                  {totalUnits.toLocaleString()} uds
                 </span>
               </div>
 

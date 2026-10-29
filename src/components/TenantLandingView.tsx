@@ -117,7 +117,7 @@ export default function TenantLandingView({
   const [serviceCustomerPhone, setServiceCustomerPhone] = useState<string>('');
   const [serviceNotes, setServiceNotes] = useState<string>('');
 
-  const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
+  const { openCart, addItem, items, getTotalUnits, getTotalPackages } = useCartStore();
 
   const { landing_config: landing, theme_config: theme } = tenant;
   const logoHeight = (theme as any)?.logo_height || 42;
@@ -133,6 +133,10 @@ export default function TenantLandingView({
 
   const totalCartUnits = getTotalUnits(tenant.id);
   const totalCartPackages = getTotalPackages(tenant.id);
+  const totalCartUniqueItems = useMemo(
+    () => items.filter((item) => item.product.tenant_id === tenant.id).length,
+    [items, tenant.id]
+  );
 
   // Fallbacks y valores corporativos centralizados (desacoplamiento de ternarios dispersos)
   const isAyme = tenant.slug === 'ayme-pet';
@@ -734,8 +738,8 @@ export default function TenantLandingView({
                 title="Ver lista de cotización"
               >
                 <ShoppingCart className="w-5 h-5" style={{ color: secondaryColor }} />
-                {totalCartPackages > 0 && (
-                  <span className="cart-badge-count">{totalCartPackages}</span>
+                {totalCartUniqueItems > 0 && (
+                  <span className="cart-badge-count">{totalCartUniqueItems}</span>
                 )}
               </button>
 

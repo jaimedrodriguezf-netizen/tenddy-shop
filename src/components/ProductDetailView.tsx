@@ -52,9 +52,14 @@ export default function ProductDetailView({
   branches = [],
   categories = [],
 }: ProductDetailViewProps) {
-  const { addItem, openCart, getTotalPackages } = useCartStore();
+  const { addItem, openCart, items, getTotalPackages } = useCartStore();
   const [currentBranch, setCurrentBranch] = useState<Branch | null>(
     selectedBranch || branches[0] || null
+  );
+
+  const totalCartUniqueItems = useMemo(
+    () => items.filter((item) => item.product.tenant_id === tenant.id).length,
+    [items, tenant.id]
   );
 
   const specs = product.attributes?.specs || {};
@@ -337,12 +342,12 @@ export default function ProductDetailView({
             >
               <ShoppingCart className="w-4 h-4" />
               <span className="hidden sm:inline">Carrito</span>
-              {totalCartPackages > 0 && (
+              {totalCartUniqueItems > 0 && (
                 <span
                   style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
                   className="font-mono font-extrabold text-[10px] px-1.5 py-0.2 rounded-full shadow-2xs"
                 >
-                  {totalCartPackages}
+                  {totalCartUniqueItems}
                 </span>
               )}
             </button>
