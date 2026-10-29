@@ -22,6 +22,7 @@ import { useCartStore } from '@/lib/store/cart';
 import { Tenant, Branch, getPackagingUnit } from '@/lib/types';
 import { getProductPrimaryImage } from '@/lib/product-image';
 import { buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
+import { resolveStorefrontTokens, buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 
 interface CartDrawerProps {
   tenant: Tenant;
@@ -50,6 +51,20 @@ export default function CartDrawer({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [createdQuoteNumber, setCreatedQuoteNumber] = useState<string | null>(null);
   const [lastWhatsAppUrl, setLastWhatsAppUrl] = useState<string | null>(null);
+
+  // Tokens de diseño y colores corporativos dinámicos
+  const theme = (tenant.theme_config as any) || {};
+  const tokens = useMemo(
+    () => resolveStorefrontTokens(theme.primary_color, theme.secondary_color),
+    [theme.primary_color, theme.secondary_color]
+  );
+  const themeStyles = useMemo(
+    () => buildStorefrontThemeCSS(theme.primary_color, theme.secondary_color),
+    [theme.primary_color, theme.secondary_color]
+  );
+  const isLanding = theme.store_template === 'landing';
+  const drawerBg = isLanding && theme.landing_bg_color ? theme.landing_bg_color : (tenant.slug === 'ayme-pet' ? '#0a1128' : '#0f172a');
+  const drawerHeaderBg = isLanding ? 'rgba(0, 0, 0, 0.45)' : '#020617';
 
   // Unidad de empaque mayorista dinámica
   const packagingUnit = React.useMemo(() => getPackagingUnit(tenant), [tenant]);
@@ -189,11 +204,21 @@ export default function CartDrawer({
       />
 
       <div className="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10">
-        <div className="w-screen max-w-md bg-slate-900 border-l border-slate-800 text-slate-100 flex flex-col shadow-2xl">
+        <div
+          style={{
+            ...themeStyles,
+            backgroundColor: drawerBg,
+            borderColor: tokens.primaryBorder,
+          }}
+          className="w-screen max-w-md border-l text-slate-100 flex flex-col shadow-2xl transition-colors"
+        >
           {/* Header del Drawer */}
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+          <div
+            style={{ backgroundColor: drawerHeaderBg, borderBottomColor: tokens.primaryBorder }}
+            className="p-4 border-b flex items-center justify-between backdrop-blur-md"
+          >
             <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-sky-400" />
+              <Package className="w-5 h-5" style={{ color: tokens.primary }} />
               <div>
                 <h3 className="font-bold text-sm text-white">Carrito Cotizador B2B</h3>
                 <p className="text-[11px] text-slate-400">
@@ -203,16 +228,16 @@ export default function CartDrawer({
             </div>
             <button
               onClick={closeCart}
-              className="p-1 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              className="p-1 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Selector de Sucursal en el Carrito */}
-          <div className="px-4 py-2.5 bg-slate-950/50 border-b border-slate-800 text-xs flex items-center justify-between">
+          <div className="px-4 py-2.5 bg-black/25 border-b border-white/10 text-xs flex items-center justify-between">
             <span className="text-slate-400 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-sky-400" />
+              <MapPin className="w-3.5 h-3.5" style={{ color: tokens.primary }} />
               Atender desde:
             </span>
             <select
@@ -252,7 +277,8 @@ export default function CartDrawer({
                         const cat = document.getElementById('catalog-section');
                         if (cat) cat.scrollIntoView({ behavior: 'smooth' });
                       }}
-                      className="mt-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer transition-colors"
+                      style={{ backgroundColor: tokens.primary, color: tokens.primaryText }}
+                      className="mt-2 text-xs font-semibold px-4 py-2 rounded-lg cursor-pointer transition-opacity hover:opacity-90"
                     >
                       Ver Catálogo
                     </button>
@@ -283,7 +309,7 @@ export default function CartDrawer({
                                 {item.product.name}
                               </h4>
                               <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                <span className="text-[11px] text-sky-400 font-mono">
+                                <span className="text-[11px] font-mono font-medium" style={{ color: tokens.primary }}>
                                   SKU: {item.product.sku}
                                 </span>
                                 {item.selectedColor && (
@@ -352,8 +378,15 @@ export default function CartDrawer({
 
             {step === 'form' && (
               <form onSubmit={handleSubmitQuote} className="space-y-4">
-                <div className="bg-sky-500/10 border border-sky-500/20 rounded-xl p-3 text-xs text-sky-300 flex items-start gap-2">
-                  <Building2 className="w-4 h-4 shrink-0 mt-0.5 text-sky-400" />
+                <div
+                  style={{
+                    backgroundColor: tokens.primaryLight,
+                    borderColor: tokens.primaryBorder,
+                    color: '#f8fafc',
+                  }}
+                  className="border rounded-xl p-3 text-xs flex items-start gap-2"
+                >
+                  <Building2 className="w-4 h-4 shrink-0 mt-0.5" style={{ color: tokens.primary }} />
                   <span>
                     Completa los datos de tu empresa para enviar el requerimiento formal a la planta de <strong>{selectedBranch?.city}</strong>.
                   </span>
@@ -381,7 +414,7 @@ export default function CartDrawer({
                           setFormData({ ...formData, customerName: e.target.value })
                         }
                         placeholder="Ej. Ing. Carlos Mendoza"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                        className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-white focus:outline-none focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] transition-all"
                       />
                     </div>
                   </div>
@@ -399,7 +432,7 @@ export default function CartDrawer({
                           setFormData({ ...formData, companyName: e.target.value })
                         }
                         placeholder="Ej. Embotelladora Andina S.A."
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                        className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-white focus:outline-none focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] transition-all"
                       />
                     </div>
                   </div>
@@ -419,7 +452,7 @@ export default function CartDrawer({
                             setFormData({ ...formData, phone: e.target.value })
                           }
                           placeholder="0998765432"
-                          className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                          className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-white focus:outline-none focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] transition-all"
                         />
                       </div>
                     </div>
@@ -436,7 +469,7 @@ export default function CartDrawer({
                             setFormData({ ...formData, deliveryCity: e.target.value })
                           }
                           placeholder="Ej. Guayaquil"
-                          className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                          className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-white focus:outline-none focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] transition-all"
                         />
                       </div>
                     </div>
@@ -455,7 +488,7 @@ export default function CartDrawer({
                           setFormData({ ...formData, email: e.target.value })
                         }
                         placeholder="compras@empresa.com"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg pl-9 pr-3 py-2 text-white focus:border-sky-500 focus:outline-none"
+                        className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg pl-9 pr-3 py-2 text-white focus:outline-none focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] transition-all"
                       />
                     </div>
                   </div>
@@ -471,7 +504,7 @@ export default function CartDrawer({
                         setFormData({ ...formData, notes: e.target.value })
                       }
                       placeholder="Color requerido, muestras previas, etc."
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white focus:border-sky-500 focus:outline-none text-xs resize-none"
+                      className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg p-2.5 text-white focus:outline-none focus:border-[var(--tenant-primary)] focus:ring-1 focus:ring-[var(--tenant-primary)] text-xs resize-none transition-all"
                     />
                   </div>
                 </div>
@@ -509,7 +542,7 @@ export default function CartDrawer({
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white">¡Cotización Registrada!</h3>
-                  <p className="text-xs font-mono text-sky-400 mt-1">
+                  <p className="text-xs font-mono mt-1 font-semibold" style={{ color: tokens.primary }}>
                     Número: {createdQuoteNumber}
                   </p>
                 </div>
@@ -546,7 +579,10 @@ export default function CartDrawer({
 
           {/* Footer del Drawer */}
           {step === 'items' && items.length > 0 && (
-            <div className="p-4 border-t border-slate-800 bg-slate-950 space-y-3">
+            <div
+              style={{ backgroundColor: drawerHeaderBg, borderTopColor: tokens.primaryBorder }}
+              className="p-4 border-t space-y-3 backdrop-blur-md"
+            >
               <div className="flex justify-between text-xs font-mono">
                 <span className="text-slate-400">Total Unidades:</span>
                 <span className="font-bold text-white text-sm">
@@ -555,14 +591,15 @@ export default function CartDrawer({
               </div>
               <div className="flex justify-between text-xs font-mono">
                 <span className="text-slate-400">Total {packagingUnit.plural}:</span>
-                <span className="font-bold text-sky-400">
+                <span className="font-bold" style={{ color: tokens.primary }}>
                   {totalPackages} {totalPackages === 1 ? packagingUnit.singular.toLowerCase() : packagingUnit.plural.toLowerCase()}
                 </span>
               </div>
 
               <button
                 onClick={() => setStep('form')}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold py-3 rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-all cursor-pointer"
+                style={{ backgroundColor: tokens.primary, color: tokens.primaryText }}
+                className="w-full text-xs font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg transition-all hover:opacity-90 active:scale-[0.99] cursor-pointer"
               >
                 <MessageCircle className="w-4 h-4" />
                 Continuar a Datos de Cotización
