@@ -159,7 +159,6 @@ export default function PlatformHomePage() {
             <a href="#how-it-works" className="hover:text-white transition-colors">Cómo Funciona</a>
             <a href="#demo" className="hover:text-white transition-colors">Demostración B2B</a>
             <a href="#features" className="hover:text-white transition-colors">Características</a>
-            <a href="#cases" className="hover:text-white transition-colors">Casos de Éxito</a>
             <a href="#faq" className="hover:text-white transition-colors">Preguntas Frecuentes</a>
             <button
               onClick={() => setIsSupportModalOpen(true)}
@@ -325,13 +324,6 @@ export default function PlatformHomePage() {
               className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-900 hover:text-white"
             >
               Características
-            </a>
-            <a
-              href="#cases"
-              onClick={() => setIsMobileNavOpen(false)}
-              className="block px-3 py-2 rounded-lg text-slate-300 hover:bg-slate-900 hover:text-white"
-            >
-              Casos de Éxito
             </a>
             <a
               href="#faq"
@@ -708,74 +700,7 @@ export default function PlatformHomePage() {
         </div>
       </section>
 
-      {/* SECCIÓN 4: Casos de Éxito / Catálogos en Vivo */}
-      <section id="cases" className="scroll-mt-24 max-w-7xl mx-auto px-4 py-16 sm:py-24 border-b border-slate-800">
-        <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-          <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
-            Agnosticidad Total de Industria
-          </span>
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mt-1">
-            Empresas y Sectores que Corren en Tenddy
-          </h2>
-          <p className="text-xs sm:text-sm text-slate-400 mt-2 px-2">
-            El mismo motor tecnológico adaptado a las necesidades de cada sector industrial.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {/* Caso 1: Plásticos */}
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-sky-500/50 transition-all group">
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-1 mb-3">
-                <span className="text-xs font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded">
-                  Industria del Plástico & Empaques
-                </span>
-                <span className="text-[11px] text-slate-400 font-mono">ayme.tenddy</span>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-white mb-2">AYME INDUSTRIAS PET</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-4">
-                Catálogo con especificaciones técnicas de inyección y soplado (cuello PCO, gramaje de preforma, capacidad en ml, resistencia a 40 Bar).
-              </p>
-            </div>
-            <div className="pt-4 border-t border-slate-800">
-              <Link
-                href="/store/ayme-pet"
-                className="w-full bg-slate-800 hover:bg-sky-600 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 group-hover:bg-sky-600"
-              >
-                <span>Explorar Catálogo en Vivo</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Caso 2: Confitería */}
-          <div className="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between hover:border-rose-500/50 transition-all group">
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-1 mb-3">
-                <span className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2.5 py-1 rounded">
-                  Confitería & Alimentos Mayoristas
-                </span>
-                <span className="text-[11px] text-slate-400 font-mono">dulcelandia.tenddy</span>
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-white mb-2">Dulcelandia Chocolates & Gomitas</h3>
-              <p className="text-xs sm:text-sm text-slate-400 leading-relaxed mb-4">
-                Venta mayorista por cajas máster y pallets para distribuidores, cadenas de supermercados y dulcerías con tablas nutricionales y vida útil.
-              </p>
-            </div>
-            <div className="pt-4 border-t border-slate-800">
-              <Link
-                href="/store/dulcelandia"
-                className="w-full bg-slate-800 hover:bg-rose-600 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 group-hover:bg-rose-600"
-              >
-                <span>Explorar Tienda de Confitería</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* SECCIÓN 5: Preguntas Frecuentes (FAQ) */}
+      {/* SECCIÓN 4: Preguntas Frecuentes (FAQ) */}
       <section id="faq" className="scroll-mt-24 py-16 sm:py-24 border-b border-slate-800 bg-slate-900/30">
         <div className="max-w-4xl mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-12">
