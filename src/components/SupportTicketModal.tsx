@@ -384,10 +384,10 @@ export default function SupportTicketModal({
                 onChange={(e) => setCategory(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-slate-900 font-medium focus:bg-white focus:border-slate-900 focus:outline-none"
               >
-                <option value="technical">🔧 Falla Técnica / Error en pantalla</option>
-                <option value="catalog">📦 Catálogo / Carga de Productos</option>
-                <option value="billing">💳 Pagos / Plan de Suscripción</option>
-                <option value="general">💬 Consulta General / Asistencia</option>
+                <option value="technical">Falla Técnica / Error en pantalla</option>
+                <option value="catalog">Catálogo / Carga de Productos</option>
+                <option value="billing">Pagos / Plan de Suscripción</option>
+                <option value="general">Consulta General / Asistencia</option>
               </select>
             </div>
 

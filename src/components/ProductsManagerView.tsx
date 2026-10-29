@@ -857,7 +857,7 @@ export default function ProductsManagerView({
                                   if (parent && !parent.querySelector('.table-fallback-icon')) {
                                     const fallback = document.createElement('div');
                                     fallback.className = 'table-fallback-icon text-slate-400 font-bold text-xs flex items-center justify-center w-full h-full';
-                                    fallback.innerText = '♳';
+                                    fallback.innerHTML = '<svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m7.5 4.27 9 5.15M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16ZM3.3 7l8.7 5 8.7-5M12 22V12"/></svg>';
                                     parent.appendChild(fallback);
                                   }
                                 }}

@@ -79,13 +79,13 @@ export interface PackagingUnit {
 }
 
 export const PACKAGING_UNIT_PRESETS: { label: string; singular: string; plural: string }[] = [
-  { label: '📦 Paquete', singular: 'Paquete', plural: 'Paquetes' },
-  { label: '📦 Caja', singular: 'Caja', plural: 'Cajas' },
-  { label: '🏭 Fardo', singular: 'Fardo', plural: 'Fardos' },
-  { label: '🚚 Bulto', singular: 'Bulto', plural: 'Bultos' },
-  { label: '🏷️ Pack', singular: 'Pack', plural: 'Packs' },
-  { label: '🌾 Saco', singular: 'Saco', plural: 'Sacos' },
-  { label: '🧵 Rollo', singular: 'Rollo', plural: 'Rollos' },
+  { label: 'Paquete', singular: 'Paquete', plural: 'Paquetes' },
+  { label: 'Caja', singular: 'Caja', plural: 'Cajas' },
+  { label: 'Fardo', singular: 'Fardo', plural: 'Fardos' },
+  { label: 'Bulto', singular: 'Bulto', plural: 'Bultos' },
+  { label: 'Pack', singular: 'Pack', plural: 'Packs' },
+  { label: 'Saco', singular: 'Saco', plural: 'Sacos' },
+  { label: 'Rollo', singular: 'Rollo', plural: 'Rollos' },
 ];
 
 export function getPackagingUnit(tenant?: Partial<Tenant> | null): PackagingUnit {

@@ -1177,8 +1177,9 @@ export default function BulkImportModal({
                 <span className="text-slate-700 font-semibold">
                   {selectedFile?.name || 'product-woocommerce-sample-products-uqktfg8y0j.csv'}
                 </span>
-                <span className="text-emerald-600 block text-[11px] font-sans font-medium mt-0.5">
-                  ✓ Respaldado en Supabase Storage
+                <span className="text-emerald-600 flex items-center gap-1 text-[11px] font-sans font-medium mt-0.5">
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Respaldado en Supabase Storage</span>
                 </span>
               </p>
             </div>

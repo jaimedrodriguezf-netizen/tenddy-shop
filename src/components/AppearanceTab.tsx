@@ -27,7 +27,8 @@ import {
   ChevronUp,
   Layers,
   Factory,
-  Package
+  Package,
+  Zap
 } from 'lucide-react';
 import {
   Tenant,
@@ -671,7 +672,8 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
                     }}
                     className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-xs px-4 py-2 rounded-xl shadow-md transition-all cursor-pointer hover:scale-102 flex items-center gap-1.5"
                   >
-                    <span>⚡ Aplicar ambos colores a la tienda</span>
+                    <Zap className="w-3.5 h-3.5 text-slate-950" />
+                    <span>Aplicar ambos colores a la tienda</span>
                   </button>
                 </div>
               </div>
@@ -1217,8 +1219,9 @@ export default function AppearanceTab({ tenant, onTenantUpdated }: AppearanceTab
             {/* Vista previa en vivo */}
             <div className="mt-3 p-3 bg-white rounded-xl border border-slate-200/80 text-xs text-slate-600 flex items-center justify-between">
               <span>Ejemplo en tarjeta de producto:</span>
-              <span className="font-mono font-bold text-slate-900">
-                📦 {packagingUnit.singular || 'Paquete'} x 12 uds • 5 {packagingUnit.plural || 'Paquetes'}
+              <span className="font-mono font-bold text-slate-900 flex items-center gap-1.5">
+                <Package className="w-3.5 h-3.5 text-slate-500 inline" />
+                <span>{packagingUnit.singular || 'Paquete'} x 12 uds • 5 {packagingUnit.plural || 'Paquetes'}</span>
               </span>
             </div>
           </div>

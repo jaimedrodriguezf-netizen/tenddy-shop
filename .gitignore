@@ -51,3 +51,6 @@ next-env.d.ts
 .codegraph/
 .mcp.json
 supabase/.temp/
+
+# Temporary reference and scratch
+.scratch/

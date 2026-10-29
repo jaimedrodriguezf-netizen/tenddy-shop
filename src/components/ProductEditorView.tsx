@@ -24,7 +24,9 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertTriangle,
-  Layers
+  Layers,
+  RectangleVertical,
+  Square
 } from 'lucide-react';
 import { Tenant, Category, Product, Brand, ProductTag, ProductAttribute } from '@/lib/types';
 import { compressImage } from '@/lib/image-compressor';
@@ -244,7 +246,7 @@ export default function ProductEditorView({
     let generated = '';
 
     if (assistantTone === 'comercial') {
-      generated = `🔥 **${name.trim() || 'Artículo Destacado'}**\n\n` +
+      generated = `**${name.trim() || 'Artículo Destacado'}**\n\n` +
         `Diseñado especialmente para pedidos mayoristas de alto rendimiento. ${base}.\n\n` +
         `• **Calidad Premium:** Fabricación con materiales resistentes y terminaciones reforzadas.\n` +
         `• **Ajuste y Confort:** Patronaje ergonómico con excelente caída y durabilidad.\n` +
@@ -926,7 +928,8 @@ export default function ProductEditorView({
                               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
                           }`}
                         >
-                          <span>📏 Vertical (3:4)</span>
+                          <RectangleVertical className="w-3.5 h-3.5 shrink-0" />
+                          <span>Vertical (3:4)</span>
                           <span className="text-[10px] opacity-75">Ropa y Confección</span>
                         </button>
 
@@ -939,7 +942,8 @@ export default function ProductEditorView({
                               : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
                           }`}
                         >
-                          <span>⏹️ Cuadrado (1:1)</span>
+                          <Square className="w-3.5 h-3.5 shrink-0" />
+                          <span>Cuadrado (1:1)</span>
                           <span className="text-[10px] opacity-75">Envases y Accesorios</span>
                         </button>
                       </div>
@@ -1088,8 +1092,8 @@ export default function ProductEditorView({
                           onChange={(e) => setInStock(e.target.value === 'in_stock')}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-semibold cursor-pointer"
                         >
-                          <option value="in_stock">🟢 Hay existencias</option>
-                          <option value="out_of_stock">🔴 Agotado</option>
+                          <option value="in_stock">En stock / Con existencias</option>
+                          <option value="out_of_stock">Agotado / Sin existencias</option>
                         </select>
                       </div>
                     </div>
@@ -1460,7 +1464,7 @@ export default function ProductEditorView({
                         title="Eliminar de la galería"
                         className="absolute top-1 right-1 w-5 h-5 bg-rose-600 hover:bg-rose-700 text-white rounded-full flex items-center justify-center text-[11px] font-bold opacity-0 group-hover:opacity-100 transition-opacity shadow-xs cursor-pointer"
                       >
-                        ✕
+                        <X className="w-3 h-3" />
                       </button>
 
                       {/* Flechas de reordenamiento */}

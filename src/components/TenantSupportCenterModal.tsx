@@ -928,8 +928,11 @@ export default function TenantSupportCenterModal({
               ========================================================================= */}
           {activeTab === 'fixes' && (
             <div className="space-y-3">
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-900">
-                <span className="font-bold">✨ Mejoras listas en tu tienda:</span> Aquí puedes consultar los ajustes y soluciones que ya implementamos para facilitarte la carga de productos y la atención a tus clientes.
+              <div className="p-3 bg-emerald-50/70 border border-emerald-200 rounded-2xl text-xs text-emerald-900 flex items-start gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Mejoras listas en tu tienda:</span> Aquí puedes consultar los ajustes y soluciones que ya implementamos para facilitarte la carga de productos y la atención a tus clientes.
+                </div>
               </div>
 
               {resolvedTickets.length === 0 ? (

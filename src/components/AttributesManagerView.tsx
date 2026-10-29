@@ -742,10 +742,10 @@ export default function AttributesManagerView({
                         type="button"
                         onClick={() => handleRemoveTerm(term)}
                         disabled={savingTerms}
-                        className="text-slate-400 hover:text-rose-600 cursor-pointer"
+                        className="text-slate-400 hover:text-rose-600 cursor-pointer flex items-center justify-center"
                         title="Eliminar término"
                       >
-                        ✕
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))
