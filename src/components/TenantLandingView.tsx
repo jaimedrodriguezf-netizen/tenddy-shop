@@ -743,7 +743,7 @@ export default function TenantLandingView({
               </ul>
             </nav>
 
-            <div className="header-actions">
+            <div className="header-actions flex items-center gap-2 sm:gap-2.5">
               {/* Botón Cotizador */}
               <button
                 type="button"
@@ -751,7 +751,7 @@ export default function TenantLandingView({
                 className="btn-cart-header cursor-pointer"
                 title="Ver lista de cotización"
               >
-                <ShoppingCart className="w-5 h-5" style={{ color: secondaryColor }} />
+                <ShoppingCart className="w-5 h-5 text-white" />
                 {totalCartUniqueItems > 0 && (
                   <span className="cart-badge-count">{totalCartUniqueItems}</span>
                 )}
@@ -780,14 +780,14 @@ export default function TenantLandingView({
                   <button
                     type="button"
                     onClick={() => setIsAdminMenuOpen((prev) => !prev)}
-                    className="flex items-center gap-1.5 p-1 sm:px-2.5 sm:py-1.5 rounded-full sm:rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 text-white transition-all cursor-pointer shadow-xs"
+                    className="h-[38px] w-[38px] sm:w-auto sm:h-[42px] px-1 sm:px-3 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/15 hover:border-white/25 text-white flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs"
                     title="Opciones de Administrador"
                   >
-                    <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center">
+                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-500/20 border border-amber-400/40 text-amber-300 flex items-center justify-center shrink-0">
                       <User className="w-3.5 h-3.5" />
                     </div>
                     <span className="hidden sm:inline text-xs font-bold text-slate-200">Admin</span>
-                    <ChevronDown className={`w-3 h-3 text-slate-400 transition-transform ${isAdminMenuOpen ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`hidden sm:inline w-3 h-3 text-slate-400 transition-transform ${isAdminMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
 
                   {isAdminMenuOpen && (
@@ -850,7 +850,7 @@ export default function TenantLandingView({
               <button
                 type="button"
                 onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-                className="md:hidden p-1.5 rounded-lg text-white hover:bg-white/10 transition-colors cursor-pointer"
+                className="md:hidden h-[38px] w-[38px] rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/15 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs"
                 aria-label={isMobileMenuOpen ? 'Cerrar menú' : 'Abrir menú'}
               >
                 {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
