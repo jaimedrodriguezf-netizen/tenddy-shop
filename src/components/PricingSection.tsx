@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Check,
+  Sparkles,
   Package,
   Camera,
   FileSpreadsheet,
@@ -13,7 +14,7 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { Plan } from '@/lib/types';
-import { DEFAULT_PLANS } from '@/lib/plans';
+import { DEFAULT_PLANS, getPromoDeadline, getPlanPromoPrice, buildPlanWhatsAppUpgradeUrl } from '@/lib/plans';
 
 interface PricingSectionProps {
   initialPlans?: Plan[];
@@ -50,25 +51,31 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
       {/* Resplandor de fondo ambiental */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-sky-600/10 via-amber-500/5 to-indigo-600/10 blur-[140px] pointer-events-none rounded-full" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Encabezado de la Sección de Precios */}
         <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4 mb-12 sm:mb-16">
+          {/* Banner de Urgencia 50% OFF de Lanzamiento */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-rose-500/15 via-amber-500/15 to-orange-500/15 border border-rose-500/30 text-rose-300 text-xs px-4 py-1.5 rounded-full font-bold shadow-lg">
+            <span className="flex h-2 w-2 rounded-full bg-rose-400 animate-pulse" />
+            <span>🔥 50% OFF DE LANZAMIENTO · Válido hasta el {getPromoDeadline().text} ({getPromoDeadline().daysLeft} días restantes)</span>
+          </div>
+
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
             Escoge el Plan que se Ajusta al Tamaño de tu Catálogo
           </h2>
 
           <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            Inicia gratis o asegura una tarifa anual fija con flujo de caja predecible. Sin comisiones por venta, sin sorpresas y con pedidos directos a tu WhatsApp.
+            Tarifas anuales fijas con el 50% de descuento aplicado. Congela tu precio por los primeros 12 meses antes de fin de mes. Sin comisiones por venta ni sorpresas.
           </p>
         </div>
 
         {/* Grilla Dinámica de Planes (Totalmente conectada a la BD / API) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 xl:gap-4 items-stretch">
           {plans.map((plan) => {
             const isFree = plan.price_yearly === 0;
             const isPopular = plan.badge === 'Más Popular' || plan.slug === 'plan_500';
             const isEnterprise = plan.slug === 'enterprise';
-            const monthlyEquivalent = isFree ? 0 : Math.round(plan.price_yearly / 12);
+            const promo = getPlanPromoPrice(plan);
 
             return (
               <div
@@ -120,14 +127,25 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
                       </div>
                     ) : (
                       <div>
-                        <div className="flex items-baseline justify-center gap-1">
+                        {/* Precio de Lista Tachado */}
+                        <div className="flex items-center justify-center gap-1.5">
+                          <span className="text-xs line-through text-slate-500 font-mono font-semibold">
+                            ${promo.originalPrice} USD
+                          </span>
+                          <span className="text-[9px] font-black uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 px-1.5 py-0.2 rounded">
+                            50% OFF
+                          </span>
+                        </div>
+
+                        {/* Precio de Oferta de Lanzamiento */}
+                        <div className="flex items-baseline justify-center gap-1 mt-0.5">
                           <span className="text-3xl sm:text-4xl font-extrabold font-mono text-white">
-                            ${plan.price_yearly}
+                            ${promo.promoPrice}
                           </span>
                           <span className="text-xs text-slate-400 font-semibold">/año</span>
                         </div>
                         <span className="text-[11px] text-emerald-400 font-semibold block mt-0.5">
-                          Equivale a ~${monthlyEquivalent} USD/mes
+                          Equivale a ~${Math.round(promo.promoPrice / 12)} USD/mes
                         </span>
                       </div>
                     )}
@@ -198,21 +216,22 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
                   </div>
                 </div>
 
-                {/* Botón de Acción Dinámico */}
+                {/* Botón de Acción Dinámico con WhatsApp Directo */}
                 <div className="mt-6 pt-4 border-t border-slate-800">
                   <Link
-                    href={`/registro?plan=${plan.slug}`}
-                    className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md ${
+                    href={isFree ? `/registro?plan=${plan.slug}` : buildPlanWhatsAppUpgradeUrl({ plan })}
+                    target={isFree ? '_self' : '_blank'}
+                    className={`w-full py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md ${
                       isPopular
                         ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-amber-500/20'
                         : isEnterprise
                         ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-indigo-600/20'
                         : isFree
                         ? 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
-                        : 'bg-sky-600 hover:bg-sky-500 text-white shadow-sky-600/20'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/20'
                     }`}
                   >
-                    <span>{isFree ? 'Comenzar Gratis' : isEnterprise ? 'Contratar Corporativo' : 'Elegir Plan'}</span>
+                    <span>{isFree ? 'Comenzar Gratis' : 'Aprovechar 50% OFF'}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>

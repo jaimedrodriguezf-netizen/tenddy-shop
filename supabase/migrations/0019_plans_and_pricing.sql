@@ -54,8 +54,12 @@ CREATE TABLE IF NOT EXISTS public.tenant_subscriptions (
 );
 
 -- 3. COLUMNAS DE CACHÉ / ACCESO DIRECTO EN TENANTS (Evita joins pesados en lecturas críticas)
-ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_slug VARCHAR(64) DEFAULT 'starter';
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_slug VARCHAR(64) DEFAULT 'plan_500';
 ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_status VARCHAR(32) DEFAULT 'active';
+
+-- Proteger clientes pioneros existentes para que no sufran bloqueos de catálogo
+UPDATE public.tenants SET plan_slug = 'plan_500' WHERE plan_slug IS NULL OR plan_slug = 'starter';
+UPDATE public.tenants SET plan_slug = 'enterprise' WHERE slug IN ('ayme', 'plastpet');
 
 -- 4. ÍNDICES DE ALTO RENDIMIENTO
 CREATE INDEX IF NOT EXISTS idx_plans_slug ON public.plans(slug);
@@ -139,6 +143,41 @@ INSERT INTO public.plans (
     }'::jsonb
 ),
 (
+    'plan_100',
+    'Catálogo 100',
+    'Para talleres y pequeños comercios que inician su catálogo digital con tarifa anual súper accesible.',
+    5.00,
+    50.00,
+    'USD',
+    'Económico',
+    2,
+    TRUE,
+    TRUE,
+    '[
+        "Catálogo digital móvil y web optimizado",
+        "Hasta 100 productos con 1 foto principal",
+        "Botón directo de cotización a WhatsApp",
+        "1 Sucursal o taller matriz",
+        "1 Usuario administrador",
+        "Subdominio tenddy.shop incluido",
+        "Soporte estándar vía Mesa de Ayuda",
+        "Tarifa anual fija de $50 USD/año"
+    ]'::jsonb,
+    '{
+        "max_products": 100,
+        "max_images_per_product": 1,
+        "max_branches": 1,
+        "max_team_members": 1,
+        "custom_domain_allowed": false,
+        "custom_landing_allowed": false,
+        "bulk_import_allowed": false,
+        "support_priority": "standard",
+        "max_storage_mb": 200,
+        "analytics_enabled": false,
+        "remove_branding": false
+    }'::jsonb
+),
+(
     'plan_500',
     'Catálogo 500',
     'Ideal para talleres y distribuidores que buscan digitalizar su catálogo completo de hasta 500 productos.',
@@ -146,7 +185,7 @@ INSERT INTO public.plans (
     100.00,
     'USD',
     'Más Popular',
-    2,
+    3,
     TRUE,
     TRUE,
     '[
@@ -181,7 +220,7 @@ INSERT INTO public.plans (
     250.00,
     'USD',
     'Crecimiento',
-    3,
+    4,
     TRUE,
     TRUE,
     '[
@@ -215,7 +254,7 @@ INSERT INTO public.plans (
     450.00,
     'USD',
     'Avanzado',
-    4,
+    5,
     TRUE,
     TRUE,
     '[
@@ -249,7 +288,7 @@ INSERT INTO public.plans (
     1200.00,
     'USD',
     'Industrial',
-    5,
+    6,
     TRUE,
     TRUE,
     '[

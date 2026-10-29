@@ -35,6 +35,9 @@ export interface Tenant {
     custom_theme?: string;
     social_links?: TenantSocialLinks;
     packaging_unit?: PackagingUnit;
+    custom_landing_unlocked?: boolean;
+    is_decoupled?: boolean;
+    decoupled_url?: string;
   };
   landing_config: {
     hero_title: string;
