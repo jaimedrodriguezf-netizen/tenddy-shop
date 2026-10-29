@@ -191,6 +191,7 @@ export default function AdminDashboardView({
   const viewsCount = tenant.views_count || 0;
 
   // Gobernanza y estado del Plan Comercial del Tenant
+  const isCustomLanding = Boolean(tenant.theme_config?.custom_landing_unlocked || tenant.theme_config?.store_template === 'landing' || tenant.slug === 'ayme');
   const currentPlan = getPlanBySlug(tenant.plan_slug);
   const nextTargetPlan = getPlanBySlug(
     tenant.plan_slug === 'free' ? 'plan_100' :
@@ -755,52 +756,64 @@ export default function AdminDashboardView({
 
       {/* WIDGET DEL PLAN COMERCIAL & UPGRADE WHATSAPP (50% OFF) */}
       <div className="pt-2">
-        <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-xl p-3 shadow-md space-y-2 border border-slate-800">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
-              <span className="truncate">{currentPlan.name}</span>
-            </span>
-            <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded border border-amber-500/30 font-mono font-bold">
-              {currentPlan.limits.max_products === -1 ? 'Ilimitado' : `${products.length}/${currentPlan.limits.max_products}`}
-            </span>
-          </div>
-
-          {/* Barra de progreso de uso */}
-          {currentPlan.limits.max_products !== -1 && (
-            <div>
-              <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className={`h-full transition-all ${
-                    products.length >= currentPlan.limits.max_products
-                      ? 'bg-rose-500'
-                      : products.length / currentPlan.limits.max_products > 0.8
-                      ? 'bg-amber-400'
-                      : 'bg-emerald-400'
-                  }`}
-                  style={{
-                    width: `${Math.min(100, (products.length / currentPlan.limits.max_products) * 100)}%`,
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[9px] text-slate-400 mt-1 font-mono">
-                <span>{products.length} productos</span>
-                <span>Max: {currentPlan.limits.max_products}</span>
-              </div>
+        {isCustomLanding ? (
+          <div className="bg-gradient-to-br from-indigo-950/80 to-slate-950 text-white rounded-xl p-3 shadow-md border border-indigo-500/30 space-y-1">
+            <div className="flex items-center gap-1.5 text-indigo-300 font-bold text-[11px]">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+              <span>Cuenta Corporativa VIP</span>
             </div>
-          )}
+            <p className="text-[10px] text-slate-400 leading-tight">
+              Instancia con Landing Corporativa personalizada y catálogo industrial sin límites estándar.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-xl p-3 shadow-md space-y-2 border border-slate-800">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-amber-400 shrink-0" />
+                <span className="truncate">{currentPlan.name}</span>
+              </span>
+              <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.2 rounded border border-amber-500/30 font-mono font-bold">
+                {currentPlan.limits.max_products === -1 ? 'Ilimitado' : `${products.length}/${currentPlan.limits.max_products}`}
+              </span>
+            </div>
 
-          {/* Botón Upgrade con Promo 50% OFF por WhatsApp */}
-          <a
-            href={upgradeWhatsAppUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full mt-1 py-1.5 px-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-[10px] font-extrabold flex items-center justify-center gap-1 shadow-sm transition-all"
-          >
-            <span>🔥 50% OFF hasta fin de mes</span>
-            <ArrowRight className="w-3 h-3" />
-          </a>
-        </div>
+            {/* Barra de progreso de uso */}
+            {currentPlan.limits.max_products !== -1 && (
+              <div>
+                <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      products.length >= currentPlan.limits.max_products
+                        ? 'bg-rose-500'
+                        : products.length / currentPlan.limits.max_products > 0.8
+                        ? 'bg-amber-400'
+                        : 'bg-emerald-400'
+                    }`}
+                    style={{
+                      width: `${Math.min(100, (products.length / currentPlan.limits.max_products) * 100)}%`,
+                    }}
+                  />
+                </div>
+                <div className="flex justify-between text-[9px] text-slate-400 mt-1 font-mono">
+                  <span>{products.length} productos</span>
+                  <span>Max: {currentPlan.limits.max_products}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Botón Upgrade con Promo 50% OFF por WhatsApp */}
+            <a
+              href={upgradeWhatsAppUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full mt-1 py-1.5 px-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 rounded-lg text-[10px] font-extrabold flex items-center justify-center gap-1 shadow-sm transition-all"
+            >
+              <span>🔥 50% OFF hasta fin de mes</span>
+              <ArrowRight className="w-3 h-3" />
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1022,35 +1035,37 @@ export default function AdminDashboardView({
               ========================================================================= */}
           {activeTab === 'dashboard' && (
             <div className="space-y-6">
-              {/* Banner Promocional 50% OFF hasta fin de mes */}
-              <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-rose-500/15 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
-                    🔥
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-900 flex items-center gap-2 flex-wrap">
-                      <span>Promoción de Lanzamiento: 50% de Descuento en Planes Anuales</span>
-                      <span className="text-[10px] bg-rose-500/15 text-rose-700 border border-rose-500/25 px-2 py-0.2 rounded-full font-bold">
-                        Válido hasta el {promoDeadline.text}
-                      </span>
+              {/* Banner Promocional 50% OFF hasta fin de mes (Solo para tiendas estándar, exentas las landings VIP) */}
+              {!isCustomLanding && (
+                <div className="bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-rose-500/15 border border-amber-500/30 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-slate-950 flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
+                      🔥
                     </div>
-                    <div className="text-[11px] text-slate-600 mt-0.5">
-                      Tu tienda está en el <strong>{currentPlan.name}</strong> ({products.length}/{currentPlan.limits.max_products === -1 ? '∞' : currentPlan.limits.max_products} productos). Congela tu tarifa anual al 50% antes de que termine el mes.
+                    <div>
+                      <div className="text-xs font-bold text-slate-900 flex items-center gap-2 flex-wrap">
+                        <span>Promoción de Lanzamiento: 50% de Descuento en Planes Anuales</span>
+                        <span className="text-[10px] bg-rose-500/15 text-rose-700 border border-rose-500/25 px-2 py-0.2 rounded-full font-bold">
+                          Válido hasta el {promoDeadline.text}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-600 mt-0.5">
+                        Tu tienda está en el <strong>{currentPlan.name}</strong> ({products.length}/{currentPlan.limits.max_products === -1 ? '∞' : currentPlan.limits.max_products} productos). Congela tu tarifa anual al 50% antes de que termine el mes.
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <a
-                  href={upgradeWhatsAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
-                >
-                  <span>Activar 50% OFF por WhatsApp</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
-                </a>
-              </div>
+                  <a
+                    href={upgradeWhatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+                  >
+                    <span>Activar 50% OFF por WhatsApp</span>
+                    <ArrowRight className="w-3.5 h-3.5 text-amber-400" />
+                  </a>
+                </div>
+              )}
 
               {/* Tarjetas de Métricas Generales */}
               <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-2.5 sm:gap-4">

@@ -82,26 +82,34 @@ export async function POST(request: Request) {
 
     // Validar límite de productos según el plan comercial asignado al tenant
     const [tenantRes, productsCountRes] = await Promise.all([
-      admin.from('tenants').select('plan_slug').eq('id', tenant_id).maybeSingle(),
+      admin.from('tenants').select('plan_slug, theme_config').eq('id', tenant_id).maybeSingle(),
       admin.from('products').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id),
     ]);
 
-    const tenantPlanSlug = tenantRes.data?.plan_slug || 'free';
-    const plan = getPlanBySlug(tenantPlanSlug);
-    const currentProductsCount = productsCountRes.count || 0;
+    const isCustomLandingTenant =
+      tenantRes.data?.theme_config?.custom_landing_unlocked === true ||
+      tenantRes.data?.theme_config?.store_template === 'landing';
 
-    const limitCheck = checkPlanLimit(plan, 'max_products', currentProductsCount);
-    if (!limitCheck.allowed) {
-      return NextResponse.json(
-        {
-          error: `Has alcanzado el límite de ${limitCheck.max} productos permitido por tu ${plan.name}. Contacta a soporte para ampliar tu cupo con la promoción del 50% OFF.`,
-          code: 'PLAN_LIMIT_REACHED',
-          limit: limitCheck.max,
-          current: currentProductsCount,
-          plan: plan.name,
-        },
-        { status: 403 }
-      );
+    // Los planes comerciales estándar y sus límites aplican exclusivamente a tiendas con catálogo estándar.
+    // Los clientes con landing corporativa / personalizada (ej: Ayme) están exentos de estos límites.
+    if (!isCustomLandingTenant) {
+      const tenantPlanSlug = tenantRes.data?.plan_slug || 'free';
+      const plan = getPlanBySlug(tenantPlanSlug);
+      const currentProductsCount = productsCountRes.count || 0;
+
+      const limitCheck = checkPlanLimit(plan, 'max_products', currentProductsCount);
+      if (!limitCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: `Has alcanzado el límite de ${limitCheck.max} productos permitido por tu ${plan.name}. Contacta a soporte para ampliar tu cupo con la promoción del 50% OFF.`,
+            code: 'PLAN_LIMIT_REACHED',
+            limit: limitCheck.max,
+            current: currentProductsCount,
+            plan: plan.name,
+          },
+          { status: 403 }
+        );
+      }
     }
 
     const clientIp = getClientIp(request);

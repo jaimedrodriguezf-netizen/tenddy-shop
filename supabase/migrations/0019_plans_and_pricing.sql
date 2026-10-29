@@ -54,8 +54,12 @@ CREATE TABLE IF NOT EXISTS public.tenant_subscriptions (
 );
 
 -- 3. COLUMNAS DE CACHÉ / ACCESO DIRECTO EN TENANTS (Evita joins pesados en lecturas críticas)
-ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_slug VARCHAR(64) DEFAULT 'starter';
+ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_slug VARCHAR(64) DEFAULT 'plan_500';
 ALTER TABLE public.tenants ADD COLUMN IF NOT EXISTS plan_status VARCHAR(32) DEFAULT 'active';
+
+-- Proteger clientes pioneros existentes para que no sufran bloqueos de catálogo
+UPDATE public.tenants SET plan_slug = 'plan_500' WHERE plan_slug IS NULL OR plan_slug = 'starter';
+UPDATE public.tenants SET plan_slug = 'enterprise' WHERE slug IN ('ayme', 'plastpet');
 
 -- 4. ÍNDICES DE ALTO RENDIMIENTO
 CREATE INDEX IF NOT EXISTS idx_plans_slug ON public.plans(slug);

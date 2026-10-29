@@ -78,11 +78,14 @@ assert(homePageContent.includes('href="#pricing"'), 'PlatformHomePage debe tener
 const adminDashboardContent = fs.readFileSync(path.join(__dirname, '../src/components/AdminDashboardView.tsx'), 'utf8');
 assert(adminDashboardContent.includes('buildPlanWhatsAppUpgradeUrl'), 'AdminDashboardView debe usar buildPlanWhatsAppUpgradeUrl');
 assert(adminDashboardContent.includes('50% OFF'), 'AdminDashboardView debe mostrar banner de promo 50%');
+assert(adminDashboardContent.includes('isCustomLanding'), 'AdminDashboardView debe identificar tiendas con landing personalizada');
+assert(adminDashboardContent.includes('Cuenta Corporativa VIP'), 'AdminDashboardView debe mostrar badge VIP para landing personalizada');
 
 const productsApiContent = fs.readFileSync(path.join(__dirname, '../src/app/api/admin/products/route.ts'), 'utf8');
 assert(productsApiContent.includes('checkPlanLimit'), 'API /api/admin/products debe validar límite con checkPlanLimit');
+assert(productsApiContent.includes('isCustomLandingTenant'), 'API /api/admin/products debe eximir a tenants con landing personalizada');
 assert(productsApiContent.includes('PLAN_LIMIT_REACHED'), 'API /api/admin/products debe responder con PLAN_LIMIT_REACHED');
 
-console.log('✅ Test 5 aprobado: UI en Torre de Control, PricingSection en Landing y gobernanza en Admin Dashboard integradas.');
+console.log('✅ Test 5 aprobado: UI en Torre de Control, PricingSection en Landing y exención para landings personalizadas integradas.');
 
 console.log('\n🎉 ¡TODAS LAS PRUEBAS DE ARQUITECTURA DEL MÓDULO DE PLANES PASARON EXITOSAMENTE!');
