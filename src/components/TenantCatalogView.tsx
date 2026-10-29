@@ -99,10 +99,14 @@ export default function TenantCatalogView({
     };
   }, []);
 
-  const { openCart, addItem, getTotalUnits, getTotalPackages } = useCartStore();
+  const { openCart, addItem, items, getTotalUnits, getTotalPackages } = useCartStore();
 
   const totalCartUnits = getTotalUnits(tenant.id);
   const totalCartPackages = getTotalPackages(tenant.id);
+  const totalCartUniqueItems = useMemo(
+    () => items.filter((item) => item.product.tenant_id === tenant.id).length,
+    [items, tenant.id]
+  );
   const primaryColor = tenant.theme_config?.primary_color || '#FB7701';
   const secondaryColor = tenant.theme_config?.secondary_color || '#111827';
   const themeTokens = useMemo(() => resolveStorefrontTokens(primaryColor, secondaryColor), [primaryColor, secondaryColor]);
@@ -439,12 +443,12 @@ export default function TenantCatalogView({
             >
               <ShoppingCart className="w-4 h-4" />
               <span className="hidden sm:inline">Carrito</span>
-              {totalCartUnits > 0 && (
+              {totalCartUniqueItems > 0 && (
                 <span
                   style={{ backgroundColor: themeTokens.primary, color: themeTokens.primaryText }}
                   className="font-mono font-bold text-[10px] px-1.5 py-0.2 rounded-full shadow-2xs"
                 >
-                  {totalCartPackages}
+                  {totalCartUniqueItems}
                 </span>
               )}
             </button>
