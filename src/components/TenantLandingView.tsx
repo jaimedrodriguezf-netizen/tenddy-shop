@@ -18,7 +18,15 @@ import {
   SlidersHorizontal,
   LogOut,
   Play,
-  Pause
+  Pause,
+  MapPin,
+  Phone,
+  Mail,
+  Clock,
+  Zap,
+  Factory,
+  Home,
+  Truck
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tenant, Branch, Category, Product, resolveLandingSections, getPackagingUnit } from '@/lib/types';
@@ -905,7 +913,7 @@ export default function TenantLandingView({
                     }}
                     className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
                   >
-                    <span>🏠 Inicio</span>
+                    <span><Home className="w-4 h-4 text-slate-400 inline mr-2" />Inicio</span>
                     <ChevronRight className="w-4 h-4 text-slate-500" />
                   </button>
                 </li>
@@ -919,7 +927,7 @@ export default function TenantLandingView({
                     }}
                     className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
                   >
-                    <span>📦 Catálogo de Envases</span>
+                    <span><Package className="w-4 h-4 text-slate-400 inline mr-2" />Catálogo de Envases</span>
                     <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-mono">
                       {products.length}
                     </span>
@@ -952,7 +960,7 @@ export default function TenantLandingView({
                     }}
                     className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
                   >
-                    <span>📍 Contacto & Fábrica</span>
+                    <span><MapPin className="w-4 h-4 text-slate-400 inline mr-2" />Contacto & Fábrica</span>
                     <ChevronRight className="w-4 h-4 text-slate-500" />
                   </button>
                 </li>
@@ -1645,7 +1653,7 @@ export default function TenantLandingView({
                       />
                       <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
                         <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>
-                          📍 {tenantDefaults.plantLocation}
+                          <MapPin className="w-3.5 h-3.5 text-red-400 inline mr-1" /> {tenantDefaults.plantLocation}
                         </span>
                         <a
                           href={directLink}
@@ -1671,7 +1679,9 @@ export default function TenantLandingView({
 
                 <ul className="contact-channels-list" style={{ marginBottom: 0 }}>
                   <li className="contact-channel-item">
-                    <div className="channel-icon-circle">📍</div>
+                    <div className="channel-icon-circle">
+                      <MapPin className="w-5 h-5" style={{ color: primaryColor }} />
+                    </div>
                     <div className="channel-text-box">
                       <h5>Planta de Fabricación</h5>
                       <span style={{ fontSize: '0.85rem' }}>
@@ -1680,7 +1690,9 @@ export default function TenantLandingView({
                     </div>
                   </li>
                   <li className="contact-channel-item">
-                    <div className="channel-icon-circle">💬</div>
+                    <div className="channel-icon-circle">
+                      <Phone className="w-5 h-5" style={{ color: primaryColor }} />
+                    </div>
                     <div className="channel-text-box">
                       <h5>Teléfono / WhatsApp Directo</h5>
                       <span style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}>
@@ -1689,7 +1701,9 @@ export default function TenantLandingView({
                     </div>
                   </li>
                   <li className="contact-channel-item">
-                    <div className="channel-icon-circle">✉️</div>
+                    <div className="channel-icon-circle">
+                      <Mail className="w-5 h-5" style={{ color: primaryColor }} />
+                    </div>
                     <div className="channel-text-box">
                       <h5>Ventas & Cotizaciones</h5>
                       <span style={{ fontSize: '0.85rem' }}>
@@ -1698,7 +1712,9 @@ export default function TenantLandingView({
                     </div>
                   </li>
                   <li className="contact-channel-item">
-                    <div className="channel-icon-circle">⏰</div>
+                    <div className="channel-icon-circle">
+                      <Clock className="w-5 h-5" style={{ color: primaryColor }} />
+                    </div>
                     <div className="channel-text-box">
                       <h5>Horarios de Atención</h5>
                       <span style={{ fontSize: '0.82rem' }}>
@@ -1709,8 +1725,11 @@ export default function TenantLandingView({
                 </ul>
               </div>
 
-              <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: 'var(--radius-sm)', padding: '1.1rem', border: '1px solid rgba(255,255,255,0.2)' }}>
-                <h5 style={{ color: '#ffffff', marginBottom: '0.35rem', fontSize: '0.92rem', fontWeight: 700 }}>⚡ Despacho Inmediato</h5>
+              <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-sm)', padding: '1.1rem', border: '1px solid rgba(255,255,255,0.15)' }}>
+                <h5 className="flex items-center gap-1.5" style={{ color: '#ffffff', marginBottom: '0.35rem', fontSize: '0.92rem', fontWeight: 700 }}>
+                  <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                  <span>Despacho Inmediato</span>
+                </h5>
                 <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', marginBottom: '0.65rem' }}>
                   ¿Su línea de producción requiere envases urgentes? Escríbanos directamente a planta.
                 </p>

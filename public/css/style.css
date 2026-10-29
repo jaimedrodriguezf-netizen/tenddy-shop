@@ -1200,13 +1200,20 @@ h1, h2, h3, h4, h5, h6 {
 .channel-icon-circle {
     width: 44px;
     height: 44px;
-    border-radius: var(--radius-sm);
-    background: rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
     flex-shrink: 0;
+    transition: all var(--transition-fast);
+}
+
+.contact-channel-item:hover .channel-icon-circle {
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
 }
 
 .channel-text-box h5 {
