@@ -743,8 +743,8 @@ export default function TenantLandingView({
                 )}
               </button>
 
-              {/* Botón WhatsApp de Cabecera Configurable */}
-              {sections.header.show_whatsapp_button && (
+              {/* Botón WhatsApp de Cabecera Configurable (retirado para AYME por solicitud de diseño limpio) */}
+              {sections.header.show_whatsapp_button && !isAyme && (
                 <a
                   href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Quisiera cotizar ${tenantDefaults.urgentProductType} para mi empresa.`)}
                   target="_blank"

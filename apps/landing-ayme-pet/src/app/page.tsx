@@ -508,21 +508,8 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 )}
               </nav>
 
-              {/* Botón WhatsApp y Alternador Móvil */}
+              {/* Alternador Móvil */}
               <div className="flex items-center gap-2 sm:gap-3">
-                {sections.header.show_whatsapp_button && (
-                  <a
-                    href={`https://wa.me/${mainWhatsapp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all hover:scale-105 active:scale-95"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="hidden sm:inline">WhatsApp Ventas ({displayPhone})</span>
-                    <span className="sm:hidden">Cotizar</span>
-                  </a>
-                )}
-
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
