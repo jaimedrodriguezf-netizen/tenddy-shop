@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Check,
+  Sparkles,
   Package,
   Camera,
   FileSpreadsheet,
@@ -50,9 +51,14 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
       {/* Resplandor de fondo ambiental */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-sky-600/10 via-amber-500/5 to-indigo-600/10 blur-[140px] pointer-events-none rounded-full" />
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Encabezado de la Sección de Precios */}
         <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4 mb-12 sm:mb-16">
+          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Tarifas 100% Anuales · Cero Letras Chicas</span>
+          </div>
+
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
             Escoge el Plan que se Ajusta al Tamaño de tu Catálogo
           </h2>
@@ -63,7 +69,7 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
         </div>
 
         {/* Grilla Dinámica de Planes (Totalmente conectada a la BD / API) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5 items-stretch">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 xl:gap-4 items-stretch">
           {plans.map((plan) => {
             const isFree = plan.price_yearly === 0;
             const isPopular = plan.badge === 'Más Popular' || plan.slug === 'plan_500';

@@ -29,12 +29,16 @@ console.log('🧪 Test 3: Verificando src/lib/plans.ts...');
 const plansHelperContent = fs.readFileSync(path.join(__dirname, '../src/lib/plans.ts'), 'utf8');
 assert(plansHelperContent.includes('export const DEFAULT_PLANS: Plan[]'), 'Debe exportar DEFAULT_PLANS');
 assert(plansHelperContent.includes("'free'"), 'Debe incluir el plan free');
+assert(plansHelperContent.includes("'plan_100'"), 'Debe incluir el plan plan_100');
 assert(plansHelperContent.includes("'plan_500'"), 'Debe incluir el plan plan_500');
 assert(plansHelperContent.includes("'plan_1000'"), 'Debe incluir el plan plan_1000');
 assert(plansHelperContent.includes("'plan_2000'"), 'Debe incluir el plan plan_2000');
 assert(plansHelperContent.includes("'enterprise'"), 'Debe incluir el plan enterprise');
 assert(plansHelperContent.includes('max_products: 10'), 'Plan free debe tener 10 productos');
 assert(plansHelperContent.includes('max_images_per_product: 2'), 'Plan free debe tener 2 fotos por producto');
+assert(plansHelperContent.includes('max_products: 100'), 'Plan 100 debe tener 100 productos');
+assert(plansHelperContent.includes('max_images_per_product: 1'), 'Plan 100 debe tener 1 foto por producto');
+assert(plansHelperContent.includes('price_yearly: 50'), 'Plan 100 debe costar 50 USD anuales');
 assert(plansHelperContent.includes('max_products: 500'), 'Plan 500 debe tener 500 productos');
 assert(plansHelperContent.includes('max_images_per_product: 1'), 'Plan 500 debe tener 1 foto por producto');
 assert(plansHelperContent.includes('price_yearly: 100'), 'Plan 500 debe costar 100 USD anuales');
@@ -45,7 +49,7 @@ assert(plansHelperContent.includes('export function getPlanBySlug'), 'Debe expor
 assert(plansHelperContent.includes('export function checkPlanLimit'), 'Debe exportar checkPlanLimit');
 assert(plansHelperContent.includes('export function calculateAnnualSavings'), 'Debe exportar calculateAnnualSavings');
 assert(plansHelperContent.includes('export function validatePlanPayload'), 'Debe exportar validatePlanPayload');
-console.log('✅ Test 3 aprobado: Helper central con escala anual completa (Free, 500, 1000, 2000, Enterprise).');
+console.log('✅ Test 3 aprobado: Helper central con escala anual completa (Free, 100 $50, 500 $100, 1000 $250, 2000 $450, Enterprise $1200).');
 
 // 4. Validar existencia de endpoints de API
 console.log('🧪 Test 4: Verificando endpoints API...');
