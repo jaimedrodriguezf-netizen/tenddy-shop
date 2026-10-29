@@ -324,7 +324,7 @@ export function getDefaultLandingSections(tenantName?: string, slug?: string): L
     },
     header: {
       enabled: true,
-      show_whatsapp_button: true,
+      show_whatsapp_button: !isAyme,
       custom_subtitle: isAyme ? 'Solutions in Packaging • B2B' : 'Producción Directa • B2B',
     },
     hero: {

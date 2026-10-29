@@ -743,8 +743,8 @@ export default function TenantLandingView({
                 )}
               </button>
 
-              {/* Botón WhatsApp de Cabecera Configurable */}
-              {sections.header.show_whatsapp_button && (
+              {/* Botón WhatsApp de Cabecera Configurable (retirado para AYME por solicitud de diseño limpio) */}
+              {sections.header.show_whatsapp_button && !isAyme && (
                 <a
                   href={buildEcuadorWhatsAppUrl(mainWhatsapp, `¡Hola ${tenant.name}! Quisiera cotizar ${tenantDefaults.urgentProductType} para mi empresa.`)}
                   target="_blank"
@@ -1411,7 +1411,7 @@ export default function TenantLandingView({
                       )}
                     </Link>
 
-                    <div className="p-2 sm:p-4 flex flex-col flex-1 justify-between">
+                    <div className="p-2 sm:p-4 flex flex-col flex-1 justify-between gap-1.5 sm:gap-2">
                       <div>
                         <div className="flex items-center justify-between text-[10px] sm:text-xs mb-1">
                           <span className="font-semibold truncate max-w-[65%]" style={{ color: primaryColor }}>
@@ -1423,19 +1423,19 @@ export default function TenantLandingView({
                         <Link
                           href={productHref}
                           onClick={handleProductNavigate}
-                          className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 hover:underline mb-1.5 sm:mb-2 leading-snug"
+                          className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 hover:underline mb-1 sm:mb-2 leading-tight sm:leading-snug block"
                         >
                           {product.name}
                         </Link>
 
                         {/* Specs Rápidas */}
                         {Object.keys(specs).length > 0 && (
-                          <div className="grid grid-cols-2 gap-1 bg-slate-50 border border-slate-100 rounded-lg p-1.5 sm:p-2 mb-2 text-[10px] sm:text-xs">
+                          <div className="grid grid-cols-2 gap-1 bg-slate-50 border border-slate-100 rounded-lg p-1 sm:p-2 mb-1.5 sm:mb-2 text-[9px] sm:text-xs">
                             {Object.entries(specs)
                               .slice(0, 2)
                               .map(([k, v]) => (
-                                <div key={k} className="flex flex-col">
-                                  <span className="text-[9px] sm:text-[10px] text-slate-400 uppercase font-medium truncate">{k.replace('_', ' ')}</span>
+                                <div key={k} className="flex flex-col min-w-0">
+                                  <span className="text-[8px] sm:text-[10px] text-slate-400 uppercase font-medium truncate">{k.replace('_', ' ')}</span>
                                   <span className="font-bold text-slate-700 truncate">{String(v)}</span>
                                 </div>
                               ))}
@@ -1443,40 +1443,42 @@ export default function TenantLandingView({
                         )}
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1 mt-auto">
-                        <div className="flex flex-col">
-                          <span className="text-[9px] sm:text-[10px] text-slate-400">Empaque</span>
-                          <span className="text-[10px] sm:text-xs font-bold text-slate-800">{packSize} u/{packagingUnit.singular.toLowerCase()}</span>
+                      <div className="pt-1.5 sm:pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-1 mt-auto">
+                        <div className="flex items-center justify-between sm:flex-col sm:items-start text-[9px] sm:text-[10px] text-slate-500">
+                          <span className="text-slate-400">Empaque:</span>
+                          <span className="text-[10px] sm:text-xs font-bold text-slate-800 font-mono">{packSize} u/{packagingUnit.singular.toLowerCase()}</span>
                         </div>
 
-                        <div className="flex items-center gap-1 sm:gap-1.5">
+                        <div className="grid grid-cols-3 sm:flex items-center gap-1 sm:gap-1.5 w-full sm:w-auto">
                           <Link
                             href={productHref}
                             onClick={handleProductNavigate}
-                            className="btn btn-outline cursor-pointer inline-flex items-center gap-1"
-                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
+                            className="btn btn-outline cursor-pointer flex sm:inline-flex items-center justify-center gap-1 py-1 sm:py-1.5 px-1 sm:px-2 rounded-lg text-center"
+                            style={{ fontSize: '0.72rem' }}
                             title="Ver Ficha Técnica en página separada"
                           >
-                            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                            <span className="hidden sm:inline">Ficha</span>
+                            <Eye className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                            <span className="text-[10px] sm:text-[11px] font-semibold">Ficha</span>
                           </Link>
                           <button
                             type="button"
                             onClick={() => addItem(product)}
-                            className="btn btn-outline cursor-pointer"
-                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
+                            className="btn btn-outline cursor-pointer flex sm:inline-flex items-center justify-center gap-1 py-1 sm:py-1.5 px-1 sm:px-2 rounded-lg text-center"
+                            style={{ fontSize: '0.72rem' }}
                             title="Agregar al Cotizador"
                           >
-                            <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                            <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                            <span className="text-[10px] sm:text-[11px] font-semibold">Bulto</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleWhatsAppQuote(product.name)}
-                            className="btn btn-whatsapp cursor-pointer"
-                            style={{ padding: '0.35rem 0.5rem' }}
+                            className="btn btn-whatsapp cursor-pointer flex sm:inline-flex items-center justify-center gap-1 py-1 sm:py-1.5 px-1 sm:px-2 rounded-lg text-center text-white"
+                            style={{ fontSize: '0.72rem' }}
                             title="Cotizar por WhatsApp"
                           >
-                            <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-white" />
+                            <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
+                            <span className="text-[10px] sm:text-[11px] font-semibold">Cotizar</span>
                           </button>
                         </div>
                       </div>

@@ -508,21 +508,8 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 )}
               </nav>
 
-              {/* Botón WhatsApp y Alternador Móvil */}
+              {/* Alternador Móvil */}
               <div className="flex items-center gap-2 sm:gap-3">
-                {sections.header.show_whatsapp_button && (
-                  <a
-                    href={`https://wa.me/${mainWhatsapp}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-md transition-all hover:scale-105 active:scale-95"
-                  >
-                    <MessageCircle className="w-4 h-4" />
-                    <span className="hidden sm:inline">WhatsApp Ventas ({displayPhone})</span>
-                    <span className="sm:hidden">Cotizar</span>
-                  </a>
-                )}
-
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -788,48 +775,48 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-6 pt-4">
             {filteredProducts.map((prod) => (
               <div
                 key={prod.id}
-                className="bg-[#060c1d] border border-white/10 rounded-2xl p-4 flex flex-col justify-between hover:border-[#A61C2E]/60 transition-all group"
+                className="bg-[#060c1d] border border-white/10 rounded-xl sm:rounded-2xl p-2.5 sm:p-4 flex flex-col justify-between hover:border-[#A61C2E]/60 transition-all group"
               >
                 <div>
-                  <div className="relative aspect-square rounded-xl bg-slate-900/80 border border-white/5 flex items-center justify-center p-4 overflow-hidden mb-3">
+                  <div className="relative aspect-square rounded-lg sm:rounded-xl bg-slate-900/80 border border-white/5 flex items-center justify-center p-2 sm:p-4 overflow-hidden mb-2 sm:mb-3">
                     <img
                       src={prod.image}
                       alt={prod.name}
                       loading="lazy"
                       className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-300"
                     />
-                    <span className="absolute top-2 right-2 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-black/60 text-slate-300 border border-white/10">
-                      B2B • Mayorista
+                    <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 text-[8px] sm:text-[9px] font-mono font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-full bg-black/60 text-slate-300 border border-white/10">
+                      B2B
                     </span>
                     {(prod as any).videoUrl && (
-                      <span className="absolute bottom-2 left-2 text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm">
+                      <span className="absolute bottom-1.5 left-1.5 sm:bottom-2 sm:left-2 text-[8px] sm:text-[9px] font-mono font-bold uppercase px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-950/90 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 shadow-sm">
                         <span>▶</span>
-                        <span>Video 360°</span>
+                        <span className="hidden sm:inline">Video 360°</span>
                       </span>
                     )}
                   </div>
 
-                  <div className="space-y-1">
-                    <div className="flex items-center justify-between text-[10px] font-mono">
-                      <span className="text-red-400 font-bold">{prod.category}</span>
+                  <div className="space-y-0.5 sm:space-y-1">
+                    <div className="flex items-center justify-between text-[9px] sm:text-[10px] font-mono">
+                      <span className="text-red-400 font-bold truncate max-w-[65%]">{prod.category}</span>
                       <span className="text-slate-500">{prod.sku}</span>
                     </div>
-                    <h4 className="font-bold text-sm text-white group-hover:text-red-300 transition-colors">
+                    <h4 className="font-bold text-xs sm:text-sm text-white group-hover:text-red-300 transition-colors line-clamp-2 leading-tight sm:leading-snug">
                       {prod.name}
                     </h4>
-                    <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed pt-1">
+                    <p className="hidden sm:block text-[11px] text-slate-400 line-clamp-2 leading-relaxed pt-1">
                       {prod.description}
                     </p>
                   </div>
 
-                  <div className="mt-3 pt-3 border-t border-white/10 space-y-1 font-mono text-[10px] text-slate-400">
+                  <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-white/10 space-y-0.5 sm:space-y-1 font-mono text-[9px] sm:text-[10px] text-slate-400">
                     <div className="flex justify-between">
                       <span>Rosca:</span>
-                      <span className="text-slate-200 font-semibold">{prod.neck}</span>
+                      <span className="text-slate-200 font-semibold truncate ml-1">{prod.neck}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Gramaje:</span>
@@ -839,23 +826,23 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 </div>
 
                 {/* Botones de acción: Ficha Técnica y Cotizar */}
-                <div className="mt-4 pt-2 space-y-2">
+                <div className="mt-2 sm:mt-4 pt-1.5 sm:pt-2 space-y-1.5 sm:space-y-2">
                   <button
                     type="button"
                     onClick={() => openProductModal(prod)}
-                    className="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold py-2 px-3 rounded-xl border border-white/10 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="w-full bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-[10px] sm:text-xs font-semibold py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl border border-white/10 transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
                   >
-                    <FileText className="w-3.5 h-3.5 text-[#A61C2E]" />
-                    <span>Ver Plano & Medidas</span>
+                    <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#A61C2E]" />
+                    <span className="truncate">Ver Plano & Medidas</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => handleSelectProductAndQuote(prod.formValue)}
-                    className="w-full bg-[#A61C2E] hover:bg-[#8C1625] text-white text-xs font-bold py-2 px-3 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md shadow-red-950/40 cursor-pointer"
+                    className="w-full bg-[#A61C2E] hover:bg-[#8C1625] text-white text-[10px] sm:text-xs font-bold py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center gap-1 sm:gap-1.5 shadow-md shadow-red-950/40 cursor-pointer"
                   >
-                    <span>Cotizar este Envase</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span className="truncate">Cotizar este Envase</span>
+                    <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" />
                   </button>
                 </div>
               </div>
