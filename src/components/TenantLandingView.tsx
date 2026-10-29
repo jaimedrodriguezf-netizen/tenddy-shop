@@ -701,7 +701,7 @@ export default function TenantLandingView({
                             : 'hover:bg-slate-800 text-slate-300'
                         }`}
                       >
-                        <span>✨ Todos los Envases</span>
+                        <span className="inline-flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> Todos los Envases</span>
                         <span className="text-[10px] text-slate-400 font-mono">({products.length})</span>
                       </button>
 
@@ -1118,11 +1118,11 @@ export default function TenantLandingView({
                 </p>
                 <div className="step-features-grid">
                   <div className="step-feat-box">
-                    <h5>🔥 Infrarrojo Modular</h5>
+                    <h5 className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-orange-400" /> Infrarrojo Modular</h5>
                     <p>Perfil térmico calibrado según el gramaje del envase.</p>
                   </div>
                   <div className="step-feat-box">
-                    <h5>🔬 Cuello PCO Sellado</h5>
+                    <h5 className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-400" /> Cuello PCO Sellado</h5>
                     <p>Protección térmica en la rosca para cero deformaciones.</p>
                   </div>
                 </div>
@@ -1421,7 +1421,7 @@ export default function TenantLandingView({
                           className="product-img w-full h-full object-contain p-2 sm:p-3 transition-transform duration-500 group-hover:scale-105"
                         />
                       ) : (
-                        <div className="text-3xl sm:text-5xl py-8 sm:py-12 text-center text-slate-300">♳</div>
+                        <div className="py-8 sm:py-12 flex items-center justify-center text-slate-400"><Package className="w-12 h-12 stroke-[1.5]" /></div>
                       )}
                     </Link>
 
@@ -1768,13 +1768,13 @@ export default function TenantLandingView({
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs">
                     <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
                     {safeExternalUrl(social.linkedin) && (
-                      <a href={safeExternalUrl(social.linkedin)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="LinkedIn">
-                        💼 LinkedIn
+                      <a href={safeExternalUrl(social.linkedin)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="LinkedIn">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.48 1.48 0 0 0 1.49-1.48 1.5 1.5 0 0 0-1.49-1.5 1.5 1.5 0 0 0-1.5 1.5c0 .82.68 1.48 1.5 1.48m1.39 9.74v-8.37H5.07v8.37h2.78z"/></svg> LinkedIn
                       </a>
                     )}
                     {safeExternalUrl(social.facebook) && (
-                      <a href={safeExternalUrl(social.facebook)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors" title="Facebook">
-                        📘 Facebook
+                      <a href={safeExternalUrl(social.facebook)!} target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="Facebook">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96A10 10 0 0 0 22 12.06C22 6.53 17.5 2.04 12 2.04Z"/></svg> Facebook
                       </a>
                     )}
                     {safeExternalUrl(social.instagram) && (
