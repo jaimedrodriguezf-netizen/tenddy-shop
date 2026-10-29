@@ -22,7 +22,10 @@ import {
   AlertCircle,
   PackageCheck,
   Check,
-  Layers
+  Layers,
+  ZoomIn,
+  X,
+  ChevronLeft
 } from 'lucide-react';
 import { Product, Tenant, Branch, Category, getPackagingUnit, resolveTieredPrice } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
@@ -62,6 +65,8 @@ export default function ProductDetailView({
   const [addedAlert, setAddedAlert] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [showAllSpecs, setShowAllSpecs] = useState(false);
+  const [isZoomOpen, setIsZoomOpen] = useState(false);
+  const [zoomScale, setZoomScale] = useState(1);
 
   // Precios dinámicos y escalas mayoristas por volumen
   const currencySymbol = tenant.settings?.currency_symbol || '$';
@@ -87,6 +92,29 @@ export default function ProductDetailView({
 
   // Variantes de paquete y unidades de empaque dinámicas
   const packagingUnit = useMemo(() => getPackagingUnit(tenant), [tenant]);
+
+  // Manejo de eventos de teclado y scroll para el Visor Ampliado (Zoom Lightbox)
+  useEffect(() => {
+    if (!isZoomOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsZoomOpen(false);
+      } else if (e.key === 'ArrowLeft' && images.length > 1) {
+        setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+        setZoomScale(1);
+      } else if (e.key === 'ArrowRight' && images.length > 1) {
+        setActiveImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+        setZoomScale(1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isZoomOpen, images.length]);
   const defaultPackSize = product.units_per_package || 100;
   const defaultPacks = `${packagingUnit.singular} x ${defaultPackSize} uds, 5 ${packagingUnit.plural} (${defaultPackSize * 5} uds), 10 ${packagingUnit.plural} (${defaultPackSize * 10} uds)`;
   const rawPacks = specs.paquetes || specs.presentacion || defaultPacks;
@@ -374,7 +402,17 @@ export default function ProductDetailView({
             )}
 
             {/* Visor Principal de Imagen o Video */}
-            <div className="flex-1 relative flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 overflow-hidden group aspect-square sm:aspect-auto sm:min-h-[520px] w-full">
+            <div
+              onClick={() => {
+                if (!isVideoActive) {
+                  setIsZoomOpen(true);
+                  setZoomScale(1);
+                }
+              }}
+              className={`flex-1 relative flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 overflow-hidden group aspect-square sm:aspect-auto sm:min-h-[520px] w-full ${
+                !isVideoActive ? 'cursor-zoom-in' : ''
+              }`}
+            >
               {isVideoActive && videoUrl ? (
                 <div className="w-full h-full flex items-center justify-center p-2 sm:p-4 bg-slate-950">
                   <video
@@ -387,11 +425,18 @@ export default function ProductDetailView({
                   />
                 </div>
               ) : (
-                <img
-                  src={images[activeImageIndex] || images[0]}
-                  alt={product.name}
-                  className="w-full h-full max-h-[360px] sm:max-h-[540px] object-contain p-2 sm:p-4 filter drop-shadow-sm transition-transform duration-300 group-hover:scale-103"
-                />
+                <>
+                  <img
+                    src={images[activeImageIndex] || images[0]}
+                    alt={product.name}
+                    className="w-full h-full max-h-[360px] sm:max-h-[540px] object-contain p-2 sm:p-4 filter drop-shadow-sm transition-transform duration-300 group-hover:scale-103"
+                  />
+                  {/* Indicador sutil de ampliación en hover */}
+                  <div className="absolute bottom-3 left-3 bg-slate-900/80 backdrop-blur-md text-white text-[11px] font-medium px-2.5 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 pointer-events-none shadow-md">
+                    <ZoomIn className="w-3.5 h-3.5 text-sky-400" />
+                    <span>Clic para ampliar</span>
+                  </div>
+                </>
               )}
 
               {/* Badges Flotantes sobre la Imagen */}
@@ -901,6 +946,136 @@ export default function ProductDetailView({
 
         </div>
       </main>
+
+      {/* =========================================================================
+          MODAL DE VISOR AMPLIADO / ZOOM LIGHTBOX DE FOTOS DE PRODUCTO
+          ========================================================================= */}
+      {isZoomOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between p-3 sm:p-6 select-none animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsZoomOpen(false);
+          }}
+        >
+          {/* Cabecera del Visor */}
+          <div className="flex items-center justify-between text-white z-20 w-full max-w-6xl mx-auto pb-2">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <span className="text-xs sm:text-sm font-bold bg-white/10 px-2.5 py-1 rounded-lg">
+                Foto {activeImageIndex + 1} de {images.length}
+              </span>
+              <span className="hidden sm:inline text-xs text-slate-300 truncate max-w-md">
+                {product.name}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setZoomScale((prev) => (prev === 1 ? 2 : 1))}
+                className="text-xs font-semibold bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Alternar nivel de aumento"
+              >
+                <ZoomIn className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">{zoomScale === 1 ? 'Aumentar (2x)' : 'Tamaño normal (1x)'}</span>
+                <span className="sm:hidden">{zoomScale === 1 ? '2x' : '1x'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsZoomOpen(false)}
+                className="p-1.5 sm:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+                aria-label="Cerrar visor"
+                title="Cerrar (Esc)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Área Central de Imagen */}
+          <div
+            className="flex-1 flex items-center justify-center relative overflow-hidden my-auto w-full max-w-6xl mx-auto"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setIsZoomOpen(false);
+            }}
+          >
+            {/* Navegación Anterior */}
+            {images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+                  setZoomScale(1);
+                }}
+                className="absolute left-1 sm:left-4 z-30 p-2 sm:p-3 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 transition-all cursor-pointer backdrop-blur-sm"
+                aria-label="Foto anterior"
+                title="Foto anterior (←)"
+              >
+                <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+
+            {/* Contenedor Interactivo con Zoom */}
+            <div
+              className="w-full h-full flex items-center justify-center transition-transform duration-200"
+              style={{
+                transform: `scale(${zoomScale})`,
+                cursor: zoomScale === 1 ? 'zoom-in' : 'zoom-out',
+              }}
+              onClick={() => setZoomScale((prev) => (prev === 1 ? 2 : 1))}
+              title={zoomScale === 1 ? 'Clic para acercar' : 'Clic para alejar'}
+            >
+              <img
+                src={images[activeImageIndex] || images[0]}
+                alt={product.name}
+                className="max-w-[92vw] max-h-[75vh] object-contain rounded-lg drop-shadow-2xl transition-all"
+              />
+            </div>
+
+            {/* Navegación Siguiente */}
+            {images.length > 1 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+                  setZoomScale(1);
+                }}
+                className="absolute right-1 sm:right-4 z-30 p-2 sm:p-3 rounded-full bg-black/60 hover:bg-black/90 text-white border border-white/20 transition-all cursor-pointer backdrop-blur-sm"
+                aria-label="Foto siguiente"
+                title="Foto siguiente (→)"
+              >
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
+              </button>
+            )}
+          </div>
+
+          {/* Miniaturas de Acceso Rápido */}
+          {images.length > 1 && (
+            <div className="flex items-center justify-center gap-2 overflow-x-auto py-2 z-20 max-w-full">
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    setActiveImageIndex(idx);
+                    setZoomScale(1);
+                  }}
+                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                    activeImageIndex === idx
+                      ? 'border-white scale-105 shadow-lg'
+                      : 'border-white/20 opacity-50 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img} alt={`Miniatura ${idx + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
