@@ -43,7 +43,38 @@ export async function GET(request: Request) {
         console.error('Error listando usuarios en superadmin:', error);
         return NextResponse.json({ error: 'No se pudieron consultar los usuarios' }, { status: 500 });
       }
-      return NextResponse.json({ success: true, users: staff || [] });
+
+      const tenantIds = Array.from(new Set((staff || []).map((s: any) => s.tenant_id).filter(Boolean)));
+
+      const [productsRes, domainsRes] = await Promise.all([
+        admin.from('products').select('tenant_id, images').in('tenant_id', tenantIds),
+        admin.from('tenant_domains').select('tenant_id, domain, is_primary').in('tenant_id', tenantIds),
+      ]);
+
+      const productsCountByTenant: Record<string, number> = {};
+      const imagesCountByTenant: Record<string, number> = {};
+      (productsRes.data || []).forEach((p: any) => {
+        if (!p.tenant_id) return;
+        productsCountByTenant[p.tenant_id] = (productsCountByTenant[p.tenant_id] || 0) + 1;
+        const imgs = Array.isArray(p.images) ? p.images : p.images ? [p.images] : [];
+        imagesCountByTenant[p.tenant_id] = (imagesCountByTenant[p.tenant_id] || 0) + imgs.filter(Boolean).length;
+      });
+
+      const domainsByTenant: Record<string, string> = {};
+      (domainsRes.data || []).forEach((d: any) => {
+        if (d.is_primary || !domainsByTenant[d.tenant_id]) {
+          domainsByTenant[d.tenant_id] = d.domain;
+        }
+      });
+
+      const staffWithMetrics = (staff || []).map((s: any) => ({
+        ...s,
+        total_products: productsCountByTenant[s.tenant_id] || 0,
+        total_images: imagesCountByTenant[s.tenant_id] || 0,
+        primary_domain: domainsByTenant[s.tenant_id] || (s.tenants?.slug ? `${s.tenants.slug}.tenddy.shop` : undefined),
+      }));
+
+      return NextResponse.json({ success: true, users: staffWithMetrics });
     }
   } catch (err: unknown) {
     console.error('Excepción en GET /api/superadmin/users:', err);

@@ -16,15 +16,7 @@ export const metadata = {
   description: 'Panel de control global para el propietario del SaaS tenddy',
 };
 
-export default async function SuperadminPage() {
-  const cookieStore = await cookies();
-  const sessionCookie = cookieStore.get('tenddy_superadmin_session');
-  const isAuthenticated = verifySuperadminToken(sessionCookie?.value);
-
-  if (!isAuthenticated) {
-    return <SuperadminLoginForm onSuccess={() => {}} />;
-  }
-
+async function loadSuperadminData() {
   try {
     const admin = getAdminClient();
 
@@ -136,24 +128,49 @@ export default async function SuperadminPage() {
       return acc + items.reduce((sub: number, i: any) => sub + (Number(i?.total_units) || 0), 0);
     }, 0);
 
-    return (
-      <SuperadminDashboardView
-        tenants={tenantsSummary}
-        totalGlobalViews={totalGlobalViews}
-        totalGlobalQuotes={totalGlobalQuotes}
-        totalGlobalProducts={totalGlobalProducts}
-        totalGlobalImages={totalGlobalImages}
-        totalStorageFiles={totalStorageFiles}
-        totalGlobalUnitsQuoted={totalGlobalUnitsQuoted}
-        totalB2BAccounts={totalB2BAccounts}
-        initialBuyers={rawBuyers}
-        initialStaff={rawStaff}
-        initialTickets={rawTickets}
-        initialPlans={initialPlans}
-      />
-    );
+    const staffWithMetrics: TenantStaffMember[] = rawStaff.map((s: any) => {
+      const tenantProducts = rawProducts.filter((p: any) => p.tenant_id === s.tenant_id);
+      const tenantImages = imagesByTenant[s.tenant_id] || 0;
+      return {
+        ...s,
+        total_products: tenantProducts.length,
+        total_images: tenantImages,
+        primary_domain: domainsByTenant[s.tenant_id] || (s.tenants?.slug ? `${s.tenants.slug}.tenddy.shop` : undefined),
+      };
+    });
+
+    return {
+      tenants: tenantsSummary,
+      totalGlobalViews,
+      totalGlobalQuotes,
+      totalGlobalProducts,
+      totalGlobalImages,
+      totalStorageFiles,
+      totalGlobalUnitsQuoted,
+      totalB2BAccounts,
+      initialBuyers: rawBuyers,
+      initialStaff: staffWithMetrics,
+      initialTickets: rawTickets,
+      initialPlans,
+    };
   } catch (err: unknown) {
-    console.error('Error cargando Torre de Control Superadmin:', err);
+    console.error('Error cargando datos de Torre de Control Superadmin:', err);
+    return null;
+  }
+}
+
+export default async function SuperadminPage() {
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get('tenddy_superadmin_session');
+  const isAuthenticated = verifySuperadminToken(sessionCookie?.value);
+
+  if (!isAuthenticated) {
+    return <SuperadminLoginForm onSuccess={() => {}} />;
+  }
+
+  const data = await loadSuperadminData();
+
+  if (!data) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-4">
         <div className="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center space-y-4">
@@ -164,14 +181,25 @@ export default async function SuperadminPage() {
           <p className="text-xs text-slate-400">
             No se pudieron recuperar las métricas en tiempo real. Por favor recargá la página.
           </p>
-          <button
-            onClick={() => {}}
-            className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs py-2.5 rounded-xl"
-          >
-            Reintentar
-          </button>
         </div>
       </div>
     );
   }
+
+  return (
+    <SuperadminDashboardView
+      tenants={data.tenants}
+      totalGlobalViews={data.totalGlobalViews}
+      totalGlobalQuotes={data.totalGlobalQuotes}
+      totalGlobalProducts={data.totalGlobalProducts}
+      totalGlobalImages={data.totalGlobalImages}
+      totalStorageFiles={data.totalStorageFiles}
+      totalGlobalUnitsQuoted={data.totalGlobalUnitsQuoted}
+      totalB2BAccounts={data.totalB2BAccounts}
+      initialBuyers={data.initialBuyers}
+      initialStaff={data.initialStaff}
+      initialTickets={data.initialTickets}
+      initialPlans={data.initialPlans}
+    />
+  );
 }

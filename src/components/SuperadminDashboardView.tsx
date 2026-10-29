@@ -797,6 +797,7 @@ export default function SuperadminDashboardView({
               <SuperadminUsersManager
                 initialBuyers={initialBuyers}
                 initialStaff={initialStaff}
+                tenants={tenants}
               />
             </div>
           )}

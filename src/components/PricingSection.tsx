@@ -4,15 +4,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Check,
-  Sparkles,
   Package,
   Camera,
   FileSpreadsheet,
   Building2,
   Globe,
   ArrowRight,
-  ShieldCheck,
-  HelpCircle
+  ShieldCheck
 } from 'lucide-react';
 import { Plan } from '@/lib/types';
 import { DEFAULT_PLANS } from '@/lib/plans';
@@ -23,14 +21,12 @@ interface PricingSectionProps {
 
 export default function PricingSection({ initialPlans = DEFAULT_PLANS }: PricingSectionProps) {
   const [plans, setPlans] = useState<Plan[]>(initialPlans);
-  const [isLoading, setIsLoading] = useState(false);
 
   // Sincronización en tiempo real con la API pública de planes
   useEffect(() => {
     let isMounted = true;
     async function fetchPlans() {
       try {
-        setIsLoading(true);
         const res = await fetch('/api/plans');
         if (!res.ok) return;
         const data = await res.json();
@@ -40,8 +36,6 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
       } catch (err) {
         // Fallback transparente a los planes por defecto
         console.warn('Nota: Usando catálogo de planes base predeterminado:', err);
-      } finally {
-        if (isMounted) setIsLoading(false);
       }
     }
 
@@ -59,11 +53,6 @@ export default function PricingSection({ initialPlans = DEFAULT_PLANS }: Pricing
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Encabezado de la Sección de Precios */}
         <div className="text-center max-w-3xl mx-auto space-y-3 sm:space-y-4 mb-12 sm:mb-16">
-          <div className="inline-flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs px-3.5 py-1.5 rounded-full font-bold uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Tarifas 100% Anuales · Cero Letras Chicas</span>
-          </div>
-
           <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight leading-tight">
             Escoge el Plan que se Ajusta al Tamaño de tu Catálogo
           </h2>
