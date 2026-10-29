@@ -12,7 +12,6 @@ import {
   Globe,
   Building2,
   Lock,
-  LifeBuoy,
   ChevronDown,
   LogOut,
   Store,
@@ -29,7 +28,6 @@ import {
   X
 } from 'lucide-react';
 import AdminLoginModal from './AdminLoginModal';
-import SupportTicketModal from './SupportTicketModal';
 import VersionBadge from './VersionBadge';
 import { supabase } from '@/lib/supabase';
 
@@ -73,7 +71,6 @@ const FAQ_ITEMS = [
 export default function PlatformHomePage() {
   const router = useRouter();
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [isSupportModalOpen, setIsSupportModalOpen] = useState(false);
   const [userInfo, setUserInfo] = useState<UserSessionInfo | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
@@ -137,12 +134,6 @@ export default function PlatformHomePage() {
         onClose={() => setIsAdminModalOpen(false)}
       />
 
-      <SupportTicketModal
-        isOpen={isSupportModalOpen}
-        onClose={() => setIsSupportModalOpen(false)}
-        shopName="tenddy Plataforma"
-      />
-
       {/* Header Central de la Plataforma */}
       <header className="border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md sticky top-0 z-50 px-3 sm:px-6 py-3 sm:py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-2">
@@ -160,13 +151,6 @@ export default function PlatformHomePage() {
             <a href="#demo" className="hover:text-white transition-colors">Demostración B2B</a>
             <a href="#features" className="hover:text-white transition-colors">Características</a>
             <a href="#faq" className="hover:text-white transition-colors">Preguntas Frecuentes</a>
-            <button
-              onClick={() => setIsSupportModalOpen(true)}
-              className="text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1.5"
-            >
-              <LifeBuoy className="w-4 h-4 text-amber-400" />
-              <span>Soporte</span>
-            </button>
           </nav>
 
           {/* Acciones de Cabecera */}
@@ -332,16 +316,6 @@ export default function PlatformHomePage() {
             >
               Preguntas Frecuentes
             </a>
-            <button
-              onClick={() => {
-                setIsMobileNavOpen(false);
-                setIsSupportModalOpen(true);
-              }}
-              className="w-full text-left px-3 py-2 rounded-lg text-amber-400 hover:bg-slate-900 flex items-center gap-2"
-            >
-              <LifeBuoy className="w-4 h-4" />
-              <span>Soporte Técnico</span>
-            </button>
           </div>
         )}
       </header>
@@ -761,13 +735,6 @@ export default function PlatformHomePage() {
             <a href="#demo" className="hover:text-white py-1 transition-colors">Demostración</a>
             <a href="#features" className="hover:text-white py-1 transition-colors">Características</a>
             <a href="#faq" className="hover:text-white py-1 transition-colors">FAQ</a>
-            <button
-              onClick={() => setIsSupportModalOpen(true)}
-              className="hover:text-white cursor-pointer text-xs flex items-center gap-1 py-1 transition-colors"
-            >
-              <LifeBuoy className="w-3.5 h-3.5 text-amber-400" />
-              <span>Soporte</span>
-            </button>
             <button
               onClick={() => setIsAdminModalOpen(true)}
               className="hover:text-white cursor-pointer text-xs py-1 transition-colors"

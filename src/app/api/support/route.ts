@@ -144,6 +144,14 @@ export async function POST(request: Request) {
       }
     }
 
+    // Bloquear acceso anónimo: El soporte técnico solo está disponible desde el panel administrativo de tiendas registradas
+    if (!validTenantId) {
+      return NextResponse.json(
+        { error: 'El canal de soporte técnico está disponible exclusivamente para tiendas y fábricas registradas desde su panel de control.' },
+        { status: 403 }
+      );
+    }
+
     const { data: ticket, error } = await admin
       .from('support_tickets')
       .insert({
