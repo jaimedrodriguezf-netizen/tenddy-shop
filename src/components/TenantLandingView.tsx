@@ -341,6 +341,52 @@ export default function TenantLandingView({
     };
   }, [activeServiceModal]);
 
+  // Restauración de posición de scroll hacia el catálogo al regresar desde la ficha de producto o con hash
+  useEffect(() => {
+    const handleRestoreCatalogScroll = () => {
+      const isCatalogHash = typeof window !== 'undefined' && (window.location.hash === '#catalog-section' || window.location.hash === '#catalogo');
+      let hasReturnFlag = false;
+      try {
+        hasReturnFlag = typeof window !== 'undefined' && sessionStorage.getItem('tenddy_return_to_catalog') === 'true';
+        if (hasReturnFlag) {
+          sessionStorage.removeItem('tenddy_return_to_catalog');
+        }
+      } catch {}
+
+      if (isCatalogHash || hasReturnFlag) {
+        const scrollToCatalog = () => {
+          const target = document.getElementById('catalog-section');
+          if (target) {
+            target.scrollIntoView({ behavior: 'instant' });
+          }
+        };
+
+        scrollToCatalog();
+        const t1 = setTimeout(scrollToCatalog, 60);
+        const t2 = setTimeout(scrollToCatalog, 200);
+        return () => {
+          clearTimeout(t1);
+          clearTimeout(t2);
+        };
+      }
+    };
+
+    handleRestoreCatalogScroll();
+    window.addEventListener('hashchange', handleRestoreCatalogScroll);
+    return () => window.removeEventListener('hashchange', handleRestoreCatalogScroll);
+  }, []);
+
+  const handleProductNavigate = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('tenddy_return_to_catalog', 'true');
+        if (!window.location.hash) {
+          window.history.replaceState(null, '', '#catalog-section');
+        }
+      }
+    } catch {}
+  };
+
   // Filtrar productos con límite progresivo (escalabilidad de DOM para catálogos masivos)
   const [visibleCount, setVisibleCount] = useState<number>(24);
   const [prevFilters, setPrevFilters] = useState<string>(`${selectedCategory}_${selectedCapacity}`);
@@ -1178,7 +1224,7 @@ export default function TenantLandingView({
       {/* =========================================================================
            SECCIÓN DE CATÁLOGO: ENVASES DESTACADOS Y FILTROS POR LÍNEAS
            ========================================================================= */}
-      <section id="catalog-section" className="py-6 sm:py-10" style={{ background: 'var(--bg-main)' }}>
+      <section id="catalog-section" className="scroll-mt-20 sm:scroll-mt-24 py-6 sm:py-10" style={{ background: 'var(--bg-main)' }}>
         <div className="container">
           {/* Barra de Búsqueda Reactiva en Vivo */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
@@ -1327,6 +1373,7 @@ export default function TenantLandingView({
                   >
                     <Link
                       href={productHref}
+                      onClick={handleProductNavigate}
                       className="product-img-box block relative aspect-square w-full bg-slate-50 overflow-hidden cursor-pointer"
                       title={`Ver ficha técnica de ${product.name}`}
                     >
@@ -1371,6 +1418,7 @@ export default function TenantLandingView({
 
                         <Link
                           href={productHref}
+                          onClick={handleProductNavigate}
                           className="font-bold text-xs sm:text-sm text-slate-900 line-clamp-2 hover:underline mb-1.5 sm:mb-2 leading-snug"
                         >
                           {product.name}
@@ -1400,6 +1448,7 @@ export default function TenantLandingView({
                         <div className="flex items-center gap-1 sm:gap-1.5">
                           <Link
                             href={productHref}
+                            onClick={handleProductNavigate}
                             className="btn btn-outline cursor-pointer inline-flex items-center gap-1"
                             style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem' }}
                             title="Ver Ficha Técnica en página separada"
