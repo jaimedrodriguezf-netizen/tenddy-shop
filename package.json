@@ -1,6 +1,6 @@
 {
   "name": "tenddy-shop",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "private": true,
   "scripts": {
     "prebuild": "node scripts/generate-version.js",
