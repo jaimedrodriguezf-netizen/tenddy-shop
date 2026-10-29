@@ -19,17 +19,16 @@ import {
   LayoutDashboard,
   Check,
   HelpCircle,
-  Calculator,
   MessageSquare,
+  ShoppingCart,
   FileSpreadsheet,
-  Boxes,
-  FileCheck,
   Menu,
   X
 } from 'lucide-react';
 import AdminLoginModal from './AdminLoginModal';
 import VersionBadge from './VersionBadge';
 import PricingSection from './PricingSection';
+import InteractiveStorefrontDemo from './InteractiveStorefrontDemo';
 import { supabase } from '@/lib/supabase';
 
 interface UserSessionInfo {
@@ -75,9 +74,6 @@ export default function PlatformHomePage() {
   const [userInfo, setUserInfo] = useState<UserSessionInfo | null>(null);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
-
-  // Estado para la demostración interactiva B2B
-  const [demoBoxes, setDemoBoxes] = useState(50);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Cargar sesión de usuario en portada
@@ -114,18 +110,6 @@ export default function PlatformHomePage() {
       });
     }
   }, [router]);
-
-  // Cálculo de precios mayoristas por volumen en el mockup demo
-  const getUnitPrice = (boxes: number) => {
-    if (boxes >= 200) return 0.85; // Pallet completo
-    if (boxes >= 50) return 0.98;  // Escala media
-    return 1.20;                   // Escala base
-  };
-
-  const currentUnitPrice = getUnitPrice(demoBoxes);
-  const totalDemoPrice = (demoBoxes * 24 * currentUnitPrice).toFixed(2); // 24 unidades por caja
-  const discountPercent =
-    demoBoxes >= 200 ? 29 : demoBoxes >= 50 ? 18 : 0;
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-sky-500 selection:text-white">
@@ -363,8 +347,8 @@ export default function PlatformHomePage() {
               href="#demo"
               className="bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 font-semibold text-sm py-3.5 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
             >
-              <Boxes className="w-4 h-4 text-sky-400" />
-              <span>Ver Demostración B2B</span>
+              <ShoppingCart className="w-4 h-4 text-amber-400" />
+              <span>Probar Catálogo Interactivo</span>
             </a>
           </div>
 
@@ -456,185 +440,22 @@ export default function PlatformHomePage() {
         </div>
       </section>
 
-      {/* SECCIÓN 2: Demostración Interactiva B2B (Mockup en Vivo) */}
+      {/* SECCIÓN 2: Demostración Interactiva de Catálogo Mayorista */}
       <section id="demo" className="scroll-mt-24 py-16 sm:py-24 border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-16">
-            <span className="text-xs font-semibold text-sky-400 uppercase tracking-wider">
+        <div className="max-w-7xl mx-auto px-4 space-y-10 sm:space-y-12">
+          <div className="text-center max-w-2xl mx-auto">
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
               Experiencia del Comprador Mayorista
             </span>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mt-1">
-              Probá Cómo Cotiza tu Cliente B2B
+              Probá Cómo Compra tu Cliente en el Catálogo Digital
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-2 px-2">
-              Mirá cómo se calculan los precios por volumen de forma automática y cómo se genera la orden para WhatsApp.
+              Buscá, filtrá por categorías de producto, agregá fardos al pedido y mirá la orden estructurada que llega directo a WhatsApp.
             </p>
           </div>
 
-          <div className="max-w-4xl mx-auto bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-              {/* Columna Izquierda: Información del Producto B2B */}
-              <div className="lg:col-span-6 space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-[10px] font-bold text-sky-400 bg-sky-500/10 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                    Envase PET Industrial
-                  </span>
-                  <span className="text-[10px] font-mono text-slate-400 bg-slate-800 px-2 py-0.5 rounded">
-                    SKU: PET-GAL-3785
-                  </span>
-                </div>
-
-                <h3 className="text-xl sm:text-2xl font-extrabold text-white">
-                  Envase Galón 3785ml con Tapa Rosca Seguridad
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                  Envase de alta resistencia para productos químicos, alimenticios y de limpieza. Aprobado para contacto con alimentos. Presentación en cajas de 24 unidades.
-                </p>
-
-                {/* Especificaciones Técnicas */}
-                <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
-                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5">
-                    <span className="text-slate-500 text-[10px] block">Material</span>
-                    <span className="font-bold text-slate-200">Resina PET Virgen</span>
-                  </div>
-                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5">
-                    <span className="text-slate-500 text-[10px] block">Boca / Cuello</span>
-                    <span className="font-bold text-slate-200">PCO 1881 (28mm)</span>
-                  </div>
-                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5">
-                    <span className="text-slate-500 text-[10px] block">Gramaje</span>
-                    <span className="font-bold text-slate-200">120g ± 2g</span>
-                  </div>
-                  <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5">
-                    <span className="text-slate-500 text-[10px] block">Resistencia</span>
-                    <span className="font-bold text-slate-200">35 PSI Presión</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-emerald-400 pt-1">
-                  <FileCheck className="w-4 h-4 shrink-0" />
-                  <span>Ficha técnica oficial descargable disponible</span>
-                </div>
-              </div>
-
-              {/* Columna Derecha: Calculadora Interactiva de Escala Mayorista */}
-              <div className="lg:col-span-6 bg-slate-950/80 border border-slate-800 rounded-2xl p-5 sm:p-6 space-y-5">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <div className="flex items-center gap-2">
-                    <Calculator className="w-4 h-4 text-sky-400" />
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">
-                      Cotizador por Volumen
-                    </span>
-                  </div>
-                  <span className="text-[11px] font-semibold text-slate-400">
-                    MOQ: 10 Cajas
-                  </span>
-                </div>
-
-                {/* Escalas de Precios */}
-                <div className="space-y-1.5">
-                  <div className="text-[11px] text-slate-400 font-medium mb-1">Escalas de precio configuradas:</div>
-                  <div className="grid grid-cols-3 gap-1.5 text-center text-xs">
-                    <div
-                      onClick={() => setDemoBoxes(10)}
-                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                        demoBoxes < 50
-                          ? 'bg-sky-500/10 border-sky-500 text-sky-400 font-bold'
-                          : 'bg-slate-900 border-slate-800 text-slate-400'
-                      }`}
-                    >
-                      <div className="text-[10px]">10 a 49 cajas</div>
-                      <div className="text-sm font-extrabold text-white">$1.20 <span className="text-[9px] font-normal text-slate-400">/u</span></div>
-                    </div>
-                    <div
-                      onClick={() => setDemoBoxes(50)}
-                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                        demoBoxes >= 50 && demoBoxes < 200
-                          ? 'bg-sky-500/10 border-sky-500 text-sky-400 font-bold'
-                          : 'bg-slate-900 border-slate-800 text-slate-400'
-                      }`}
-                    >
-                      <div className="text-[10px]">50 a 199 cajas</div>
-                      <div className="text-sm font-extrabold text-white">$0.98 <span className="text-[9px] font-normal text-slate-400">/u</span></div>
-                      <span className="text-[9px] text-emerald-400 font-bold">-18%</span>
-                    </div>
-                    <div
-                      onClick={() => setDemoBoxes(200)}
-                      className={`p-2 rounded-xl border transition-all cursor-pointer ${
-                        demoBoxes >= 200
-                          ? 'bg-sky-500/10 border-sky-500 text-sky-400 font-bold'
-                          : 'bg-slate-900 border-slate-800 text-slate-400'
-                      }`}
-                    >
-                      <div className="text-[10px]">Pallet (200+)</div>
-                      <div className="text-sm font-extrabold text-white">$0.85 <span className="text-[9px] font-normal text-slate-400">/u</span></div>
-                      <span className="text-[9px] text-emerald-400 font-bold">-29%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Selector de Cantidad */}
-                <div>
-                  <div className="flex justify-between text-xs text-slate-300 font-medium mb-1.5">
-                    <span>Cantidad a Cotizar:</span>
-                    <span className="font-bold text-white">{demoBoxes} Cajas ({demoBoxes * 24} Unidades)</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => setDemoBoxes((prev) => Math.max(10, prev - 10))}
-                      className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-white font-bold flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      -
-                    </button>
-                    <input
-                      type="range"
-                      min={10}
-                      max={300}
-                      step={10}
-                      value={demoBoxes}
-                      onChange={(e) => setDemoBoxes(Number(e.target.value))}
-                      className="w-full accent-sky-500 cursor-pointer"
-                    />
-                    <button
-                      onClick={() => setDemoBoxes((prev) => Math.min(500, prev + 10))}
-                      className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-white font-bold flex items-center justify-center transition-colors cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-
-                {/* Resumen de Cotización */}
-                <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-3 space-y-1.5 text-xs">
-                  <div className="flex justify-between text-slate-400">
-                    <span>Precio unitario aplicado:</span>
-                    <span className="font-bold text-white">${currentUnitPrice.toFixed(2)} USD</span>
-                  </div>
-                  {discountPercent > 0 && (
-                    <div className="flex justify-between text-emerald-400 font-semibold">
-                      <span>Descuento por escala:</span>
-                      <span>-{discountPercent}%</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm font-extrabold text-white pt-1.5 border-t border-slate-800">
-                    <span>Total Estimado:</span>
-                    <span className="text-sky-400">${totalDemoPrice} USD</span>
-                  </div>
-                </div>
-
-                {/* Botón Simulado WhatsApp */}
-                <div className="pt-1">
-                  <div className="w-full bg-emerald-600/90 text-white font-bold text-xs py-3 px-4 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20">
-                    <MessageSquare className="w-4 h-4" />
-                    <span>Cotización Lista para WhatsApp (Planta Norte)</span>
-                  </div>
-                  <span className="text-[10px] text-slate-500 block text-center mt-1.5">
-                    El mensaje se envía preformateado con SKU, volumen y datos de planta
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+          <InteractiveStorefrontDemo />
         </div>
       </section>
 
