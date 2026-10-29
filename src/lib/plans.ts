@@ -1,4 +1,5 @@
 import { Plan, PlanLimits, BillingCycle } from './types';
+import { buildEcuadorWhatsAppUrl } from './ecuador-phone';
 
 // ==========================================================
 // TENDDY SAAS: Planes por Defecto (Fallback anti-desfase DDL)
@@ -380,3 +381,93 @@ export function validatePlanPayload(body: any): { valid: boolean; error?: string
     },
   };
 }
+
+/**
+ * Obtiene la fecha límite de la promoción de lanzamiento (último día del mes en curso)
+ */
+export function getPromoDeadline(): { text: string; daysLeft: number; dateStr: string } {
+  const now = new Date();
+  // Último día del mes actual (año, mes + 1, día 0 = último día del mes)
+  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  
+  const diffTime = lastDay.getTime() - now.getTime();
+  const daysLeft = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+  const monthsEs = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const monthName = monthsEs[lastDay.getMonth()];
+  const formattedText = `${lastDay.getDate()} de ${monthName}`;
+  const dateStr = lastDay.toISOString().split('T')[0];
+
+  return {
+    text: formattedText,
+    daysLeft,
+    dateStr,
+  };
+}
+
+/**
+ * Calcula el precio promocional con el 50% de descuento de lanzamiento
+ */
+export function getPlanPromoPrice(plan: Plan): {
+  originalPrice: number;
+  promoPrice: number;
+  discountPercent: number;
+  isPromo: boolean;
+} {
+  if (plan.price_yearly <= 0) {
+    return {
+      originalPrice: 0,
+      promoPrice: 0,
+      discountPercent: 0,
+      isPromo: false,
+    };
+  }
+
+  const promoPrice = Math.round(plan.price_yearly * 0.5);
+  return {
+    originalPrice: plan.price_yearly,
+    promoPrice,
+    discountPercent: 50,
+    isPromo: true,
+  };
+}
+
+/**
+ * Construye la URL de WhatsApp para solicitar la activación o compra de un plan con la promo 50% OFF
+ */
+export function buildPlanWhatsAppUpgradeUrl({
+  plan,
+  tenantSlug,
+  tenantName,
+  phone = '0980065021', // Teléfono oficial de Tenddy
+}: {
+  plan: Plan;
+  tenantSlug?: string;
+  tenantName?: string;
+  phone?: string;
+}): string {
+  const promo = getPlanPromoPrice(plan);
+  const deadline = getPromoDeadline();
+
+  let msg = `¡Hola Tenddy! 👋 `;
+  if (tenantName || tenantSlug) {
+    msg += `Quiero activar el *${plan.name}* para mi tienda *${tenantName || tenantSlug}* (${tenantSlug || ''}.tenddy.shop).\n\n`;
+  } else {
+    msg += `Quiero contratar el *${plan.name}* para mi empresa en Tenddy.\n\n`;
+  }
+
+  if (promo.isPromo) {
+    msg += `🔥 *Promoción 50% OFF de Lanzamiento*: $${promo.promoPrice} USD/año (en lugar de $${promo.originalPrice} USD/año, válida hasta el ${deadline.text}).\n\n`;
+  } else {
+    msg += `Tarifa: $${plan.price_yearly} USD/año.\n\n`;
+  }
+
+  msg += `Por favor envíenme los datos de cuenta bancaria o link de cobro para realizar la transferencia.`;
+
+  return buildEcuadorWhatsAppUrl(phone, msg);
+}
+

@@ -49,7 +49,10 @@ assert(plansHelperContent.includes('export function getPlanBySlug'), 'Debe expor
 assert(plansHelperContent.includes('export function checkPlanLimit'), 'Debe exportar checkPlanLimit');
 assert(plansHelperContent.includes('export function calculateAnnualSavings'), 'Debe exportar calculateAnnualSavings');
 assert(plansHelperContent.includes('export function validatePlanPayload'), 'Debe exportar validatePlanPayload');
-console.log('✅ Test 3 aprobado: Helper central con escala anual completa (Free, 100 $50, 500 $100, 1000 $250, 2000 $450, Enterprise $1200).');
+assert(plansHelperContent.includes('export function getPromoDeadline'), 'Debe exportar getPromoDeadline');
+assert(plansHelperContent.includes('export function getPlanPromoPrice'), 'Debe exportar getPlanPromoPrice');
+assert(plansHelperContent.includes('export function buildPlanWhatsAppUpgradeUrl'), 'Debe exportar buildPlanWhatsAppUpgradeUrl');
+console.log('✅ Test 3 aprobado: Helper central con escala anual completa y helpers de promo 50% / WhatsApp.');
 
 // 4. Validar existencia de endpoints de API
 console.log('🧪 Test 4: Verificando endpoints API...');
@@ -71,6 +74,15 @@ const homePageContent = fs.readFileSync(path.join(__dirname, '../src/components/
 assert(homePageContent.includes('PricingSection'), 'PlatformHomePage debe importar PricingSection');
 assert(homePageContent.includes('<PricingSection />'), 'PlatformHomePage debe renderizar PricingSection');
 assert(homePageContent.includes('href="#pricing"'), 'PlatformHomePage debe tener ancla #pricing en navbar');
-console.log('✅ Test 5 aprobado: UI en Torre de Control y PricingSection en Landing integradas.');
+
+const adminDashboardContent = fs.readFileSync(path.join(__dirname, '../src/components/AdminDashboardView.tsx'), 'utf8');
+assert(adminDashboardContent.includes('buildPlanWhatsAppUpgradeUrl'), 'AdminDashboardView debe usar buildPlanWhatsAppUpgradeUrl');
+assert(adminDashboardContent.includes('50% OFF'), 'AdminDashboardView debe mostrar banner de promo 50%');
+
+const productsApiContent = fs.readFileSync(path.join(__dirname, '../src/app/api/admin/products/route.ts'), 'utf8');
+assert(productsApiContent.includes('checkPlanLimit'), 'API /api/admin/products debe validar límite con checkPlanLimit');
+assert(productsApiContent.includes('PLAN_LIMIT_REACHED'), 'API /api/admin/products debe responder con PLAN_LIMIT_REACHED');
+
+console.log('✅ Test 5 aprobado: UI en Torre de Control, PricingSection en Landing y gobernanza en Admin Dashboard integradas.');
 
 console.log('\n🎉 ¡TODAS LAS PRUEBAS DE ARQUITECTURA DEL MÓDULO DE PLANES PASARON EXITOSAMENTE!');

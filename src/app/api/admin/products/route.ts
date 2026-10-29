@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getAdminClient } from '@/lib/supabase';
 import { verifyTenantAdmin } from '@/lib/auth-guard';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { getPlanBySlug, checkPlanLimit } from '@/lib/plans';
 
 // Validación de Magic Bytes binarios para prevenir MIME-spoofing en subidas de fotos
 function isValidImageMagicBytes(buffer: Buffer, mimeType: string): boolean {
@@ -77,6 +78,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: auth.error || 'No autorizado' }, { status: 401 });
     }
 
+    const admin = getAdminClient();
+
+    // Validar límite de productos según el plan comercial asignado al tenant
+    const [tenantRes, productsCountRes] = await Promise.all([
+      admin.from('tenants').select('plan_slug').eq('id', tenant_id).maybeSingle(),
+      admin.from('products').select('id', { count: 'exact', head: true }).eq('tenant_id', tenant_id),
+    ]);
+
+    const tenantPlanSlug = tenantRes.data?.plan_slug || 'free';
+    const plan = getPlanBySlug(tenantPlanSlug);
+    const currentProductsCount = productsCountRes.count || 0;
+
+    const limitCheck = checkPlanLimit(plan, 'max_products', currentProductsCount);
+    if (!limitCheck.allowed) {
+      return NextResponse.json(
+        {
+          error: `Has alcanzado el límite de ${limitCheck.max} productos permitido por tu ${plan.name}. Contacta a soporte para ampliar tu cupo con la promoción del 50% OFF.`,
+          code: 'PLAN_LIMIT_REACHED',
+          limit: limitCheck.max,
+          current: currentProductsCount,
+          plan: plan.name,
+        },
+        { status: 403 }
+      );
+    }
+
     const clientIp = getClientIp(request);
     // Rate limiting: máximo 40 creaciones de productos por minuto por tienda/IP
     const { isAllowed } = checkRateLimit(`prod_create_${tenant_id}_${clientIp}`, {
@@ -101,8 +128,6 @@ export async function POST(request: Request) {
 
     const cleanSku = sku.toLowerCase().replace(/[^a-z0-9]/g, '');
     let targetSlug = `${baseSlug}-${cleanSku}`;
-
-    const admin = getAdminClient();
 
     // Comprobar y evitar colisión de slug (previene error duplicate key value violates unique constraint)
     const { data: existingProd } = await admin
