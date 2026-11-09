@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Package,
   MessageCircle,
@@ -24,7 +24,12 @@ import {
   Search,
   ExternalLink,
   HelpCircle,
-  Home
+  Home,
+  Play,
+  Pause,
+  ShieldCheck,
+  Zap,
+  Snowflake
 } from 'lucide-react';
 import { buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 import { resolveLandingSections, LandingSectionsConfig } from '@/lib/types';
@@ -247,6 +252,34 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
   const [contactProduct, setContactProduct] = useState('Botella PET 500ml');
   const [contactVolume, setContactVolume] = useState('5.000 a 10.000 uds/mes');
 
+  // Control de video de fondo y secuencia de scroll 60fps
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const trackRef = useRef<HTMLElement>(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState<boolean>(true);
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
+  const [frameIndex, setFrameIndex] = useState<number>(1);
+
+  const toggleVideoPlay = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play().then(() => setIsVideoPlaying(true)).catch(() => {});
+    } else {
+      videoRef.current.pause();
+      setIsVideoPlaying(false);
+    }
+  };
+
+  const scrollToPhase = (targetProgressRatio: number) => {
+    if (!trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const trackTop = rect.top + scrollTop;
+    const totalScrollable = rect.height - window.innerHeight;
+    if (totalScrollable <= 0) return;
+    const targetScroll = trackTop + totalScrollable * targetProgressRatio;
+    window.scrollTo({ top: targetScroll, behavior: 'smooth' });
+  };
+
   // Control de menú móvil
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -358,6 +391,82 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
     handleScrollEvents();
     return () => window.removeEventListener('scroll', handleScrollEvents);
   }, []);
+
+  // Listener para la Secuencia de Scroll con Lerp continuo a 60fps optimizado
+  useEffect(() => {
+    let currentProgress = 0;
+    let targetProgress = 0;
+    let rafId: number | null = null;
+
+    const calculateProgress = () => {
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      const windowHeight = window.innerHeight;
+
+      if (rect.bottom < 0) {
+        targetProgress = 1;
+        return;
+      }
+      if (rect.top > windowHeight) {
+        targetProgress = 0;
+        return;
+      }
+
+      const totalScrollable = rect.height - windowHeight;
+      if (totalScrollable <= 0) return;
+      const scrolled = -rect.top;
+      targetProgress = Math.max(0, Math.min(1, scrolled / totalScrollable));
+    };
+
+    const tick = () => {
+      const diff = targetProgress - currentProgress;
+      if (Math.abs(diff) < 0.001) {
+        currentProgress = targetProgress;
+        rafId = null;
+      } else {
+        currentProgress += diff * 0.35;
+        rafId = requestAnimationFrame(tick);
+      }
+      setScrollProgress(currentProgress);
+      const fIndex = Math.min(144, Math.max(1, Math.floor(currentProgress * 143) + 1));
+      setFrameIndex(fIndex);
+    };
+
+    const onScroll = () => {
+      calculateProgress();
+      if (!rafId && Math.abs(targetProgress - currentProgress) >= 0.001) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    onScroll();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, []);
+
+  // Cálculo de opacidades y traslaciones de las tarjetas del Hero interactivo
+  const introOpacity = scrollProgress <= 0.22
+    ? (scrollProgress > 0.12 ? Math.max(0, Math.min(1, (0.22 - scrollProgress) / 0.10)) : 1)
+    : 0;
+  const introTranslate = (1 - introOpacity) * -25;
+
+  const step1Opacity = (scrollProgress >= 0.22 && scrollProgress <= 0.58)
+    ? (scrollProgress < 0.32 ? (scrollProgress - 0.22) / 0.10 : (scrollProgress > 0.48 ? (0.58 - scrollProgress) / 0.10 : 1))
+    : 0;
+  const step1Translate = (1 - step1Opacity) * 25;
+
+  const step2Opacity = (scrollProgress >= 0.58 && scrollProgress <= 0.98)
+    ? (scrollProgress < 0.68 ? (scrollProgress - 0.58) / 0.10 : (scrollProgress > 0.88 ? (0.98 - scrollProgress) / 0.10 : 1))
+    : 0;
+  const step2Translate = (1 - step2Opacity) * 25;
 
   const mainWhatsapp = '593998722324';
   const displayPhone = '099 872 2324';
@@ -576,80 +685,247 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         )}
       </div>
 
-      {/* 3. HERO DE POTENCIA INDUSTRIAL */}
+      {/* 3. HERO INTERACTIVO CON SECUENCIA DE SCROLL (VIDEO Y TELEMETRÍA 40 BAR) */}
       {sections.hero.enabled && (
-        <section className="relative pt-28 sm:pt-36 pb-16 sm:pb-24 px-4 sm:px-6 border-b border-white/10 overflow-hidden">
-          <div className="absolute inset-0 bg-radial from-[#A61C2E]/20 via-transparent to-transparent pointer-events-none" />
-          <div className="max-w-7xl mx-auto relative z-10 space-y-6 text-center sm:text-left sm:flex sm:items-center sm:justify-between sm:gap-10">
-            <div className="space-y-4 max-w-2xl">
-              {sections.hero.badge && (
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/15 text-yellow-300 text-xs font-mono font-bold">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>{sections.hero.badge}</span>
-                </div>
-              )}
+        <section className="scroll-sequence-track" id="scroll-sequence-track" ref={trackRef}>
+          <div className="scroll-sequence-sticky">
+            {/* Video de Fondo Industrial Continuo */}
+            <video
+              ref={videoRef}
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="metadata"
+              poster="/assets/hero-machine.jpg"
+              id="hero-background-video"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                zIndex: 1,
+              }}
+            >
+              <source src="/assets/process-video.mp4" type="video/mp4" />
+            </video>
+            <div
+              className="sequence-dark-vignette"
+              style={{
+                background: `radial-gradient(circle at 65% 50%, rgba(11, 17, 32, 0.1) 0%, rgba(11, 17, 32, 0.5) 60%, rgba(11, 17, 32, 0.8) 100%), linear-gradient(to top, #0a1128, transparent 100%)`,
+                zIndex: 2,
+              }}
+            />
 
-              <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white leading-tight">
-                {sections.hero.title_main || 'TECNOLOGÍA EN'} <br />
-                <span className="text-[#A61C2E] underline decoration-yellow-400/50">
-                  {sections.hero.title_highlight || 'soplado & inyección'}
-                </span>
-              </h2>
-
-              <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-                {sections.hero.description}
-              </p>
-
-              <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
-                {sections.rfq_and_map.enabled && (
-                  <a
-                    href="#cotizar"
-                    className="bg-[#A61C2E] hover:bg-[#8C1625] text-white font-extrabold text-xs sm:text-sm px-6 py-3 rounded-2xl shadow-lg shadow-[#A61C2E]/30 transition-all hover:scale-105 active:scale-95 flex items-center gap-2 cursor-pointer"
+            {/* Capa UI con Telemetría y las 3 Secciones Sincronizadas */}
+            <div className="sequence-ui-layer">
+              {/* HUD Superior */}
+              <div className="sequence-top-hud flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="hud-badge-active text-[10px] sm:text-xs">
+                    <span>MONITOREO DE LÍNEA EN TIEMPO REAL</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleVideoPlay}
+                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/80 hover:bg-slate-800 text-[10px] sm:text-xs font-mono font-bold text-white border border-slate-700/80 transition-all cursor-pointer shadow-xs"
+                    title={isVideoPlaying ? 'Pausar video de planta' : 'Reanudar video'}
                   >
-                    <span>{sections.hero.cta_primary_text || 'Solicitar Muestras & Cotización'}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </a>
-                )}
+                    {isVideoPlaying ? (
+                      <Pause className="w-3 h-3 text-amber-400" />
+                    ) : (
+                      <Play className="w-3 h-3 text-emerald-400 fill-emerald-400" />
+                    )}
+                    <span className="hidden sm:inline">{isVideoPlaying ? 'VIDEO EN VIVO' : 'VIDEO PAUSADO'}</span>
+                  </button>
+                </div>
+                <div className="hidden sm:flex items-center gap-2 text-[10px] sm:text-xs text-slate-300">
+                  <span>SISTEMA: BLOW-MOLD ROTARY TURBINE • 40 BAR</span>
+                </div>
+              </div>
 
-                <a
-                  href="#catalogo"
-                  className="bg-slate-800/80 hover:bg-slate-700 text-white font-bold text-xs sm:text-sm px-5 py-3 rounded-2xl border border-white/10 transition-all cursor-pointer flex items-center gap-2"
+              {/* Contenedor Central de las Secciones que aparecen con el scroll */}
+              <div className="sequence-middle-container">
+                {/* FASE 0: INTRO HERO AL INICIO (Progress 0.0 a 0.22) */}
+                <article
+                  className="sequence-step-card"
+                  id="sequence-step-intro"
+                  style={{
+                    opacity: introOpacity,
+                    transform: `translateY(${introTranslate}px)`,
+                    pointerEvents: introOpacity > 0.1 ? 'auto' : 'none',
+                  }}
                 >
-                  <Package className="w-4 h-4 text-[#A61C2E]" />
-                  <span>Ver Catálogo de Envases</span>
-                </a>
+                  <span className="step-phase-tag text-[10px] sm:text-xs">
+                    AYME INDUSTRIAS PET • PACKAGING
+                  </span>
+                  <h1 className="step-card-title" style={{ fontSize: 'clamp(1.35rem, 4vw, 2.4rem)' }}>
+                    TECNOLOGÍA EN <br />
+                    <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: 'var(--accent)', textTransform: 'none' }}>
+                      soplado & inyección
+                    </span>
+                  </h1>
+                  <p className="step-card-lead text-xs sm:text-sm">
+                    Fabricación de envases, botellas, tapas y preformas en PET y PP con tecnología rotativa de alta velocidad para la industria.
+                  </p>
+                  <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                    <a
+                      href="#catalogo"
+                      className="btn btn-accent cursor-pointer"
+                      style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+                    >
+                      Ver Catálogo {new Date().getFullYear()}
+                    </a>
+                    <a
+                      href={`https://wa.me/${mainWhatsapp}?text=${encodeURIComponent('¡Hola AYME INDUSTRIAS PET! Quiero asesoría y cotización.')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline"
+                      style={{ color: '#ffffff', borderColor: 'rgba(255,255,255,0.4)', padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+                    >
+                      Cotizar por WhatsApp
+                    </a>
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <span>↕</span>
+                    <span>Desplace hacia abajo para ver la secuencia sincronizada</span>
+                  </div>
+                </article>
+
+                {/* SECCIÓN SINCRONIZADA 1: Fase 01 (0.22 a 0.58) */}
+                <article
+                  className="sequence-step-card"
+                  id="sequence-step-1"
+                  style={{
+                    opacity: step1Opacity,
+                    transform: `translateY(${step1Translate}px)`,
+                    pointerEvents: step1Opacity > 0.1 ? 'auto' : 'none',
+                  }}
+                >
+                  <span className="step-phase-tag text-[10px] sm:text-xs">FASE 01 / CONTROL TÉRMICO DE PREFORMAS</span>
+                  <h2 className="step-card-title" style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.85rem)' }}>Inyección & Calentamiento Infrarrojo de Precisión</h2>
+                  <p className="step-card-lead text-xs sm:text-sm">
+                    Las preformas de resina PET 100% virgen entran en el túnel térmico rotativo con control por zonas independientes, asegurando plasticidad perfecta y distribución milimétrica de pared.
+                  </p>
+                  <div className="step-features-grid">
+                    <div className="step-feat-box">
+                      <h5 className="flex items-center gap-1.5"><Zap className="w-4 h-4 text-orange-400" /> Infrarrojo Modular</h5>
+                      <p>Perfil térmico calibrado según el gramaje del envase.</p>
+                    </div>
+                    <div className="step-feat-box">
+                      <h5 className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-emerald-400" /> Cuello PCO Sellado</h5>
+                      <p>Protección térmica en la rosca para cero deformaciones.</p>
+                    </div>
+                  </div>
+                  <a
+                    href="#catalogo"
+                    className="btn btn-accent btn-block cursor-pointer"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+                  >
+                    Ver Catálogo de Envases
+                  </a>
+                </article>
+
+                {/* SECCIÓN SINCRONIZADA 2: Fase 02 (0.58 a 0.98) */}
+                <article
+                  className="sequence-step-card"
+                  id="sequence-step-2"
+                  style={{
+                    opacity: step2Opacity,
+                    transform: `translateY(${step2Translate}px)`,
+                    pointerEvents: step2Opacity > 0.1 ? 'auto' : 'none',
+                  }}
+                >
+                  <span className="step-phase-tag text-[10px] sm:text-xs" style={{ background: 'rgba(37, 211, 102, 0.2)', color: '#25D366' }}>
+                    FASE 02 / BI-ORIENTACIÓN MOLECULAR
+                  </span>
+                  <h2 className="step-card-title" style={{ fontSize: 'clamp(1.2rem, 3.5vw, 1.85rem)' }}>Soplado Rotativo a 40 Bar & Enfriamiento Criogénico</h2>
+                  <p className="step-card-lead text-xs sm:text-sm">
+                    Las varillas de estiramiento servoasistidas expanden la preforma mientras el aire a alta presión copia cada detalle del molde en aluminio aeronáutico refrigerado.
+                  </p>
+                  <div className="step-features-grid">
+                    <div className="step-feat-box">
+                      <h5 className="flex items-center gap-1.5"><ShieldCheck className="w-4 h-4 text-amber-400" /> Alta Resistencia</h5>
+                      <p>Bi-orientación molecular que triplica la resistencia a caídas.</p>
+                    </div>
+                    <div className="step-feat-box">
+                      <h5 className="flex items-center gap-1.5"><Snowflake className="w-4 h-4 text-sky-400" /> Enfriamiento Rápido</h5>
+                      <p>Ciclo ultraveloz con fondo petaloide libre de tensiones.</p>
+                    </div>
+                  </div>
+                  <a
+                    href={`https://wa.me/${mainWhatsapp}?text=${encodeURIComponent('¡Hola AYME INDUSTRIAS PET! Deseo cotizar fabricación en volumen de envases.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-whatsapp btn-block"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.82rem' }}
+                  >
+                    Cotizar Producción por WhatsApp
+                  </a>
+                </article>
+
+                {/* Indicador Lateral de Progreso Interactivo */}
+                <div className="sequence-timeline-hud">
+                  <button
+                    type="button"
+                    onClick={() => scrollToPhase(0.38)}
+                    className={`timeline-node cursor-pointer transition-all bg-transparent border-0 p-1 rounded hover:text-white hover:scale-125 ${
+                      scrollProgress >= 0.22 && scrollProgress <= 0.58 ? 'text-white font-extrabold scale-110 drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]' : 'text-white/60'
+                    }`}
+                    title="Ir a Fase 01: Inyección & Control Térmico"
+                  >
+                    01
+                  </button>
+                  <div
+                    className="timeline-track-bar cursor-pointer group"
+                    onClick={(e) => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const clickY = e.clientY - rect.top;
+                      const ratio = Math.max(0, Math.min(1, clickY / rect.height));
+                      scrollToPhase(0.22 + ratio * 0.73);
+                    }}
+                    title="Haga clic para saltar en la secuencia"
+                  >
+                    <div
+                      className="timeline-fill-bar"
+                      id="sequence-progress-bar"
+                      style={{ height: `${scrollProgress * 100}%` }}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => scrollToPhase(0.78)}
+                    className={`timeline-node cursor-pointer transition-all bg-transparent border-0 p-1 rounded hover:text-white hover:scale-125 ${
+                      scrollProgress >= 0.58 ? 'text-white font-extrabold scale-110 drop-shadow-[0_0_8px_rgba(37,211,102,0.8)]' : 'text-white/60'
+                    }`}
+                    title="Ir a Fase 02: Soplado Rotativo & Enfriamiento Criogénico"
+                  >
+                    02
+                  </button>
+                </div>
+              </div>
+
+              {/* HUD Inferior con Telemetría Sincronizada */}
+              <div className="sequence-bottom-hud">
+                <div className="hud-telemetry-col">
+                  <span>SECUENCIA: </span>
+                  <strong id="telemetry-frame-val">FR-{String(frameIndex).padStart(4, '0')} / 0144</strong>
+                </div>
+                <div className="hud-telemetry-col">
+                  <span>SINCRONIZACIÓN: </span>
+                  <strong id="telemetry-progress-val">{Math.round(scrollProgress * 100)}%</strong>
+                </div>
+                <div className="hud-telemetry-col">
+                  <span>VELOCIDAD: </span>
+                  <strong>12.000 BPH CONTINUO</strong>
+                </div>
+                <div className="hud-telemetry-col">
+                  <span>SCROLL INTERACTIVO: </span>
+                  <strong>BIDIRECCIONAL ↕</strong>
+                </div>
               </div>
             </div>
-
-            {/* Tarjeta de Telemetría de Planta */}
-            {sections.hero.show_telemetry && (
-              <div className="mt-8 sm:mt-0 bg-slate-900/90 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-4 sm:w-80 shrink-0 text-left">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                  <span className="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Factory className="w-4 h-4 text-emerald-400" />
-                    <span>{sections.hero.telemetry_plant_name || 'Planta Calderón'}</span>
-                  </span>
-                  <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                    {sections.hero.telemetry_status || 'Operativa'}
-                  </span>
-                </div>
-
-                <div className="space-y-3 font-mono text-xs">
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Cadencia Máxima:</span>
-                    <span className="text-white font-bold text-sm">{sections.hero.telemetry_cadence || '+12.000 BPH'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Material Certificado:</span>
-                    <span className="text-white font-bold">{sections.hero.telemetry_material || 'Resina PET 100% Virgen'}</span>
-                  </div>
-                  <div>
-                    <span className="text-slate-500 block text-[10px]">Matricería CNC:</span>
-                    <span className="text-white font-bold">{sections.hero.telemetry_tooling || 'Diseño de Moldes 3D'}</span>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </section>
       )}
