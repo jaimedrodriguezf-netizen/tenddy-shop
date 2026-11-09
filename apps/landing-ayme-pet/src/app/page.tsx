@@ -29,7 +29,13 @@ import {
   Pause,
   ShieldCheck,
   Zap,
-  Snowflake
+  Snowflake,
+  Award,
+  RefreshCw,
+  Truck,
+  Video,
+  Music,
+  ShoppingCart
 } from 'lucide-react';
 import { buildStorefrontThemeCSS } from '@/lib/theme-tokens';
 import { resolveLandingSections, LandingSectionsConfig } from '@/lib/types';
@@ -1033,9 +1039,8 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
     <div id="inicio" style={themeStyles} className="min-h-screen bg-[#0a1128] text-slate-100 font-sans selection:bg-[#A61C2E] selection:text-white">
       {/* 1 & 2. CABECERA FLOTANTE CON SMART HIDE Y SCROLL SPY */}
       <div
-        className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
-          isHeaderSolid ? 'shadow-2xl' : ''
-        }`}
+        className={`fixed-header-wrapper ${isHeaderSolid ? 'scrolled solid-header' : ''}`}
+        id="fixed-header-wrapper"
         style={{
           transform: isHeaderVisible ? 'translateY(0)' : 'translateY(-100%)',
           transition: 'transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease',
@@ -1043,162 +1048,209 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
           pointerEvents: isHeaderVisible ? 'auto' : 'none',
         }}
       >
-        {/* 1. TOP PROMO BAR CORPORATIVA */}
+        {/* 1. TOP PROMO BAR CORPORATIVA OFICIAL */}
         {sections.top_bar.enabled && (
           <div
-            style={{ backgroundColor: sections.top_bar.bg_color || '#8C1625' }}
-            className="text-white text-[11px] font-bold py-1.5 px-4 text-center border-b border-white/10 flex items-center justify-center gap-2"
+            className="top-promo-bar"
+            style={{
+              backgroundColor: sections.top_bar.bg_color || secondaryColor,
+              opacity: isHeaderSolid ? 1 : undefined,
+            }}
           >
-            <span>{sections.top_bar.text}</span>
+            <span className="inline-flex items-center gap-1.5"><Factory className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>AYME INDUSTRIAS PET</strong> | Solutions in Packaging</span>
+            <span className="hidden md:inline">•</span>
+            <span className="hidden md:inline-flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>Ventas Mayoristas & Moldes</strong></span>
+            <span className="hidden sm:inline">•</span>
+            <span className="inline-flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>WhatsApp: {displayPhone}</strong></span>
           </div>
         )}
 
-        {/* 2. HEADER CORPORATIVO INTERACTIVO */}
-        {sections.header.enabled && (
-          <header className={`backdrop-blur-md border-b border-white/10 transition-colors duration-300 ${
-            isHeaderSolid ? 'bg-[#0a1128]/98 shadow-xl' : 'bg-[#0a1128]/85'
-          }`}>
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
-              {/* Logo y Enlace a Inicio */}
-              <a
-                href="#inicio"
-                onClick={(e) => {
-                  e.preventDefault();
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="flex items-center gap-3 group transition-transform hover:opacity-95"
-                title="AYME INDUSTRIAS PET - Inicio"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#A61C2E] to-[#8C1625] flex items-center justify-center font-black text-white text-lg shadow-md border border-white/20 group-hover:scale-105 transition-transform">
-                  A
-                </div>
-                <div>
-                  <h1 className="font-extrabold text-base tracking-tight text-white leading-tight">
-                    AYME INDUSTRIAS PET
-                  </h1>
-                  <p className="text-[10px] text-slate-400 font-mono">
-                    {sections.header.custom_subtitle || 'Solutions in Packaging • B2B'}
-                  </p>
-                </div>
-              </a>
+        {/* 2. HEADER PRINCIPAL OFICIAL */}
+        <header
+          className="site-header"
+          id="site-header"
+          style={{
+            backgroundColor: isHeaderSolid ? '#0a1128' : undefined,
+            backdropFilter: isHeaderSolid ? 'blur(20px)' : undefined,
+            WebkitBackdropFilter: isHeaderSolid ? 'blur(20px)' : undefined,
+            borderBottom: isHeaderSolid ? '1px solid rgba(255, 255, 255, 0.15)' : undefined,
+            boxShadow: isHeaderSolid ? '0 10px 30px rgba(0, 0, 0, 0.7)' : undefined,
+          }}
+        >
+          <div className="container header-inner">
+            <a
+              href="#inicio"
+              onClick={(e) => {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="brand-logo-link"
+              title="AYME INDUSTRIAS PET - Inicio"
+            >
+              <img
+                src="/assets/logo.png"
+                alt="AYME INDUSTRIAS PET"
+                className="brand-logo-img"
+                style={{ height: '42px' }}
+              />
+            </a>
 
-              {/* Navegación Desktop con Scroll Spy Reactivo */}
-              <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  className={`transition-colors cursor-pointer py-1 relative ${
-                    activeSection === 'inicio' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Inicio
-                  {activeSection === 'inicio' && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
-                  )}
-                </button>
-                <a
-                  href="#catalogo"
-                  className={`transition-colors py-1 relative ${
-                    activeSection === 'catalogo' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Catálogo de Envases
-                  {activeSection === 'catalogo' && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
-                  )}
-                </a>
-                <a
-                  href="#faqs"
-                  className={`transition-colors py-1 relative ${
-                    activeSection === 'faqs' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Preguntas Frecuentes
-                  {activeSection === 'faqs' && (
-                    <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
-                  )}
-                </a>
-                {sections.rfq_and_map.enabled && (
-                  <a
-                    href="#cotizar"
-                    className={`transition-colors py-1 relative ${
-                      activeSection === 'cotizar' ? 'text-white font-bold' : 'text-slate-400 hover:text-white'
-                    }`}
+            <nav className="main-navigation">
+              <ul className="main-nav-links">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className={`nav-link cursor-pointer bg-transparent border-0 ${activeSection === 'inicio' ? 'active' : ''}`}
                   >
-                    Cotizar & Planta
-                    {activeSection === 'cotizar' && (
-                      <span className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#A61C2E] rounded-full" />
-                    )}
+                    Inicio
+                  </button>
+                </li>
+                <li>
+                  <a
+                    href="#catalogo"
+                    className={`nav-link ${activeSection === 'catalogo' ? 'active' : ''}`}
+                  >
+                    Catálogo de Envases
                   </a>
+                </li>
+                <li>
+                  <a
+                    href="#faqs"
+                    className={`nav-link ${activeSection === 'faqs' ? 'active' : ''}`}
+                  >
+                    Preguntas Frecuentes
+                  </a>
+                </li>
+                {sections.rfq_and_map.enabled && (
+                  <li>
+                    <a
+                      href="#cotizar"
+                      className={`nav-link ${activeSection === 'cotizar' ? 'active' : ''}`}
+                    >
+                      Contacto & Cotizaciones
+                    </a>
+                  </li>
                 )}
-              </nav>
+              </ul>
+            </nav>
 
-              {/* Alternador Móvil */}
-              <div className="flex items-center gap-2 sm:gap-3">
+            <div className="header-actions flex items-center gap-2 sm:gap-2.5">
+              {/* Botón Cotizador */}
+              <button
+                type="button"
+                onClick={() => {
+                  const target = document.getElementById('cotizar');
+                  if (target) target.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="btn-cart-header cursor-pointer"
+                title="Ver lista de cotización"
+              >
+                <ShoppingCart className="w-5 h-5 text-white" />
+              </button>
+
+              {/* Botón Menú Móvil */}
+              <button
+                type="button"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="lg:hidden md:hidden h-[38px] w-[38px] rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-white/15 text-white flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+                aria-label="Abrir menú de navegación"
+              >
+                {isMobileMenuOpen ? <X className="w-5 h-5 text-white" /> : <Menu className="w-5 h-5 text-white" />}
+              </button>
+            </div>
+          </div>
+        </header>
+      </div>
+
+      {/* Drawer de Navegación Móvil Desacoplado */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-[1000] md:hidden">
+          <div
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm transition-opacity"
+          />
+          <div className="fixed top-0 right-0 w-4/5 max-w-xs h-full bg-slate-900 border-l border-slate-800 p-5 flex flex-col justify-between shadow-2xl text-slate-100 animate-fade-in overflow-y-auto">
+            <div>
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4">
+                <span className="font-bold text-sm tracking-wide text-white">Menú de Navegación</span>
                 <button
                   type="button"
-                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                  className="lg:hidden p-2 rounded-xl bg-white/10 text-white hover:bg-white/15 transition-colors cursor-pointer"
-                  aria-label="Abrir menú de navegación"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"
                 >
-                  {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                  <X className="w-5 h-5" />
                 </button>
               </div>
+
+              <ul className="space-y-2">
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                  >
+                    <span><Home className="w-4 h-4 text-slate-400 inline mr-2" />Inicio</span>
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                  </button>
+                </li>
+                <li>
+                  <a
+                    href="#catalogo"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                  >
+                    <span><Package className="w-4 h-4 text-slate-400 inline mr-2" />Catálogo de Envases</span>
+                    <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded-full font-mono">
+                      {AYME_PRODUCTS.length}
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#faqs"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                  >
+                    <span><HelpCircle className="w-4 h-4 text-slate-400 inline mr-2" />Preguntas Frecuentes</span>
+                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                  </a>
+                </li>
+                {sections.rfq_and_map.enabled && (
+                  <li>
+                    <a
+                      href="#cotizar"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="w-full text-left px-3 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 text-slate-200 flex items-center justify-between"
+                    >
+                      <span><MapPin className="w-4 h-4 text-slate-400 inline mr-2" />Contacto & Planta</span>
+                      <ChevronRight className="w-4 h-4 text-slate-500" />
+                    </a>
+                  </li>
+                )}
+              </ul>
             </div>
 
-            {/* Menú Drawer Móvil con Resaltado de Sección */}
-            {isMobileMenuOpen && (
-              <div className="lg:hidden bg-[#060c1d]/98 backdrop-blur-xl border-t border-white/10 px-4 py-4 space-y-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`flex items-center gap-2 w-full text-left py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    activeSection === 'inicio' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  <Home className="w-3.5 h-3.5" />
-                  <span>Inicio</span>
-                </button>
-                <a
-                  href="#catalogo"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    activeSection === 'catalogo' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  <Package className="w-3.5 h-3.5" />
-                  <span>Catálogo de Envases</span>
-                </a>
-                <a
-                  href="#faqs"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
-                    activeSection === 'faqs' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
-                  }`}
-                >
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>Preguntas Frecuentes</span>
-                </a>
-                {sections.rfq_and_map.enabled && (
-                  <a
-                    href="#cotizar"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-colors ${
-                      activeSection === 'cotizar' ? 'bg-[#A61C2E]/25 text-white border-l-2 border-[#A61C2E]' : 'text-slate-300 hover:bg-white/10'
-                    }`}
-                  >
-                    <MapPin className="w-3.5 h-3.5" />
-                    <span>Cotizador & Retiro en Planta</span>
-                  </a>
-                )}
+            <div className="pt-4 border-t border-slate-800 space-y-3">
+              <a
+                href={`https://wa.me/${mainWhatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn btn-whatsapp w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold rounded-xl"
+              >
+                <MessageCircle className="w-4 h-4" />
+                <span>WhatsApp: {displayPhone}</span>
+              </a>
+              <div className="text-[11px] text-slate-500 text-center">
+                <span>AYME INDUSTRIAS PET • Solutions in Packaging</span>
               </div>
-            )}
-          </header>
-        )}
-      </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 3. HERO INTERACTIVO CON SECUENCIA DE SCROLL (VIDEO Y TELEMETRÍA 40 BAR) */}
       {sections.hero.enabled && (
@@ -1874,44 +1926,114 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
                 </a>
               </div>
 
-              <div className="h-72 w-full rounded-2xl overflow-hidden border border-white/10 bg-slate-900">
-                <iframe
-                  title="Ubicación AYME INDUSTRIAS PET"
-                  src={
-                    sections.rfq_and_map.map_embed_url && !sections.rfq_and_map.map_embed_url.includes('maps.app.goo.gl') && !sections.rfq_and_map.map_embed_url.includes('goo.gl') && sections.rfq_and_map.map_embed_url.includes('embed')
-                      ? sections.rfq_and_map.map_embed_url
-                      : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.441504!3d-0.115479!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"
-                  }
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                />
-              </div>
+              <div className="space-y-4 pt-2">
+                <div className="google-maps-container" style={{ position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '2px solid rgba(255,255,255,0.2)', boxShadow: 'var(--shadow-md)' }}>
+                  <iframe
+                    title="Ubicación AYME INDUSTRIAS PET"
+                    src={
+                      sections.rfq_and_map.map_embed_url && !sections.rfq_and_map.map_embed_url.includes('maps.app.goo.gl') && !sections.rfq_and_map.map_embed_url.includes('goo.gl') && sections.rfq_and_map.map_embed_url.includes('embed')
+                        ? sections.rfq_and_map.map_embed_url
+                        : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15959.278385012543!2d-78.441504!3d-0.115479!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x91d58fb442f4625b%3A0xe5438843c08f654b!2sLlano%20Grande%2C%20Quito!5e0!3m2!1ses!2sec!4v1700000000000!5m2!1ses!2sec"
+                    }
+                    width="100%"
+                    height="240"
+                    style={{ border: 0, display: 'block' }}
+                    allowFullScreen={false}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                  <div style={{ position: 'absolute', bottom: '8px', left: '8px', right: '8px', background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '0.45rem 0.75rem', borderRadius: '6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(255,255,255,0.2)' }}>
+                    <span style={{ fontSize: '0.78rem', color: '#FFFFFF', fontWeight: 700 }}>
+                      <MapPin className="w-3.5 h-3.5 text-red-400 inline mr-1" /> Sector Calderón - Llano Grande, Quito
+                    </span>
+                    <a
+                      href={
+                        sections.rfq_and_map.map_embed_url && sections.rfq_and_map.map_embed_url.includes('maps.app.goo.gl')
+                          ? sections.rfq_and_map.map_embed_url
+                          : "https://maps.google.com/?q=-0.115479,-78.441504"
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: '0.75rem', color: '#38BDF8', fontWeight: 700, textDecoration: 'underline' }}
+                    >
+                      Ver en Google Maps ↗
+                    </a>
+                  </div>
+                </div>
 
-              <div className="text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-white/10">
-                <span className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>{sections.rfq_and_map.schedule || 'Lunes a Viernes: 08:00 - 17:30'}</span>
-                </span>
-                <div className="flex items-center gap-3">
+                <ul className="contact-channels-list" style={{ marginBottom: 0 }}>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">
+                      <MapPin className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div className="channel-text-box">
+                      <h5>Planta de Fabricación</h5>
+                      <span style={{ fontSize: '0.85rem' }}>
+                        Llano Grande, Sector Calderón, Quito - Ecuador
+                      </span>
+                    </div>
+                  </li>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">
+                      <Phone className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div className="channel-text-box">
+                      <h5>Teléfono / WhatsApp Directo</h5>
+                      <a
+                        href="tel:+593998722324"
+                        style={{ fontSize: '1.05rem', fontWeight: 800, color: '#ffffff' }}
+                        className="hover:underline"
+                        title="Llamar a planta"
+                      >
+                        {displayPhone}
+                      </a>
+                    </div>
+                  </li>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">
+                      <Mail className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div className="channel-text-box">
+                      <h5>Ventas & Cotizaciones</h5>
+                      <a
+                        href="mailto:ventas@aymeindustriaspet.com"
+                        style={{ fontSize: '0.85rem' }}
+                        className="text-slate-300 hover:text-white hover:underline"
+                        title="Enviar correo"
+                      >
+                        ventas@aymeindustriaspet.com
+                      </a>
+                    </div>
+                  </li>
+                  <li className="contact-channel-item">
+                    <div className="channel-icon-circle">
+                      <Clock className="w-5 h-5 text-red-400" />
+                    </div>
+                    <div className="channel-text-box">
+                      <h5>Horarios de Atención</h5>
+                      <span style={{ fontSize: '0.82rem' }}>
+                        {sections.rfq_and_map.schedule || 'Lunes a Viernes: 08:00 - 17:30 | Sábados: 08:30 - 13:00'}
+                      </span>
+                    </div>
+                  </li>
+                </ul>
+
+                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-sm)', padding: '1.1rem', border: '1px solid rgba(255,255,255,0.15)' }}>
+                  <h5 className="flex items-center gap-1.5" style={{ color: '#ffffff', marginBottom: '0.35rem', fontSize: '0.92rem', fontWeight: 700 }}>
+                    <Zap className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    <span>Despacho Inmediato</span>
+                  </h5>
+                  <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.8rem', marginBottom: '0.65rem' }}>
+                    ¿Su línea de producción requiere envases urgentes? Escríbanos directamente a planta.
+                  </p>
                   <a
-                    href="tel:+593998722324"
-                    className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors"
-                    title="Llamar a planta"
+                    href={`https://wa.me/${mainWhatsapp}?text=${encodeURIComponent('⚡ PEDIDO URGENTE: Requiero despacho inmediato de envases PET para línea de producción en planta.')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn btn-accent btn-block"
+                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
                   >
-                    <Phone className="w-3.5 h-3.5 text-[#A61C2E]" />
-                    <span>099 872 2324</span>
-                  </a>
-                  <a
-                    href={`mailto:${sections.rfq_and_map.email || 'ventas@aymeindustriaspet.com'}`}
-                    className="flex items-center gap-1 font-mono text-white hover:text-red-300 transition-colors"
-                    title="Enviar correo"
-                  >
-                    <Mail className="w-3.5 h-3.5 text-yellow-400" />
-                    <span>{sections.rfq_and_map.email || 'ventas@aymeindustriaspet.com'}</span>
+                    Contactar por WhatsApp
                   </a>
                 </div>
               </div>
@@ -2066,74 +2188,75 @@ export default function AymeCorporateLandingPage({ initialSections }: AymeLandin
         </div>
       )}
 
-      {/* WIDGET FLOTANTE OMNICANAL: BOTÓN VOLVER ARRIBA Y BOTÓN WHATSAPP */}
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3 pointer-events-auto">
-        {/* Botón Volver Arriba */}
-        {isHeaderSolid && (
-          <button
-            type="button"
-            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="bg-slate-800/90 hover:bg-slate-700 text-white p-3 rounded-full shadow-2xl transition-all hover:scale-110 active:scale-95 border border-white/20 cursor-pointer"
-            aria-label="Volver arriba"
-            title="Volver arriba"
-          >
-            <ChevronUp className="w-5 h-5" />
-          </button>
-        )}
-
-        {/* Botón WhatsApp Flotante Permanente */}
+      {/* WIDGET FLOTANTE DE WHATSAPP OFICIAL CON BADGE EXPANDIBLE */}
+      <aside
+        aria-label="Atención por WhatsApp"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 sm:gap-3 group animate-fade-in"
+      >
+        <div className="hidden sm:inline-flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900/95 text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-slate-700 shadow-xl pointer-events-none whitespace-nowrap">
+          <span>¿Cotizamos por WhatsApp?</span>
+          <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden">WhatsApp Planta ({displayPhone})</span>
+        </div>
+        <button
+          type="button"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="hidden"
+          title="Volver arriba"
+        >
+          Volver arriba
+        </button>
         <a
           href={`https://wa.me/${mainWhatsapp}?text=${encodeURIComponent(
             '¡Hola AYME INDUSTRIAS PET! Deseo consultar disponibilidad de envases y precios mayoristas de planta.'
           )}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-4 py-3 rounded-full shadow-2xl transition-all hover:scale-105 active:scale-95 flex items-center gap-2 border border-white/20 group"
-          title="Contactar a Ventas en Planta"
+          className="w-11 h-11 sm:w-13 sm:h-13 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white flex items-center justify-center shadow-2xl shadow-emerald-600/40 hover:scale-108 transition-all active:scale-95 cursor-pointer relative"
+          title={`Chatear por WhatsApp con AYME INDUSTRIAS PET (${displayPhone})`}
         >
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-200 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-300" />
-          </span>
-          <MessageCircle className="w-5 h-5" />
-          <span className="hidden sm:inline">WhatsApp Planta ({displayPhone})</span>
+          <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-emerald-300 absolute -top-0.5 -right-0.5 animate-ping opacity-75" />
+          <span className="w-3 sm:w-3.5 h-3 sm:h-3.5 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 border-2 border-white" />
+          <MessageCircle className="w-6 h-6 sm:w-7 sm:h-7" />
         </a>
-      </div>
+      </aside>
 
-      {/* 6. FOOTER INTERACTIVO */}
+      {/* 6. FOOTER CORPORATIVO OFICIAL */}
       {sections.footer.enabled && (
-        <footer className="border-t border-white/10 py-10 px-4 text-center text-xs text-slate-400 space-y-4 bg-[#060c1d]">
-          <div className="flex flex-wrap justify-center items-center gap-6 text-[11px] font-semibold text-slate-400">
-            <button
-              type="button"
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="hover:text-white transition-colors cursor-pointer"
-            >
-              Inicio
-            </button>
-            <a href="#catalogo" className="hover:text-white transition-colors">
-              Catálogo de Envases
-            </a>
-            <a href="#faqs" className="hover:text-white transition-colors">
-              Preguntas Frecuentes
-            </a>
-            <a href="#cotizar" className="hover:text-white transition-colors">
-              Solicitar Cotización
-            </a>
-            <a
-              href={`https://wa.me/${mainWhatsapp}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-emerald-400 hover:text-emerald-300 transition-colors"
-            >
-              WhatsApp Ventas
-            </a>
+        <footer className="site-footer">
+          <div className="container">
+            <div className="footer-bottom-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <p className="copyright-text" style={{ margin: 0 }}>
+                  {sections.footer.copyright_text || `© ${new Date().getFullYear()} AYME INDUSTRIAS PET. Solutions in Packaging. Todos los derechos reservados.`}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-2 text-xs">
+                  <span className="text-slate-400 font-semibold text-[11px]">Canales Oficiales:</span>
+                  <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="LinkedIn">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.48 1.48 0 0 0 1.49-1.48 1.5 1.5 0 0 0-1.49-1.5 1.5 1.5 0 0 0-1.5 1.5c0 .82.68 1.48 1.5 1.48m1.39 9.74v-8.37H5.07v8.37h2.78z"/></svg> LinkedIn
+                  </a>
+                  <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="Facebook">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.04C6.5 2.04 2 6.53 2 12.06C2 17.06 5.66 21.21 10.44 21.96V14.96H7.9V12.06H10.44V9.85C10.44 7.34 11.93 5.96 14.22 5.96C15.31 5.96 16.45 6.15 16.45 6.15V8.62H15.19C13.95 8.62 13.56 9.39 13.56 10.18V12.06H16.34L15.89 14.96H13.56V21.96A10 10 0 0 0 22 12.06C22 6.53 17.5 2.04 12 2.04Z"/></svg> Facebook
+                  </a>
+                  <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="Instagram">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/></svg> Instagram
+                  </a>
+                  <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" className="text-slate-300 hover:text-white transition-colors inline-flex items-center gap-1" title="TikTok">
+                    <Music className="w-3.5 h-3.5" /> TikTok
+                  </a>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-3 sm:mt-0">
+                <div className="footer-badges flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-slate-400">
+                  <span className="inline-flex items-center gap-1"><Award className="w-3.5 h-3.5 text-amber-400" /> Inocuidad BPM</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="inline-flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 text-emerald-400" /> PET 100% Reciclable</span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="inline-flex items-center gap-1"><Truck className="w-3.5 h-3.5 text-sky-400" /> Despacho Paletizado</span>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <p>{sections.footer.copyright_text || `© ${new Date().getFullYear()} AYME INDUSTRIAS PET. Solutions in Packaging. Todos los derechos reservados.`}</p>
-          {sections.footer.show_powered_by && (
-            <p className="text-[10px] text-slate-600">Portal corporativo e infraestructura B2B impulsada por tenddy.</p>
-          )}
         </footer>
       )}
     </div>
