@@ -40,6 +40,7 @@ import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
 import ProductTunnelHero from '@/components/ProductTunnelHero';
 import AymeProductCard from '@/components/AymeProductCard';
+import AymeScrollShowcase from '@/components/AymeScrollShowcase';
 import aymeCardStyles from '@/components/AymeProductCard.module.css';
 import VersionBadge from '@/components/VersionBadge';
 import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
@@ -1266,6 +1267,10 @@ export default function TenantLandingView({
           </div>
         </div>
       </section>
+      )}
+
+      {isAyme && (
+        <AymeScrollShowcase products={products} onAdd={addItem} onNavigate={handleProductNavigate} />
       )}
 
       {/* =========================================================================

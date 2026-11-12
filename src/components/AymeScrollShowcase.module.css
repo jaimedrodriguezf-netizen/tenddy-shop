@@ -1,0 +1,120 @@
+.showcase {
+  position: relative;
+  background: #f8f5f3;
+  color: #172033;
+  isolation: isolate;
+}
+
+.stage {
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.scene {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 40px;
+  padding: 112px 48px 48px;
+}
+
+.copy { min-width: 0; }
+
+.eyebrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #9d2334;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin: 0 0 20px;
+}
+
+.copy h3 {
+  font-size: clamp(1.6rem, 2.6vw, 2.7rem);
+  font-weight: 650;
+  line-height: 1.16;
+  letter-spacing: -0.025em;
+  margin: 0 0 20px;
+  overflow-wrap: anywhere;
+}
+
+.facts {
+  color: #4b5563;
+  font-size: 1rem;
+  line-height: 1.65;
+  margin: 0 0 24px;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.actions a,
+.actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 10px 18px;
+  border: 1px solid #a61c2e;
+  border-radius: 10px;
+  color: #8c1625;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actions button { background: #a61c2e; color: white; }
+.actions a:hover { background: #f3e6e5; }
+.actions button:hover { background: #8c1625; }
+.showcase a:focus-visible,
+.showcase button:focus-visible { outline: 3px solid #172033; outline-offset: 4px; }
+
+.hint { margin: 16px 0 0; color: #596171; font-size: 0.75rem; }
+.hint a { display: inline-flex; align-items: center; min-height: 44px; color: #8c1625; text-decoration: underline; }
+
+.visual { display: flex; justify-content: center; align-items: center; min-width: 0; }
+.visual img {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 22px 18px #30233824);
+}
+
+.showcase[data-pinned='true'] { height: 380vh; }
+.showcase[data-pinned='true'] .stage { position: sticky; top: 0; height: 100vh; }
+.showcase[data-pinned='true'] .scene { position: absolute; inset: 0; }
+.showcase[data-pinned='true'] .scene[aria-hidden='true'] { visibility: hidden; pointer-events: none; }
+.showcase[data-pinned='true'] .visual img {
+  max-height: 58vh;
+  transform: translateY(var(--scene-y, 0px)) scale(var(--scene-scale, 1));
+  opacity: var(--scene-opacity, 1);
+}
+
+@media (max-width: 767px) {
+  .scene { grid-template-columns: minmax(0, 1fr); gap: 20px; padding: 108px 24px 28px; }
+  .visual { grid-row: 1; }
+  .visual img { width: min(100%, 300px); height: 240px; }
+  .copy h3 { font-size: 1.5rem; margin-bottom: 12px; }
+  .eyebrow { font-size: 0.68rem; margin-bottom: 12px; }
+  .facts { font-size: 0.9rem; margin-bottom: 16px; line-height: 1.5; }
+  .actions { gap: 10px; }
+  .actions a, .actions button { padding: 10px 14px; font-size: 0.82rem; }
+  .hint { margin-top: 8px; }
+  .showcase[data-pinned='true'] .scene { align-content: center; gap: 16px; }
+  .showcase[data-pinned='true'] .visual img { height: min(28vh, 240px); }
+}
+
+/* CSS también protege la primera pintura y el cambio de preferencia en vivo. */
+@media (prefers-reduced-motion: reduce) {
+  .showcase[data-pinned] { height: auto; }
+  .showcase[data-pinned] .stage { position: static; height: auto; }
+  .showcase[data-pinned] .scene { position: relative; visibility: visible; pointer-events: auto; }
+  .showcase[data-pinned] .visual img { transform: none; opacity: 1; }
+}

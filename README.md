@@ -86,6 +86,39 @@ en datos locales se reportan como omitidas; una fixture verifica ese filtro.
 Después del build, `CARD_SCREENSHOTS=1` con el comando de navegador guarda
 `.next/ayme-product-cards-desktop.png` y `.next/ayme-product-cards-mobile.png`.
 
+## Recorrido secundario de envases AYME
+
+Exclusivo de `/store/ayme-pet`, entre la portada y el catálogo. El desplazamiento
+nativo controla cuatro escenas reversibles con texto a la izquierda en escritorio
+y foto sobre texto en móvil. No reproduce video, no gira productos ni avanza solo.
+El enlace al catálogo permite continuar directamente. Ventanas cortas, contenido
+que no cabe y movimiento reducido muestran las cuatro escenas en flujo normal;
+la preferencia puede cambiar durante la visita.
+
+La sección usa los productos recibidos, sin consultas adicionales ni catálogo
+copiado. Las fotos de oso con tapa morada y vaso estampado buscan `AYME-030` y
+`AYME-042`: muestran nombre vigente, ficha real y **Agregar al pedido** mediante
+el carrito existente. Si falta una referencia, queda solo la descripción visual
+y consulta. El osito rojo y la botella con dispensador rojo siempre son
+presentaciones descriptivas: sin capacidad, SKU, material, empaque, ficha ni
+pedido asignado. **Consultar este modelo** lleva al contacto original, sin enviar
+mensajes ni registrar cotizaciones. No se usan descripciones genéricas como
+prueba de certificación.
+
+```bash
+HERO_TEST_URL=http://localhost:3002/store/ayme-pet node tests/ayme-scroll-showcase.test.js
+node tests/ayme-scroll-showcase-render.test.js
+```
+
+Las pruebas públicas cubren orden, datos ausentes, aislamiento de tenants,
+scroll reversible, geometría, acciones, móvil y cambio dinámico de movimiento
+reducido. El navegador usa un perfil nuevo y bloquea solicitudes no GET y mapas;
+solo modifica su carrito local aislado. Después del build, ejecutar la prueba de
+navegador con `SHOWCASE_SCREENSHOTS=1` guarda
+`.next/ayme-scroll-showcase-{desktop,mobile,reduced}.png`. La verificación
+independiente y la comprobación compilada por Tailscale fueron aprobadas; estas
+comprobaciones no autorizan publicación.
+
 ## 🧪 Pruebas y Validación
 
 El sistema cuenta con pruebas E2E para verificar flujos críticos de compra y cotización:
