@@ -1,0 +1,158 @@
+.hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 760px;
+  height: 100svh;
+  overflow: hidden;
+  background: #f7f6f4;
+  color: #241c1d;
+  font-family: 'Instrument Sans', sans-serif;
+}
+
+.stage {
+  position: absolute;
+  inset: 110px 0 155px;
+  overflow: hidden;
+}
+
+.product {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(56vw, 700px);
+  height: 110%;
+  max-width: none;
+  object-fit: contain;
+  transform-origin: center;
+  animation: depth 24s linear infinite;
+  will-change: transform;
+}
+
+.product:nth-child(1) { --lane: -26%; animation-delay: -14s; }
+.product:nth-child(2) { --lane: 28%; animation-delay: -8s; }
+.product:nth-child(3) { --lane: -16%; animation-delay: -2s; }
+.product:nth-child(4) { --lane: 24%; animation-delay: -20s; }
+
+/* Front-facing cutouts grow out of depth; stacking follows depth, never rotation.
+   Opacity stays solid through the visible overlap, fading only at the edges. */
+@keyframes depth {
+  0% { transform: translate(calc(-50% + var(--lane) * .25), -52%) scale(.24); opacity: 0; z-index: 1; }
+  3% { opacity: 1; }
+  50% { transform: translate(calc(-50% + var(--lane)), -50%) scale(.85); opacity: 1; z-index: 5; }
+  97% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--lane) * 2), -46%) scale(1.85); opacity: 0; z-index: 10; }
+}
+
+.hero[data-paused='true'] .product { animation-play-state: paused; }
+
+.copy {
+  position: absolute;
+  z-index: 20;
+  inset: auto 0 0;
+  padding: 95px 24px 40px;
+  text-align: center;
+  background: linear-gradient(transparent, rgba(247, 246, 244, .97) 38%, #f7f6f4 80%);
+}
+
+.brand {
+  margin: 0 0 10px;
+  color: #A61C2E;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .18em;
+}
+
+.copy h1 {
+  margin: 0 auto;
+  max-width: 1000px;
+  font-size: clamp(34px, 4.4vw, 64px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -.045em;
+  color: #241c1d;
+}
+
+.lead { margin: 14px 0 22px; font-size: 16px; color: #62585a; }
+.actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 12px; }
+.actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 48px;
+  padding: 12px 24px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.primary { background: #A61C2E; color: white; }
+.primary:hover { background: #8C1625; }
+.secondary { color: #8C1625; border: 1px solid #8C1625; background: #f7f6f4; }
+.secondary:hover { background: #eee6e6; }
+.pause {
+  position: absolute;
+  z-index: 21;
+  top: 132px;
+  right: 28px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid #c9c2c2;
+  border-radius: 999px;
+  background: #fff;
+  color: #534447;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.pause:disabled { cursor: default; }
+.pause:focus, .actions a:focus-visible { outline: 3px solid #A61C2E; outline-offset: 4px; }
+
+/* A deliberate four-product composition, not an invisible first animation frame. */
+.hero[data-reduced-motion='true'] .product {
+  animation: none;
+  opacity: 1;
+  transform: translate(calc(-50% + var(--lane)), -50%) scale(.72);
+}
+.hero[data-reduced-motion='true'] .product:nth-child(1) { --lane: -56%; z-index: 4; }
+.hero[data-reduced-motion='true'] .product:nth-child(2) { --lane: -15%; z-index: 3; }
+.hero[data-reduced-motion='true'] .product:nth-child(3) { --lane: 28%; z-index: 2; }
+.hero[data-reduced-motion='true'] .product:nth-child(4) { --lane: 64%; z-index: 1; }
+
+@media (prefers-reduced-motion: reduce) {
+  .product { animation: none; opacity: 1; transform: translate(calc(-50% + var(--lane)), -50%) scale(.72); }
+}
+
+/* Mobile keeps even the foreground canvas inside the stage. Depth comes from
+   size and stacking rather than sending the cup beyond the narrow viewport. */
+@keyframes mobileDepth {
+  0% { transform: translate(calc(-50% + var(--lane) * .25), -50%) scale(.24); opacity: 0; z-index: 1; }
+  3% { opacity: 1; }
+  50% { transform: translate(calc(-50% + var(--lane) * .6), -50%) scale(.65); opacity: 1; z-index: 5; }
+  97% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--lane)), -50%) scale(1.05); opacity: 0; z-index: 10; }
+}
+
+@media (max-width: 600px) {
+  .hero { min-height: 740px; }
+  .stage { inset: 175px 0 230px; }
+  .product { width: 80vw; height: 90%; animation-name: mobileDepth; }
+  .product:nth-child(1) { --lane: -8%; }
+  .product:nth-child(2) { --lane: 8%; }
+  .product:nth-child(3) { --lane: -4%; }
+  .product:nth-child(4) { --lane: 4%; }
+  .pause { top: 122px; right: 16px; }
+  .copy { padding: 70px 20px 32px; }
+  .copy h1 { max-width: 350px; font-size: 38px; }
+  .lead { max-width: 290px; margin: 14px auto 20px; font-size: 14px; }
+  .actions { gap: 10px; }
+  .actions a { padding: 12px 18px; font-size: 13px; }
+  .hero[data-reduced-motion='true'] .product { transform: translate(calc(-50% + var(--lane)), -50%) scale(.68); }
+  .hero[data-reduced-motion='true'] .product:nth-child(1) { --lane: -28%; }
+  .hero[data-reduced-motion='true'] .product:nth-child(2) { --lane: -10%; }
+  .hero[data-reduced-motion='true'] .product:nth-child(3) { --lane: 10%; }
+  .hero[data-reduced-motion='true'] .product:nth-child(4) { --lane: 28%; }
+}

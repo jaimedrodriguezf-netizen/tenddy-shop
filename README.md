@@ -43,6 +43,49 @@ Permite a múltiples negocios operar con su propia identidad de marca (storefron
 
 ---
 
+## Portada canónica de AYME
+
+Vista local: `http://localhost:3002/store/ayme-pet` (ruta canónica: `/store/ayme-pet`).
+Solo la tienda exacta `ayme-pet` utiliza la portada automática de cuatro envases,
+sin rotación ni sincronización al scroll. El botón **Pausar / Reanudar** admite
+teclado; la preferencia de movimiento reducido desactiva la animación, incluso
+al cambiar durante la visita. Los enlaces llevan al catálogo y contacto originales.
+La opción `sections.hero.enabled` permite ocultar la portada de AYME.
+Catálogo, filtros, fichas, carrito y formulario siguen usando los datos y flujos
+originales; las demás tiendas conservan su portada industrial. Sin publicación.
+
+Con la aplicación principal ejecutándose en el puerto 3002:
+
+```bash
+HERO_TEST_URL=http://localhost:3002/store/ayme-pet node tests/ayme-canonical-hero.test.js
+node tests/ayme-canonical-hero-render.test.js
+```
+
+La prueba de navegador no envía formularios, cotizaciones ni mensajes y usa un
+carrito aislado. Comprueba imágenes, controles, móvil, filtros, fichas y Bulto.
+La prueba de renderizado comprueba aislamiento, desactivación y las secciones
+originales con datos deterministas, sin crear tiendas en la base de datos.
+
+## Tarjetas del catálogo AYME
+
+Solo `/store/ayme-pet` usa las tarjetas con imagen completa, nombre, SKU,
+especificaciones disponibles y unidades reales por empaque. **Agregar al pedido**
+(icono + texto) agrega el mismo empaque al cotizador existente; **Ficha** y
+**Cotizar** quedan debajo como acciones secundarias, con objetivos táctiles de
+44 px. La grilla muestra cuatro columnas en escritorio y dos en móvil. No se
+inventan categorías, precios ni especificaciones cuando faltan datos.
+
+```bash
+HERO_TEST_URL=http://localhost:3002/store/ayme-pet node tests/ayme-product-cards.test.js
+node tests/ayme-product-cards-render.test.js
+```
+
+El navegador usa un perfil nuevo y bloquea solicitudes no GET; intercepta la
+apertura de WhatsApp sin enviar mensajes ni formularios. Las categorías ausentes
+en datos locales se reportan como omitidas; una fixture verifica ese filtro.
+Después del build, `CARD_SCREENSHOTS=1` con el comando de navegador guarda
+`.next/ayme-product-cards-desktop.png` y `.next/ayme-product-cards-mobile.png`.
+
 ## 🧪 Pruebas y Validación
 
 El sistema cuenta con pruebas E2E para verificar flujos críticos de compra y cotización:

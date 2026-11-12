@@ -38,6 +38,9 @@ import Link from 'next/link';
 import { Tenant, Branch, Category, Product, resolveLandingSections, getPackagingUnit } from '@/lib/types';
 import { useCartStore } from '@/lib/store/cart';
 import CartDrawer from '@/components/CartDrawer';
+import ProductTunnelHero from '@/components/ProductTunnelHero';
+import AymeProductCard from '@/components/AymeProductCard';
+import aymeCardStyles from '@/components/AymeProductCard.module.css';
 import VersionBadge from '@/components/VersionBadge';
 import { normalizeEcuadorPhone, buildEcuadorWhatsAppUrl } from '@/lib/ecuador-phone';
 
@@ -206,7 +209,7 @@ export default function TenantLandingView({
     return false;
   })();
 
-  // Control de Smart Hide y Fondo Sólido Opaco para AYME (Evita traslúcido sobre productos)
+  // Control de Smart Hide y Fondo Sólido Opaco al hacer scroll
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [isHeaderSolid, setIsHeaderSolid] = useState(false);
 
@@ -217,7 +220,7 @@ export default function TenantLandingView({
       const currentY = window.scrollY;
       const diff = currentY - prevY;
 
-      // 1. En el Hero (<= 60px): visible y con transparencia original sobre el video
+      // 1. En el Hero (<= 60px): visible y con transparencia original
       if (currentY <= 60) {
         setIsHeaderVisible(true);
         setIsHeaderSolid(false);
@@ -241,10 +244,12 @@ export default function TenantLandingView({
 
     window.addEventListener('scroll', handleSmartHeader, { passive: true });
     return () => window.removeEventListener('scroll', handleSmartHeader);
-  }, []);
+  }, [isAyme]);
 
-  // Listener para la Secuencia de Scroll con Lerp continuo a 60fps optimizado
+  // La portada de AYME es automática: no necesita el motor de scroll industrial.
+  // Las demás tiendas conservan su secuencia y sus controles originales.
   useEffect(() => {
+    if (isAyme) return;
     let currentProgress = 0;
     let targetProgress = 0;
     let rafId: number | null = null;
@@ -303,7 +308,7 @@ export default function TenantLandingView({
         cancelAnimationFrame(rafId);
       }
     };
-  }, []);
+  }, [isAyme]);
 
   // Cálculo de opacidades y traslaciones de las tarjetas del Hero interactivo
   // Fase 0: Intro (0.0 a 0.22)
@@ -605,7 +610,15 @@ export default function TenantLandingView({
                 opacity: isHeaderSolid ? 1 : undefined,
               }}
             >
-              {customTopBarText && customTopBarText.trim() ? (
+              {isAyme ? (
+                <>
+                  <span className="inline-flex items-center gap-1.5"><Factory className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>AYME INDUSTRIAS PET</strong> | Solutions in Packaging</span>
+                  <span className="hidden md:inline">•</span>
+                  <span className="hidden md:inline-flex items-center gap-1.5"><Package className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>Ventas Mayoristas & Moldes</strong></span>
+                  <span className="hidden sm:inline">•</span>
+                  <span className="inline-flex items-center gap-1.5"><Phone className="w-3.5 h-3.5 text-white/90 shrink-0" /> <strong>WhatsApp: {displayPhone}</strong></span>
+                </>
+              ) : customTopBarText && customTopBarText.trim() ? (
                 customTopBarText.includes('•') ? (
                   customTopBarText.split('•').map((segment: string, idx: number, arr: string[]) => (
                     <React.Fragment key={idx}>
@@ -666,70 +679,82 @@ export default function TenantLandingView({
                     Inicio
                   </button>
                 </li>
-                {/* Dropdown de Categorías de Envases */}
-                <li className="relative" ref={dropdownRef}>
-                  <button
-                    type="button"
-                    onClick={() => setIsProductsDropdownOpen((prev) => !prev)}
-                    className="nav-link cursor-pointer bg-transparent border-0 flex items-center gap-1.5"
-                  >
-                    <span>Catálogo de Envases</span>
-                    <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {isProductsDropdownOpen && (
-                    <div
-                      className="absolute top-full left-0 mt-2 w-72 rounded-2xl border shadow-2xl p-2 z-50 bg-slate-900 border-slate-700 text-slate-100"
+                {/* Catálogo de Envases: directo y limpio para AYME, dropdown para otras tiendas */}
+                {isAyme ? (
+                  <li>
+                    <button
+                      type="button"
+                      onClick={() => document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="nav-link cursor-pointer bg-transparent border-0"
                     >
-                      <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1 flex items-center justify-between">
-                        <span>Líneas de Envases</span>
-                        <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-mono font-bold">
-                          {categories.length} Líneas
-                        </span>
-                      </div>
+                      Catálogo de Envases
+                    </button>
+                  </li>
+                ) : (
+                  <li className="relative" ref={dropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setIsProductsDropdownOpen((prev) => !prev)}
+                      className="nav-link cursor-pointer bg-transparent border-0 flex items-center gap-1.5"
+                    >
+                      <span>Catálogo de Envases</span>
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isProductsDropdownOpen ? 'rotate-180' : ''}`} />
+                    </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedCategory('all');
-                          setIsProductsDropdownOpen(false);
-                          document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                        className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
-                          selectedCategory === 'all'
-                            ? 'bg-red-500/20 text-red-400 font-bold'
-                            : 'hover:bg-slate-800 text-slate-300'
-                        }`}
+                    {isProductsDropdownOpen && (
+                      <div
+                        className="absolute top-full left-0 mt-2 w-72 rounded-2xl border shadow-2xl p-2 z-50 bg-slate-900 border-slate-700 text-slate-100"
                       >
-                        <span className="inline-flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> Todos los Envases</span>
-                        <span className="text-[10px] text-slate-400 font-mono">({products.length})</span>
-                      </button>
+                        <div className="px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-700/50 mb-1 flex items-center justify-between">
+                          <span>Líneas de Envases</span>
+                          <span className="text-[10px] bg-red-500/20 text-red-400 px-1.5 py-0.5 rounded font-mono font-bold">
+                            {categories.length} Líneas
+                          </span>
+                        </div>
 
-                      {categories.map((cat) => {
-                        const count = products.filter((p) => p.category_id === cat.id).length;
-                        return (
-                          <button
-                            key={cat.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedCategory(cat.id);
-                              setIsProductsDropdownOpen(false);
-                              document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
-                            }}
-                            className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
-                              selectedCategory === cat.id
-                                ? 'bg-red-500/20 text-red-400 font-bold'
-                                : 'hover:bg-slate-800 text-slate-300'
-                            }`}
-                          >
-                            <span className="truncate pr-2">{cat.name}</span>
-                            <span className="text-[10px] text-slate-400 font-mono">({count})</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </li>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedCategory('all');
+                            setIsProductsDropdownOpen(false);
+                            document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors ${
+                            selectedCategory === 'all'
+                              ? 'bg-red-500/20 text-red-400 font-bold'
+                              : 'hover:bg-slate-800 text-slate-300'
+                          }`}
+                        >
+                          <span className="inline-flex items-center gap-1.5"><Package className="w-3.5 h-3.5" /> Todos los Envases</span>
+                          <span className="text-[10px] text-slate-400 font-mono">({products.length})</span>
+                        </button>
+
+                        {categories.map((cat) => {
+                          const count = products.filter((p) => p.category_id === cat.id).length;
+                          return (
+                            <button
+                              key={cat.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedCategory(cat.id);
+                                setIsProductsDropdownOpen(false);
+                                document.getElementById('catalog-section')?.scrollIntoView({ behavior: 'smooth' });
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded-xl text-xs font-medium flex items-center justify-between transition-colors ${
+                                selectedCategory === cat.id
+                                  ? 'bg-red-500/20 text-red-400 font-bold'
+                                  : 'hover:bg-slate-800 text-slate-300'
+                              }`}
+                            >
+                              <span className="truncate pr-2">{cat.name}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">({count})</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </li>
+                )}
 
                 <li>
                   <button
@@ -994,6 +1019,9 @@ export default function TenantLandingView({
       {/* =========================================================================
            SECCIÓN INTERACTIVA: SECUENCIA DE TRANSFORMACIÓN SINCRONIZADA AL SCROLL
            ========================================================================= */}
+      {isAyme ? (
+        sections.hero.enabled && <ProductTunnelHero />
+      ) : (
       <section className="scroll-sequence-track" id="scroll-sequence-track" ref={trackRef}>
         <div className="scroll-sequence-sticky">
           {/* Video de Fondo Industrial Continuo */}
@@ -1238,6 +1266,7 @@ export default function TenantLandingView({
           </div>
         </div>
       </section>
+      )}
 
       {/* =========================================================================
            SECCIÓN DE CATÁLOGO: ENVASES DESTACADOS Y FILTROS POR LÍNEAS
@@ -1377,12 +1406,19 @@ export default function TenantLandingView({
               </button>
             </div>
           ) : (
-            <div className="products-grid" id="products-grid">
+            <div className={isAyme ? aymeCardStyles.grid : 'products-grid'} id="products-grid">
               {displayedProducts.map((product) => {
                 const specs = product.attributes?.specs || {};
                 const badge = product.attributes?.badge;
                 const packSize = product.units_per_package || 1;
                 const productHref = `/store/${tenant.slug}/producto/${encodeURIComponent(product.slug || product.sku?.toLowerCase() || product.id)}`;
+
+                if (isAyme) return (
+                  <AymeProductCard key={product.id} product={product} href={productHref}
+                    category={categories.find(c => c.id === product.category_id)?.name}
+                    packagingUnit={packagingUnit.singular} onNavigate={handleProductNavigate}
+                    onAdd={() => addItem(product)} onQuote={() => handleWhatsAppQuote(product.name)} />
+                );
 
                 return (
                   <div
